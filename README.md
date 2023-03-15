@@ -1,4 +1,4 @@
-# JavaScript Notebook
+# EvaNotebook
 A notebook-like for JavaScript.
 
 
