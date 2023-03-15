@@ -23,7 +23,7 @@ body {
 
 @font-face {
   font-family: "Fira Code Regular";
-  src: url(/terminal/assets/fonts/FiraCode-Regular.woff);
+  src: url(/assets/fonts/FiraCode-Regular.woff);
 }
 
 * {

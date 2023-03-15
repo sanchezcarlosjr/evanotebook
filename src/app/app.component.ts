@@ -18,7 +18,6 @@ import InlineImage from 'editorjs-inline-image';
 // @ts-ignore
 import Button from "./Button.js";
 import {Cell} from "./cell";
-import {unsplash_access_key} from "../env/env.prod";
 // @ts-ignore
 import BreakLine from 'editorjs-break-line';
 
@@ -77,8 +76,8 @@ export class AppComponent implements OnInit {
               display: true,
             },
             unsplash: {
-              appName: 'Eva Notebook',
-              clientId: unsplash_access_key
+              appName: retrieve("ua"),
+              clientId: retrieve("uc")
             }
           }
         },
