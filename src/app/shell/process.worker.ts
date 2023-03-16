@@ -101,7 +101,7 @@ async function retrieveFromCache(key: string) {
   return token;
 }
 
-async function generateChatGPTRequest(content: string, options: {token: string}) {
+async function generateChatGPTRequest(content: string, options: {token: string, messages: {role: string, content: string}[]}) {
   return new Request('https://api.openai.com/v1/chat/completions',
     {
       'method': 'POST',
@@ -114,7 +114,8 @@ async function generateChatGPTRequest(content: string, options: {token: string})
           {
             "role": "user",
             "content": content
-          }
+          },
+          ...options.messages
         ]
       })
     });
