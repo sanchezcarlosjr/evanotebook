@@ -1,10 +1,28 @@
 import {map, Observable, startWith, Subscriber} from "rxjs";
 
 import {IMqttServiceOptions, MqttService} from 'ngx-mqtt';
-
+import {webSocket, WebSocketSubject} from "rxjs/webSocket";
 
 export interface Protocol {
   connect: (options: any) => any;
+  send: (options: any) => any;
+}
+
+export class WebSocket implements Protocol {
+  private subject: WebSocketSubject<unknown>| undefined = undefined;
+  connect(options: any): any {
+    this.subject = webSocket(options);
+    return this.subject;
+  }
+
+  toJSON() {
+    return undefined;
+  }
+
+  send(message: object) {
+    this.subject?.next(message);
+  }
+
 }
 
 export class WebRTC implements Protocol {

@@ -17,11 +17,26 @@ import {
   switchMap,
   switchScan,
   take,
-  tap
+  tap, throwError
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
 import * as protocols from '../protocols';
 import * as jp from 'jsonpath';
+import { match, P, Pattern, isMatching } from 'ts-pattern';
+import * as Immutable  from "immutable";
+
+// @ts-ignore
+globalThis.P = P
+// @ts-ignore
+globalThis.Pattern = Pattern
+// @ts-ignore
+globalThis.isMatching = isMatching
+// @ts-ignore
+globalThis.match = match
+// @ts-ignore
+globalThis.regex = (expr: RegExp) => P.when((str: string): str is never => expr.test(str));
+// @ts-ignore
+globalThis.Immutable = Immutable;
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -218,7 +233,7 @@ class ProcessWorker {
       }).pipe(catchError(err =>  of({error: true, message: err.message})), map(_ => message))
     );
     environment.sendEmail = (options: { type?: string, provider?: string, personalizations?: any, token: string, proxy?: string, to: string|string[], from: string, subject: string }) =>
-      switchMap(message =>
+      switchMap(state =>
         fromFetch(
           options?.proxy ? `${options.proxy}https%3A%2F%2Fapi.sendgrid.com%2Fv3%2Fmail%2Fsend` : "https://api.sendgrid.com/v3/mail/send",
           {
@@ -245,11 +260,11 @@ class ProcessWorker {
                 "content": [
                   {
                     "type": options.type ?? "text/plain",
-                    "value": message
+                    "value": state
                   }
                 ]
               })
-          })
+          }).pipe(map(_ => state))
       )
     environment.display = (func = identity) => tap(observerOrNext =>
       this.localEcho.println(environment.serialize(func(observerOrNext)).replace(/\\u002F/g, "/"))
@@ -261,6 +276,7 @@ class ProcessWorker {
       switchMap((configuration: any) =>
         (typeof observable === "function" ? observable(configuration.message) : observable).pipe(tap(next => configuration.connection.send(next))))
     );
+    environment.sendOverProtocol  =   tap((configuration: any) => configuration.connection.send(configuration.message));
     environment.randomBetween = (max = 0, min = 10) => Math.floor(Math.random() * (max - min + 1)) + min;
     environment.fromFetch = (input: string | Request, init?: RequestInit | undefined) => fromFetch(input, init).pipe(
       switchMap((response: any) => response.ok ? response.json() :
@@ -280,13 +296,14 @@ class ProcessWorker {
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display());
     environment.publishMQTT =
-      (topic: string, options = {publication: {}, message: {}}) =>
-        map((text: string) => ({
+      (topic: string, payload: string = "text", options = {publication: {}, message: {}}) =>
+        map((payload: string) => ({
           topic,
-          message: environment.serialize({text, ...options.message}), ...options.publication
+          message: environment.serialize({[`${payload}`]: payload, ...options.message}),
+          ...options.publication
         }));
     environment.sayHermes = environment.publishMQTT("hermes/tts/say");
-    environment.gpt = (options: {token: string}) => switchMap((message: string) =>
+    environment.gpt = (options: any) => switchMap((message: string) =>
       from(generateChatGPTRequest(message, options)).pipe(switchMap(request => environment.fromFetch(request)
         .pipe(
           tap((x: { error: boolean }) => {
@@ -320,17 +337,24 @@ class ProcessWorker {
 const processWorker = new ProcessWorker(globalThis, new LocalEcho(), new Terminal());
 
 // @ts-ignore
-globalThis.addEventListener('exec', (event: CustomEvent) => {
+globalThis.addEventListener('exec', async (event: CustomEvent) => {
   if (!event.detail.payload) {
     sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
     return;
   }
-  processWorker.exec(event.detail.payload).subscribe({
+  // @ts-ignore
+  globalThis.db = event.detail.payload.database;
+  try {
+    const response = await processWorker.exec(event.detail.payload.code);
+    response.subscribe({
+      // @ts-ignore
+      complete: () => sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}})
+    });
+  } catch (e) {
     // @ts-ignore
-    complete: () => sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}})
-  });
+    sendMessage({'event': 'shell.error', payload: {threadId: self.name, text: `${e.name}: ${e.message}`}});
+  }
 });
-
 
 self.onmessage = (event) => globalThis.dispatchEvent(new CustomEvent(event.data.event, {
   bubbles: true,

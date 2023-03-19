@@ -47,9 +47,6 @@ import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 onconnect = (e) => {
   const port = e.ports[0];
 
-  port.onmessage = (e: MessageEvent) => {
-    const workerResult = `Result: ${e.data[0] * e.data[1]}`;
-    port.postMessage(workerResult);
-  };
-  
+  port.onmessage = (e: MessageEvent) => {};
+
 };

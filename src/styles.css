@@ -21,6 +21,10 @@ body {
   background-color: #f0f2f5;
 }
 
+.ce-block__content {
+  max-width: 53%!important;
+}
+
 @font-face {
   font-family: "Fira Code Regular";
   src: url(/assets/fonts/FiraCode-Regular.woff);

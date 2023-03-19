@@ -52,10 +52,7 @@ export class AppComponent implements OnInit {
             language: 'javascript'
           }
         },
-        button: {
-          class: Button,
-          inlineToolbar: false,
-        },
+        button: Button,
         checklist: {
           class: Checklist,
           inlineToolbar: true,
