@@ -113,15 +113,18 @@ export class MQTT implements Protocol {
 
   connect(options: IMqttServiceOptions & { topic: string }) {
     this.mqtt = new MqttService(options);
-    return this.mqtt?.observe(options.topic).pipe(
+    const topic = options?.topic ?? "main";
+    return this.mqtt?.observe(topic).pipe(
       map((message) => ({
         ready: true,
+        topic,
         // @ts-ignore
         message: globalThis.deserialize(message.payload.toString()),
         connection: this
       })),
       startWith({
         ready: true,
+        topic,
         connection: this
       }),
     );
