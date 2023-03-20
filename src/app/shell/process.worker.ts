@@ -354,10 +354,10 @@ class ProcessWorker {
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display());
     environment.publishMQTT =
-      (topic: string, payload: string = "text", options = {publication: {}, message: {}}) =>
+      (topic: string, payloadName: string = "text", options = {publication: {}, message: {}}) =>
         map((payload: string) => ({
           topic,
-          message: environment.serialize({[`${payload}`]: payload, ...options.message}),
+          message: environment.serialize({[`${payloadName}`]: payload, ...options.message}),
           ...options.publication
         }));
     environment.sayHermes = environment.publishMQTT("hermes/tts/say");
