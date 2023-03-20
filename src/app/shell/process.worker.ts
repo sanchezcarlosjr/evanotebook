@@ -145,7 +145,7 @@ async function generateChatGPTRequest(content: string, options: { token: string,
             "role": "user",
             "content": content
           },
-          ...options.messages
+          ...(options?.messages ?? [])
         ]
       })
     });
