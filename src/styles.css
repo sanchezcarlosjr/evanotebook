@@ -11,18 +11,15 @@ body {
   width: 100%;
   height: max-content;
   margin: 0;
+  overflow-x: auto;
+  word-wrap: anywhere;
   flex-wrap: wrap;
   white-space: pre-wrap;       /* Since CSS 2.1 */
   white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
   white-space: -pre-wrap;      /* Opera 4-6 */
   white-space: -o-pre-wrap;    /* Opera 7 */
-  word-wrap: break-word;       /* Internet Explorer 5.5+ */
   font-size: 0.7em;
   background-color: #f0f2f5;
-}
-
-.ce-block__content {
-  max-width: 53%!important;
 }
 
 @font-face {
@@ -262,4 +259,28 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
+}
+
+#editor-js {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+}
+
+.cdx-block {
+  width: 100%;
+  height: max-content;
+  margin: 0;
+  flex-wrap: wrap;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+
+.codex-editor {
+  width: 100%;
 }

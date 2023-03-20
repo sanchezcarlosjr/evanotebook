@@ -5,8 +5,8 @@ import {
   delayWhen,
   filter,
   from,
-  interval,
-  map,
+  interval, lastValueFrom,
+  map, merge, mergeScan, mergeWith,
   Observable,
   of,
   pipe,
@@ -17,13 +17,15 @@ import {
   switchMap,
   switchScan,
   take,
-  tap, throwError
+  tap, toArray
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
 import * as protocols from '../protocols';
 import * as jp from 'jsonpath';
-import { match, P, Pattern, isMatching } from 'ts-pattern';
-import * as Immutable  from "immutable";
+import {isMatching, match, P, Pattern} from 'ts-pattern';
+import * as Immutable from "immutable";
+import {List} from "immutable";
+import Indexed = Immutable.Seq.Indexed;
 
 // @ts-ignore
 globalThis.P = P
@@ -76,21 +78,34 @@ globalThis.database = {
   })
 }
 
-function requestPrompt(text: string): Promise<string | null> {
+function requestResource(event: string, request: any): Promise<any> {
   return new Promise((resolve, reject) => {
     // @ts-ignore
-    globalThis.addEventListener('prompt', (event: CustomEvent) => {
+    globalThis.addEventListener(event, (event: CustomEvent) => {
       resolve(event.detail.payload);
       // @ts-ignore
-      globalThis.removeEventListener('prompt', null);
+      globalThis.removeEventListener(event, null);
     });
     // @ts-ignore
-    sendMessage({
-      event: 'prompt', payload: {
-        threadId: self.name,
-        text: text ?? ""
-      }
-    });
+    sendMessage(request);
+  });
+}
+
+function requestFile(options: object): Promise<string | null> {
+  return requestResource('shell.InputFile', {
+    event: 'file', payload: {
+      threadId: self.name,
+      ...options
+    }
+  });
+}
+
+function requestPrompt(text: string): Promise<string | null> {
+  return requestResource('prompt', {
+    event: 'prompt', payload: {
+      threadId: self.name,
+      text: text ?? ""
+    }
   });
 }
 
@@ -116,7 +131,7 @@ async function retrieveFromCache(key: string) {
   return token;
 }
 
-async function generateChatGPTRequest(content: string, options: {token: string, messages: {role: string, content: string}[]}) {
+async function generateChatGPTRequest(content: string, options: { token: string, messages: { role: string, content: string }[] }) {
   return new Request('https://api.openai.com/v1/chat/completions',
     {
       'method': 'POST',
@@ -177,6 +192,18 @@ class LocalEcho {
 
 const identity = (x: any) => x;
 
+async function readFile(index: number, fileList: FileList) {
+  return {
+    index,
+    name: fileList.item(index)?.name,
+    size: fileList.item(index)?.size,
+    type: fileList.item(index)?.type,
+    lastModified: fileList.item(index)?.lastModified,
+    webkitRelativePath: fileList.item(index)?.webkitRelativePath,
+    text: await fileList.item(index)?.text() ?? []
+  };
+}
+
 class ProcessWorker {
   constructor(private environment: any, private localEcho: LocalEcho, private terminal: Terminal) {
     environment.clear = tap(() => this.terminal.clear());
@@ -195,31 +222,49 @@ class ProcessWorker {
     environment.filter = filter;
     environment.range = range;
     environment.delayWhen = delayWhen;
-    environment.serialize = (obj: any) => {
+    environment.serialize = (obj: any, spaces?: number) => {
       try {
-        return JSON.stringify(obj);
+        return JSON.stringify(obj, (key: string, value: any) => {
+          return match(value)
+             .with(
+                P.instanceOf(FileList), (fileList: FileList) => ({
+                 fileList: Immutable.Range(0,fileList.length).reduce(
+                         (acc, index) => acc.push({
+                           index,
+                           name: fileList.item(index)?.name,
+                           size: fileList.item(index)?.size,
+                           type: fileList.item(index)?.type,
+                           lastModified: fileList.item(index)?.lastModified,
+                           webkitRelativePath: fileList.item(index)?.webkitRelativePath
+                         }), Immutable.List<any>([])
+                 )
+               })
+             ).otherwise(x => x);
+        }, spaces);
       } catch (e) {
         return obj.toString();
       }
     };
-    environment.deserialize = (code: string) => {
+    environment.deserialize = (text: string) => {
       try {
-        return JSON.parse(code);
+        return JSON.parse(text);
       } catch (e) {
-        return code;
+        return text;
       }
     };
+    environment.lastValueFrom = lastValueFrom;
     environment.from = from;
     environment.of = of;
     environment.interval = interval;
     environment.startWith = startWith;
     environment.switchScan = switchScan;
+    environment.mergeScan = mergeScan;
     environment.delay = delay;
     environment.speak = tap((text: string) => speechSynthesis.speak(text));
     environment.take = take;
     environment.switchMap = switchMap;
     environment.rx = rx;
-    environment.sendSMS = (options: {passcode: string, path: string, recipients: string[]}) => switchMap(message =>
+    environment.sendSMS = (options: { passcode: string, path: string, recipients: string[] }) => switchMap(message =>
       fromFetch(options.path, {
         method: 'POST',
         headers: {
@@ -230,9 +275,9 @@ class ProcessWorker {
           message,
           recipients: options.recipients.join(',')
         }),
-      }).pipe(catchError(err =>  of({error: true, message: err.message})), map(_ => message))
+      }).pipe(catchError(err => of({error: true, message: err.message})), map(_ => message))
     );
-    environment.sendEmail = (options: { type?: string, provider?: string, personalizations?: any, token: string, proxy?: string, to: string|string[], from: string, subject: string }) =>
+    environment.sendEmail = (options: { type?: string, provider?: string, personalizations?: any, token: string, proxy?: string, to: string | string[], from: string, subject: string }) =>
       switchMap(state =>
         fromFetch(
           options?.proxy ? `${options.proxy}https%3A%2F%2Fapi.sendgrid.com%2Fv3%2Fmail%2Fsend` : "https://api.sendgrid.com/v3/mail/send",
@@ -246,7 +291,7 @@ class ProcessWorker {
               {
                 "personalizations": options.personalizations ?? [
                   {
-                    "to": Array.isArray(options?.to) ? options.to.map(email => ({email})) :  [
+                    "to": Array.isArray(options?.to) ? options.to.map(email => ({email})) : [
                       {
                         email: options?.to ?? ""
                       }
@@ -267,16 +312,17 @@ class ProcessWorker {
           }).pipe(map(_ => state))
       )
     environment.display = (func = identity) => tap(observerOrNext =>
-      this.localEcho.println(environment.serialize(func(observerOrNext)).replace(/\\u002F/g, "/"))
+      this.localEcho.println(environment.serialize(func(observerOrNext), 1)?.replace(/\\u002F/g, "/"))
     );
+    environment.log = tap(observer => console.log(observer));
     environment.input = (placeholder: string) => from(requestPrompt(placeholder));
-    environment.prompt = (placeholder: string) => switchMap(_ => environment.input(placeholder));
+    environment.prompt = (placeholder: string) => switchMap(data => environment.input(placeholder));
     environment.chat = (observable: Observable<any> | Function) => pipe(
       filter((configuration: any) => configuration.ready),
       switchMap((configuration: any) =>
         (typeof observable === "function" ? observable(configuration.message) : observable).pipe(tap(next => configuration.connection.send(next))))
     );
-    environment.sendOverProtocol  =   tap((configuration: any) => configuration.connection.send(configuration.message));
+    environment.sendOverProtocol = tap((configuration: any) => configuration.connection.send(configuration.message));
     environment.randomBetween = (max = 0, min = 10) => Math.floor(Math.random() * (max - min + 1)) + min;
     environment.fromFetch = (input: string | Request, init?: RequestInit | undefined) => fromFetch(input, init).pipe(
       switchMap((response: any) => response.ok ? response.json() :
@@ -286,6 +332,18 @@ class ProcessWorker {
         })
       ),
       catchError(err => of({error: true, message: err.message}))
+    );
+    environment.readFiles = pipe(
+      map((fileList: FileList) => Immutable.Range(0,fileList.length).map(
+          (index) => from(readFile(index, fileList)) as Observable<any>
+        )
+      ),
+      switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1,v.size).toArray())))
+    );
+    environment.uploadFiles = (options: any) => from(requestFile(options));
+    environment.importJSON = (options: any) => environment.uploadFiles(options).pipe(
+      environment.readFiles,
+      map((file: {text: string}) => environment.deserialize(file.text))
     );
     environment.filterErrors = pipe(environment.display((x: { message: string }) => x.message), filter((x: { error: boolean }) => x.error));
     environment.jp = jp;

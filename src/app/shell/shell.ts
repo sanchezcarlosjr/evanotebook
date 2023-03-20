@@ -68,6 +68,7 @@ export class Shell {
     environment.addEventListener('localecho.printWide', (event: CustomEvent) => {
     });
     environment.addEventListener('prompt', (event: CustomEvent) => this.editor.blocks.getById(event.detail.payload.threadId)?.call('prompt', event.detail.payload.text));
+    environment.addEventListener('file', (event: CustomEvent) => this.editor.blocks.getById(event.detail.payload.threadId)?.call('inputFile', event.detail.payload));
     environment.addEventListener('shell.error', (event: CustomEvent) => {
       this.environment.dispatchEvent(new CustomEvent('localecho.println', {
         bubbles: true, detail: {payload: event.detail.payload}
@@ -78,6 +79,9 @@ export class Shell {
         }
       }));
     });
+    environment.addEventListener('shell.InputFile', (event: CustomEvent) => this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+      event: 'shell.InputFile', payload: event.detail.payload.response
+    }));
     environment.addEventListener('shell.Prompt', (event: CustomEvent) => this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
       event: 'prompt', payload: event.detail.payload.response
     }));

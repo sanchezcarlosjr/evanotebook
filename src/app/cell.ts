@@ -46,6 +46,27 @@ export class Cell extends EditorjsCodeflask {
     }
   }
 
+  inputFile(options: any) {
+    const input = document.createElement('input');
+    input.classList.add('prompt', 'cdx-button');
+    this.cell?.appendChild(input);
+    input.multiple = true;
+    input.type = "file";
+    input.addEventListener('change', (event: any) => {
+      const fileList: FileList = event.target.files;
+      window.dispatchEvent(new CustomEvent('shell.InputFile', {
+        bubbles: true, detail: {
+          payload: {
+            // @ts-ignore
+            response: fileList,
+            threadId: this.id
+          }
+        }
+      }));
+      this.cell?.removeChild(input);
+    }, false);
+  }
+
   clear() {
     //@ts-ignore
     this.cell.children[1].innerHTML = "";
