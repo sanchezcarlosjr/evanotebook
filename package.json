@@ -1,10 +1,10 @@
 {
-  "name": "evasim_terminal",
+  "name": "evanotebook",
   "version": "0.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --prod",
+    "build": "ng build --configuration production  --allowed-common-js-dependencies",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

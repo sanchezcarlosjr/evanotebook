@@ -5,8 +5,11 @@ import {
   delayWhen,
   filter,
   from,
-  interval, lastValueFrom,
-  map, merge, mergeScan, mergeWith,
+  interval,
+  lastValueFrom,
+  map,
+  mergeScan,
+  mergeWith,
   Observable,
   of,
   pipe,
@@ -17,14 +20,13 @@ import {
   switchMap,
   switchScan,
   take,
-  tap, toArray
+  tap
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
 import * as protocols from './protocols';
 import * as jp from 'jsonpath';
 import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as Immutable from "immutable";
-import {List} from "immutable";
 import Indexed = Immutable.Seq.Indexed;
 
 // @ts-ignore
@@ -145,7 +147,7 @@ async function generateChatGPTRequest(content: string, options: { token: string,
             "role": "user",
             "content": content
           },
-          ...options.messages
+          ...(options?.messages ?? [])
         ]
       })
     });
@@ -226,20 +228,20 @@ class ProcessWorker {
       try {
         return JSON.stringify(obj, (key: string, value: any) => {
           return match(value)
-             .with(
-                P.instanceOf(FileList), (fileList: FileList) => ({
-                 fileList: Immutable.Range(0,fileList.length).reduce(
-                         (acc, index) => acc.push({
-                           index,
-                           name: fileList.item(index)?.name,
-                           size: fileList.item(index)?.size,
-                           type: fileList.item(index)?.type,
-                           lastModified: fileList.item(index)?.lastModified,
-                           webkitRelativePath: fileList.item(index)?.webkitRelativePath
-                         }), Immutable.List<any>([])
-                 )
-               })
-             ).otherwise(x => x);
+            .with(
+              P.instanceOf(FileList), (fileList: FileList) => ({
+                fileList: Immutable.Range(0, fileList.length).reduce(
+                  (acc, index) => acc.push({
+                    index,
+                    name: fileList.item(index)?.name,
+                    size: fileList.item(index)?.size,
+                    type: fileList.item(index)?.type,
+                    lastModified: fileList.item(index)?.lastModified,
+                    webkitRelativePath: fileList.item(index)?.webkitRelativePath
+                  }), Immutable.List<any>([])
+                )
+              })
+            ).otherwise(x => x);
         }, spaces);
       } catch (e) {
         return obj.toString();
@@ -334,16 +336,16 @@ class ProcessWorker {
       catchError(err => of({error: true, message: err.message}))
     );
     environment.readFiles = pipe(
-      map((fileList: FileList) => Immutable.Range(0,fileList.length).map(
+      map((fileList: FileList) => Immutable.Range(0, fileList.length).map(
           (index) => from(readFile(index, fileList)) as Observable<any>
         )
       ),
-      switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1,v.size).toArray())))
+      switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
     environment.uploadFiles = (options: any) => from(requestFile(options));
     environment.importJSON = (options: any) => environment.uploadFiles(options).pipe(
       environment.readFiles,
-      map((file: {text: string}) => environment.deserialize(file.text))
+      map((file: { text: string }) => environment.deserialize(file.text))
     );
     environment.filterErrors = pipe(environment.display((x: { message: string }) => x.message), filter((x: { error: boolean }) => x.error));
     environment.jp = jp;
@@ -354,10 +356,10 @@ class ProcessWorker {
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display());
     environment.publishMQTT =
-      (topic: string, payload: string = "text", options = {publication: {}, message: {}}) =>
+      (topic: string, payloadName: string = "text", options = {publication: {}, message: {}}) =>
         map((payload: string) => ({
           topic,
-          message: environment.serialize({[`${payload}`]: payload, ...options.message}),
+          message: environment.serialize({[`${payloadName}`]: payload, ...options.message}),
           ...options.publication
         }));
     environment.sayHermes = environment.publishMQTT("hermes/tts/say");
