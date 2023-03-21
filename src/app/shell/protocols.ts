@@ -113,9 +113,11 @@ export class MQTT implements Protocol {
 
   connect(options: IMqttServiceOptions & { topic: string }) {
     options = {
-       protocol: 'ws',
-       hostname: 'localhost',
-       port: 9001,
+       protocol: 'wss',
+       hostname: 'test.mosquitto.org',
+      // @ts-ignore
+       topic: "eva-main",
+       port: 8081,
        ...options
     };
     this.mqtt = new MqttService(options);

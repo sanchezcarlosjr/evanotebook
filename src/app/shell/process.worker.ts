@@ -20,7 +20,7 @@ import {
   tap, toArray
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
-import * as protocols from '../protocols';
+import * as protocols from './protocols';
 import * as jp from 'jsonpath';
 import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as Immutable from "immutable";
