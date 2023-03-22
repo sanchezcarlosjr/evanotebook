@@ -4,7 +4,7 @@ import {
   delay,
   delayWhen,
   filter,
-  from,
+  from, generate,
   interval,
   lastValueFrom,
   map,
@@ -20,7 +20,7 @@ import {
   switchMap,
   switchScan,
   take,
-  tap
+  tap, UnaryFunction
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
 import * as protocols from './protocols';
@@ -93,20 +93,21 @@ function requestResource(event: string, request: any): Promise<any> {
   });
 }
 
+function observeResource(event: string, request: any): Observable<any> {
+  return new Observable((subscriber) => {
+    // @ts-ignore
+    globalThis.addEventListener(event, (event: CustomEvent) => {
+      subscriber.next(event.detail.payload);
+    });
+    self.postMessage(request);
+  });
+}
+
 function requestFile(options: object): Promise<string | null> {
   return requestResource('shell.InputFile', {
     event: 'file', payload: {
       threadId: self.name,
       ...options
-    }
-  });
-}
-
-function requestPrompt(text: string): Promise<string | null> {
-  return requestResource('prompt', {
-    event: 'prompt', payload: {
-      threadId: self.name,
-      text: text ?? ""
     }
   });
 }
@@ -206,6 +207,11 @@ async function readFile(index: number, fileList: FileList) {
   };
 }
 
+interface PromptInputParams {
+  placeholder: string;
+  type: string;
+}
+
 class ProcessWorker {
   constructor(private environment: any, private localEcho: LocalEcho, private terminal: Terminal) {
     environment.clear = tap(() => this.terminal.clear());
@@ -220,9 +226,11 @@ class ProcessWorker {
     environment.tap = tap;
     environment.map = map;
     environment.reduce = reduce;
+    environment.generate = generate;
     environment.scan = scan;
     environment.filter = filter;
     environment.range = range;
+    environment.ImagesAccepted = ".jpg, .png, .jpeg, .svg, .gif, .bmp, .tif, .tiff|image/*";
     environment.delayWhen = delayWhen;
     environment.serialize = (obj: any, spaces?: number) => {
       try {
@@ -266,6 +274,10 @@ class ProcessWorker {
     environment.take = take;
     environment.switchMap = switchMap;
     environment.rx = rx;
+    environment.doAside = (...operations: UnaryFunction<any, any>[]) => {
+      // @ts-ignore
+      return tap((value: any) => of(value).pipe(...operations).subscribe());
+    };
     environment.sendSMS = (options: { passcode: string, path: string, recipients: string[] }) => switchMap(message =>
       fromFetch(options.path, {
         method: 'POST',
@@ -312,13 +324,21 @@ class ProcessWorker {
                 ]
               })
           }).pipe(map(_ => state))
-      )
-    environment.display = (func = identity) => tap(observerOrNext =>
-      this.localEcho.println(environment.serialize(func(observerOrNext), 1)?.replace(/\\u002F/g, "/"))
+      );
+    environment.display = tap(observerOrNext =>
+       this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"))
     );
     environment.log = tap(observer => console.log(observer));
-    environment.input = (placeholder: string) => from(requestPrompt(placeholder));
-    environment.prompt = (placeholder: string) => switchMap(data => environment.input(placeholder));
+    environment.input = (options: PromptInputParams) =>
+      observeResource('prompt', {
+        event: 'prompt',
+        payload: {
+          threadId: self.name,
+          options
+        }
+      });
+    environment.pipe = pipe;
+    environment.prompt = (options: PromptInputParams) => switchMap(_ => environment.input(options));
     environment.chat = (observable: Observable<any> | Function) => pipe(
       filter((configuration: any) => configuration.ready),
       switchMap((configuration: any) =>
@@ -342,19 +362,23 @@ class ProcessWorker {
       ),
       switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
-    environment.uploadFiles = (options: any) => from(requestFile(options));
-    environment.importJSON = (options: any) => environment.uploadFiles(options).pipe(
+    environment.importFiles = (options: any) => from(requestFile(options));
+    environment.importJSON = (options: any) => environment.importFiles({
+      ...options,
+      accept: "application/json"
+    }).pipe(
       environment.readFiles,
       map((file: { text: string }) => environment.deserialize(file.text))
     );
-    environment.filterErrors = pipe(environment.display((x: { message: string }) => x.message), filter((x: { error: boolean }) => x.error));
+    environment.filterErrors = pipe(map(
+      (x: {message: string}) => x.message), environment.display, filter((x: { error: boolean }) => x.error));
     environment.jp = jp;
     environment.jpquery = (path: string) => map((ob: object) => jp.query(ob, path));
     environment.jpapply = (path: string, fn: (x: any) => any) => map((ob: object) => jp.apply(ob, path, fn));
     environment.write = (f = identity) => tap((observerOrNext: string) => this.terminal?.write(f(observerOrNext)));
     environment.printWide =
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
-    environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display());
+    environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display);
     environment.publishMQTT =
       (topic: string, payloadName: string = "text", options = {publication: {}, message: {}}) =>
         map((payload: string) => ({

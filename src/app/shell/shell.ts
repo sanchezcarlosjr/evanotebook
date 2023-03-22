@@ -67,7 +67,8 @@ export class Shell {
     environment.addEventListener('speak', (event: CustomEvent) => window.speechSynthesis.speak(new SpeechSynthesisUtterance(event.detail.payload.toString())));
     environment.addEventListener('localecho.printWide', (event: CustomEvent) => {
     });
-    environment.addEventListener('prompt', (event: CustomEvent) => this.editor.blocks.getById(event.detail.payload.threadId)?.call('prompt', event.detail.payload.text));
+    environment.addEventListener('prompt', (event: CustomEvent) =>
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('prompt', event.detail.payload.options));
     environment.addEventListener('file', (event: CustomEvent) => this.editor.blocks.getById(event.detail.payload.threadId)?.call('inputFile', event.detail.payload));
     environment.addEventListener('shell.error', (event: CustomEvent) => {
       this.environment.dispatchEvent(new CustomEvent('localecho.println', {

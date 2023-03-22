@@ -7,6 +7,7 @@ export class Cell extends EditorjsCodeflask {
   private cell: HTMLElement | undefined;
   private subscription: Subscription | undefined;
   private data: any;
+  private input: HTMLInputElement | null = null;
 
   constructor(obj: any) {
     super(obj);
@@ -44,6 +45,7 @@ export class Cell extends EditorjsCodeflask {
     for (let i=(this.cell?.children.length ?? 0)-1; i > 1; i--) {
       this.cell?.removeChild(this.cell?.children[i]);
     }
+    this.input = null;
   }
 
   inputFile(options: any) {
@@ -52,6 +54,7 @@ export class Cell extends EditorjsCodeflask {
     this.cell?.appendChild(input);
     input.multiple = true;
     input.type = "file";
+    input.accept = options?.accept ?? "";
     input.addEventListener('change', (event: any) => {
       const fileList: FileList = event.target.files;
       window.dispatchEvent(new CustomEvent('shell.InputFile', {
@@ -81,24 +84,34 @@ export class Cell extends EditorjsCodeflask {
     this.write(text + "\n");
   }
 
-  prompt(placeholder: string) {
-    const input = document.createElement('input');
-    input.classList.add('prompt', 'cdx-input');
-    this.cell?.appendChild(input);
-    input.placeholder = placeholder;
-    input.type = "text";
-    input.addEventListener('keydown', (event) => {
+  removeNode(node?: HTMLElement) {
+    if (node) {
+      this.cell?.removeChild(node);
+    }
+  }
+
+  prompt(payload: {placeholder?: string, type?: string}) {
+    if (this.input) {
+      return;
+    }
+    this.input = document.createElement('input');
+    this.input.classList.add('prompt', 'cdx-input');
+    this.input.placeholder = payload?.placeholder ?? "Write your message";
+    this.input.type = payload?.type ?? "text";
+    this.cell?.appendChild(this.input);
+    this.input.addEventListener('keydown', (event) => {
       if (event.key === "Enter") {
         window.dispatchEvent(new CustomEvent('shell.Prompt', {
           bubbles: true, detail: {
             payload: {
               // @ts-ignore
-              response: input.value,
+              response: this.input.value,
               threadId: this.id
             }
           }
         }));
-        this.cell?.removeChild(input);
+        // @ts-ignore
+        this.input.value = "";
       }
     });
   }
