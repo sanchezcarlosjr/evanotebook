@@ -73,9 +73,18 @@ export class Shell {
     environment.addEventListener('terminal.write', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('write', event.detail.payload.text);
     });
-    environment.addEventListener('speak', (event: CustomEvent) => window.speechSynthesis.speak(new SpeechSynthesisUtterance(event.detail.payload.toString())));
-    environment.addEventListener('localecho.printWide', (event: CustomEvent) => {
+    environment.addEventListener('compress', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'compress', payload: this.compress(event.detail.payload.input, event.detail.payload.options)
+      });
     });
+    environment.addEventListener('decompress', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'decompress', payload: this.decompress(event.detail.payload.input)
+      });
+    });
+    environment.addEventListener('speak', (event: CustomEvent) => window.speechSynthesis.speak(new SpeechSynthesisUtterance(event.detail.payload.toString())));
+    environment.addEventListener('localecho.printWide', (event: CustomEvent) => {});
     environment.addEventListener('prompt', (event: CustomEvent) =>
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('prompt', event.detail.payload.options));
     environment.addEventListener('file', (event: CustomEvent) => this.editor.blocks.getById(event.detail.payload.threadId)?.call('inputFile', event.detail.payload));
@@ -137,7 +146,7 @@ export class Shell {
   start() {
     const c = retrieve("c") as string;
     if (c) {
-      this.editor.render(JSON.parse(this.textDecoder.decode(this.brotli.decompress(base64ToData(c)))));
+      this.editor.render(JSON.parse(this.decompress(c)));
     }
     this.environment.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
       if (keyboardEvent.key === "s" && keyboardEvent.ctrlKey) {
@@ -156,7 +165,16 @@ export class Shell {
     this.Toast.fire({
       icon: 'info', title: 'Saving...'
     });
-    save('c', dataToBase64(this.brotli.compress(this.textEncoder.encode(JSON.stringify(outputData)))));
+    save('c', this.compress((JSON.stringify(outputData))));
   }
+
+  private compress(input: string, options?: any) {
+    return dataToBase64(this.brotli.compress(this.textEncoder.encode(input), options));
+  }
+
+  private decompress(base64: string) {
+    return this.textDecoder.decode(this.brotli.decompress(base64ToData(base64)));
+  }
+
 
 }

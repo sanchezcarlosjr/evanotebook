@@ -3,7 +3,7 @@ import {
   catchError,
   delay,
   delayWhen,
-  filter,
+  filter, first,
   from, generate,
   interval,
   lastValueFrom,
@@ -267,6 +267,7 @@ class ProcessWorker {
     environment.of = of;
     environment.interval = interval;
     environment.startWith = startWith;
+    environment.first = first;
     environment.switchScan = switchScan;
     environment.mergeScan = mergeScan;
     environment.delay = delay;
@@ -337,8 +338,23 @@ class ProcessWorker {
           options
         }
       });
-    environment.pipe = pipe;
     environment.prompt = (options: PromptInputParams) => switchMap(_ => environment.input(options));
+    environment.compress = (options: {quality: number}) => switchMap((input: string) => observeResource('compress', {
+      event: 'compress',
+      payload: {
+        threadId: self.name,
+        input,
+        options
+      }
+    }).pipe(first()));
+    environment.decompress = switchMap((input: string) => observeResource('decompress', {
+      event: 'decompress',
+      payload: {
+        threadId: self.name,
+        input,
+      }
+    }).pipe(first()));
+    environment.pipe = pipe;
     environment.chat = (observable: Observable<any> | Function) => pipe(
       filter((configuration: any) => configuration.ready),
       switchMap((configuration: any) =>
