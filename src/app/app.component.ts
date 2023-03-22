@@ -6,7 +6,7 @@ import Header from '@editorjs/header';
 import List from '@editorjs/list';
 // @ts-ignore
 import Marker from '@editorjs/marker';
-import {retrieve, Shell} from "./shell/shell";
+import {Shell} from "./shell/shell";
 // @ts-ignore
 import Alert from 'editorjs-alert';
 // @ts-ignore
@@ -20,6 +20,7 @@ import Button from "./Button.js";
 import {Cell} from "./cell";
 // @ts-ignore
 import BreakLine from 'editorjs-break-line';
+import * as brotli from '../assets/brotli_wasm/brotli_wasm';
 
 @Component({
   selector: 'app-root', templateUrl: './app.component.html', styleUrls: ['./app.component.css']
@@ -27,13 +28,12 @@ import BreakLine from 'editorjs-break-line';
 export class AppComponent implements OnInit {
   editor: EditorJS | null = null;
 
-  ngOnInit() {
+  async ngOnInit() {
     this.editor = new EditorJS({
       holder: 'editor-js',
       autofocus: true,
       // @ts-ignore
       logLevel: "ERROR",
-      data: JSON.parse(retrieve("c") || '"{}"'),
       tools: {
         header: {
           class: Header,
@@ -73,8 +73,8 @@ export class AppComponent implements OnInit {
               display: true,
             },
             unsplash: {
-              appName: retrieve("ua"),
-              clientId: retrieve("uc")
+              appName: "",
+              clientId: ""
             }
           }
         },
@@ -88,10 +88,9 @@ export class AppComponent implements OnInit {
         }
       }
     });
-    this.editor.isReady.then(() => {
-      const shell = new Shell(this.editor as EditorJS, window);
-      shell.start();
-    });
+    this.editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ =>
+      new Shell(this.editor as EditorJS, window, brotli).start()
+    );
   }
 
 }

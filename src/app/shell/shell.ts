@@ -1,17 +1,24 @@
 import EditorJS from "@editorjs/editorjs";
 import {interval, Observable, Subscription} from 'rxjs';
 import Swal from 'sweetalert2';
+import {BrotliWasmType} from "brotli-wasm";
 
-export function save(query: string, expression: string) {
+function save(query: string, expression: string) {
   const url = new URL(window.location.toString());
-  url.searchParams.set(query, btoa(expression));
+  url.searchParams.set(query, expression);
   window.history.pushState({}, "", url);
   return expression;
 }
 
-export function retrieve(query: string, defaultValue = "") {
-  return atob((new URL(document.location.toString())).searchParams.get(query) || defaultValue);
+function retrieve(query: string, defaultValue = "") {
+  return (new URL(document.location.toString())).searchParams.get(query) || defaultValue;
 }
+
+// https://github.com/httptoolkit/brotli-wasm/blob/main/test/brotli.spec.ts
+const dataToBase64 = (data: Uint8Array | number[]) => btoa(String.fromCharCode(...data));
+const base64ToData = (base64: string) => new Uint8Array(
+  [...atob(base64)].map(c => c.charCodeAt(0))
+);
 
 enum JobStatus {
   created = 0, running = 1
@@ -25,8 +32,10 @@ export class Shell {
   })
   private jobs = new Map<string, { worker: Worker, code: string, status: number, data: {}, subscription: Subscription; }>();
   private sharedWorker: SharedWorker;
+  private textEncoder = new TextEncoder();
+  private textDecoder = new TextDecoder();
 
-  constructor(private editor: EditorJS, private environment: any) {
+  constructor(private editor: EditorJS, private environment: any, private brotli: BrotliWasmType) {
     this.sharedWorker = new SharedWorker(new URL('./database.worker', import.meta.url), {
       type: 'module', name: "database"
     });
@@ -126,6 +135,10 @@ export class Shell {
   }
 
   start() {
+    const c = retrieve("c") as string;
+    if (c) {
+      this.editor.render(JSON.parse(this.textDecoder.decode(this.brotli.decompress(base64ToData(c)))));
+    }
     this.environment.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
       if (keyboardEvent.key === "s" && keyboardEvent.ctrlKey) {
         keyboardEvent.preventDefault();
@@ -142,9 +155,8 @@ export class Shell {
     }
     this.Toast.fire({
       icon: 'info', title: 'Saving...'
-    })
-    this.sharedWorker.port.postMessage({event: "insert", payload: outputData});
-    save('c', JSON.stringify(outputData));
+    });
+    save('c', dataToBase64(this.brotli.compress(this.textEncoder.encode(JSON.stringify(outputData)))));
   }
 
 }
