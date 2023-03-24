@@ -19,7 +19,6 @@
     "@angular/platform-browser-dynamic": "^15.2.2",
     "@angular/router": "^15.2.2",
     "@angular/service-worker": "^15.2.2",
-    "@calumk/editorjs-codeflask": "^1.0.9",
     "@codemirror/lang-javascript": "^6.1.4",
     "@editorjs/editorjs": "^2.26.5",
     "@editorjs/embed": "^2.5.3",
