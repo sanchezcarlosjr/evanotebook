@@ -1,10 +1,10 @@
 import {EditorView} from "codemirror"
-import {javascript, esLint} from "@codemirror/lang-javascript"
+import {esLint, javascript} from "@codemirror/lang-javascript"
 import {EditorState} from "@codemirror/state"
 // @ts-ignore
 import EditorjsCodeflask from '@calumk/editorjs-codeflask';
 import {espresso} from "thememirror";
-import {linter, lintGutter} from "@codemirror/lint";
+import {linter, lintGutter, lintKeymap} from "@codemirror/lint";
 import {
   crosshairCursor,
   dropCursor,
@@ -18,16 +18,9 @@ import {defaultKeymap, history, historyKeymap} from "@codemirror/commands";
 import {bracketMatching, foldGutter, foldKeymap, indentOnInput} from "@codemirror/language";
 import {autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap} from "@codemirror/autocomplete";
 import {searchKeymap} from "@codemirror/search";
-import {lintKeymap} from "@codemirror/lint";
 // @ts-ignore
 import * as eslint from "eslint-linter-browserify";
-
-interface Block {
-  data?: any;
-  block?: {id: string};
-  config?: any;
-  readOnly?: boolean;
-}
+import {Block} from "./Block";
 
 const config = {
   // eslint configuration
@@ -258,7 +251,7 @@ export class CodeBlock {
       })
     });
     this.editorView.dom.addEventListener('keydown', (event) => {
-      if (event.key === "Enter" || event.ctrlKey && event.key === "v") {
+      if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
         event.stopPropagation();
       }
     });

@@ -101,3 +101,7 @@ body {
 .ce-toolbar__content {
   max-width: 70%;  /* example value, adjust for your own use case */
 }
+
+math-field {
+  width: 100%;
+}

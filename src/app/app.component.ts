@@ -40,6 +40,10 @@ export class AppComponent implements OnInit {
           class: await import("@editorjs/checklist").then(x => x.default),
           inlineToolbar: true,
         },
+        mathlive: {
+          class: await import("./cellTypes/MathBlock").then(x => x.CodeBlock),
+          inlineToolbar: true,
+        },
         embed: {
           // @ts-ignore
           class: await import("@editorjs/embed").then(x => x.default),
