@@ -32,7 +32,7 @@ interface Block {
 const config = {
   // eslint configuration
   parserOptions: {
-    ecmaVersion: 2019,
+    ecmaVersion: 2022,
     sourceType: "module",
   },
   env: {
