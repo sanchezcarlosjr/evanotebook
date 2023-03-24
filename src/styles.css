@@ -4,11 +4,13 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
 }
+
 .cdx-settings-button {
   font-size: 14px;
   min-height: fit-content !important;
   width: 95%;
 }
+
 .output {
   display: flex;
   position: relative;
@@ -52,171 +54,8 @@ body {
   border-radius: 5px;
 }
 
-.anyButtonContainer{
-  position: relative;
-}
-
-.anyButtonContainer__registerButton{
-  display: block;
-  margin: auto;
-}
-
-.anyButtonContainer__inputHolder{}
-
-.anyButtonContainer__inputHolder > * {
-  margin-bottom: 10px;
-}
-
-.anyButtonContainer__input {
-  padding-left: 38px;
-  background-repeat: no-repeat;
-  background-position: 10px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.anyButtonContainer__input--link{
-  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 277.279 277.279" height="20" width="20" style="enable-background:new 0 0 277.279 277.279;" xml:space="preserve"> <g id="XMLID_105_"> <path id="XMLID_106_" d="M149.245,191.671l-42.425,42.426c0,0,0,0.001-0.001,0.001c0,0,0,0.001-0.001,0.001   c-17.544,17.545-46.092,17.546-63.638,0c-8.5-8.5-13.18-19.801-13.18-31.82c0-12.018,4.68-23.317,13.177-31.817   c0.001-0.001,0.002-0.002,0.003-0.003l42.425-42.426c5.857-5.858,5.857-15.356-0.001-21.213c-5.857-5.857-15.355-5.857-21.213,0   l-42.425,42.426c-0.003,0.003-0.006,0.007-0.009,0.01C7.798,163.42,0,182.251,0,202.279c0,20.033,7.801,38.867,21.967,53.033   C36.589,269.933,55.794,277.244,75,277.244c19.206,0,38.412-7.311,53.032-21.932c0,0,0-0.001,0-0.001   c0.001,0,0.001-0.001,0.001-0.001l42.425-42.426c5.857-5.857,5.857-15.355-0.001-21.213   C164.601,185.814,155.104,185.814,149.245,191.671z"/> <path id="XMLID_107_" d="M277.279,75c0-20.033-7.802-38.867-21.968-53.033c-29.243-29.242-76.824-29.241-106.065,0   c-0.001,0.002-0.003,0.003-0.004,0.005l-42.424,42.423c-5.858,5.857-5.858,15.356,0,21.213c2.93,2.93,6.768,4.394,10.607,4.394   c3.838,0,7.678-1.465,10.606-4.394l42.424-42.423c0.001-0.002,0.003-0.003,0.005-0.005c17.544-17.544,46.092-17.545,63.638,0   c8.499,8.5,13.181,19.801,13.181,31.82c0,12.018-4.68,23.317-13.178,31.817c-0.001,0.001-0.002,0.002-0.003,0.003l-42.425,42.426   c-5.857,5.857-5.857,15.355,0.001,21.213c2.929,2.929,6.768,4.394,10.606,4.394c3.839,0,7.678-1.465,10.607-4.394l42.425-42.426   c0.003-0.003,0.006-0.007,0.009-0.01C269.48,113.859,277.279,95.028,277.279,75z"/> <path id="XMLID_108_" d="M85.607,191.671c2.929,2.929,6.768,4.394,10.606,4.394c3.839,0,7.678-1.465,10.607-4.394l84.852-84.852   c5.858-5.857,5.858-15.355,0-21.213c-5.857-5.857-15.355-5.857-21.213,0l-84.852,84.851   C79.749,176.316,79.749,185.814,85.607,191.671z"/> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> <g> </g> </svg>');
-}
-.anyButtonContainer__input--text{
-  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="Capa_1" enable-background="new 0 0 512 512" height="20" viewBox="0 0 512 512" width="20"><g><path d="m15 114.235c8.284 0 15-6.716 15-15v-69.235h69.235c8.284 0 15-6.716 15-15s-6.716-15-15-15h-84.235c-8.284 0-15 6.716-15 15v84.235c0 8.285 6.716 15 15 15z"/><path d="m497 0h-84.235c-8.284 0-15 6.716-15 15s6.716 15 15 15h69.235v69.235c0 8.284 6.716 15 15 15s15-6.716 15-15v-84.235c0-8.284-6.716-15-15-15z"/><path d="m497 397.765c-8.284 0-15 6.716-15 15v69.235h-69.235c-8.284 0-15 6.716-15 15s6.716 15 15 15h84.235c8.284 0 15-6.716 15-15v-84.235c0-8.285-6.716-15-15-15z"/><path d="m99.235 482h-69.235v-69.235c0-8.284-6.716-15-15-15s-15 6.716-15 15v84.235c0 8.284 6.716 15 15 15h84.235c8.284 0 15-6.716 15-15s-6.715-15-15-15z"/><path d="m419.66 191.38v-94.73c0-4.7-3.81-8.51-8.52-8.51h-155.14-155.14c-4.71 0-8.52 3.81-8.52 8.51v94.73c0 4.71 3.81 8.52 8.52 8.52h45.24c4.7 0 8.51-3.81 8.51-8.52v-32.45c0-4.71 3.82-8.52 8.52-8.52h53.21c4.71 0 8.52 3.81 8.52 8.52v234.14c0 4.71-3.81 8.52-8.52 8.52h-23.27c-4.71 0-8.52 3.81-8.52 8.52v45.24c0 4.7 3.81 8.51 8.52 8.51h62.93 62.93c4.71 0 8.52-3.81 8.52-8.51v-45.24c0-4.71-3.81-8.52-8.52-8.52h-23.27c-4.71 0-8.52-3.81-8.52-8.52v-234.14c0-4.71 3.81-8.52 8.52-8.52h53.21c4.7 0 8.52 3.81 8.52 8.52v32.45c0 4.71 3.81 8.52 8.51 8.52h45.24c4.71 0 8.52-3.81 8.52-8.52z"/></g></svg>');
-}
-.anyButtonContainer__input[contentEditable=true][data-placeholder]::before {
-  position: absolute;
-  content: attr(data-placeholder);
-  color: #707684;
-  font-weight: normal;
-  opacity: 0;
-}
-
-.anyButtonContainer__input[contentEditable=true][data-placeholder]:empty::before {
-  opacity: 1;
-}
-
-.anyButtonContainer__input[contentEditable=true][data-placeholder]:empty:focus::before {
-  opacity: 0;
-}
-
-
 .cdx-button{
   white-space: nowrap;
-}
-
-.anyButtonContainer__anyButtonHolder{
-  text-align: center;
-}
-
-.btn{
-  display: inline-block;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #212529;
-  text-align: center;
-  text-decoration: none !important;
-  vertical-align: middle;
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  background-color: transparent;
-  border: 1px solid transparent;
-  padding: .375rem .75rem;
-  font-size: 1rem;
-  border-radius: .25rem;
-  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-}
-
-.btn--default{
-  color: #fff;
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-}
-
-.btn--gray{
-  color: #fff;
-  background-color: #7c7c7c;
-  border-color: #7c7c7c;
-}
-
-
-.toggle-input {
-  position: absolute;
-  z-index: 5;
-  opacity: 0;
-  cursor: pointer;
-  width: 40px;
-  height: 20px;
-  margin: 0;
-}
-
-.toggle-label {
-  width: 40px;
-  height: 20px;
-  background: #ccc;
-  position: relative;
-  display: inline-block;
-  border-radius: 46px;
-  transition: 0.4s;
-  box-sizing: border-box;
-}
-.toggle-label:after {
-  content: "";
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border-radius: 100%;
-  left: 0;
-  top: 0;
-  z-index: 2;
-  background: #fff;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-  transition: 0.4s;
-}
-
-.toggle-input:checked + .toggle-label {
-  background-color: #4BD865;
-}
-.toggle-input:checked + .toggle-label:after {
-  left: 20px;
-}
-
-.toggle-switch {
-  width: 40px;
-  margin-left: auto;
-  padding: 10px 0;
-}
-
-.colored-toast.swal2-icon-success {
-  background-color: #a5dc86 !important;
-}
-
-.colored-toast.swal2-icon-error {
-  background-color: #f27474 !important;
-}
-
-.colored-toast.swal2-icon-warning {
-  background-color: #f8bb86 !important;
-}
-
-.colored-toast.swal2-icon-info {
-  background-color: #3fc3ee !important;
-}
-
-.colored-toast.swal2-icon-question {
-  background-color: #87adbd !important;
-}
-
-.colored-toast .swal2-title {
-  color: white;
-}
-
-.colored-toast .swal2-close {
-  color: white;
-}
-
-.colored-toast .swal2-html-container {
-  color: white;
 }
 
 .prompt {

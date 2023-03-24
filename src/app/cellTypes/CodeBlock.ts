@@ -278,7 +278,6 @@ export class CodeBlock {
   }
 
   save(blockContent: any) {
-    console.log(this.editorView?.state.doc.toString());
     return {
       code: this.editorView?.state.doc.toString(),
       language: "javascript",

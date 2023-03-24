@@ -1,6 +1,5 @@
 import EditorJS from "@editorjs/editorjs";
 import {interval, Observable, Subscription} from 'rxjs';
-import Swal from 'sweetalert2';
 import {BrotliWasmType} from "brotli-wasm";
 
 function save(query: string, expression: string) {
@@ -25,11 +24,6 @@ enum JobStatus {
 }
 
 export class Shell {
-  private Toast = Swal.mixin({
-    toast: true, position: 'top-right', iconColor: 'white', customClass: {
-      popup: 'colored-toast'
-    }, showConfirmButton: false, timer: 1200, timerProgressBar: true
-  })
   private jobs = new Map<string, { worker: Worker, code: string, status: number, data: {}, subscription: Subscription; }>();
   private sharedWorker: SharedWorker;
   // https://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it?lq=1
@@ -170,9 +164,6 @@ export class Shell {
     if (outputData.blocks.length === 0) {
       return;
     }
-    this.Toast.fire({
-      icon: 'info', title: 'Saving...'
-    });
     save('c', this.compress((JSON.stringify(outputData))));
   }
 

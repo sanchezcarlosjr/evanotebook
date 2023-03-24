@@ -1,73 +1,52 @@
 import {Component, OnInit} from '@angular/core';
-import EditorJS from "@editorjs/editorjs";
-// @ts-ignore
-import Header from '@editorjs/header';
-// @ts-ignore
-import List from '@editorjs/list';
-// @ts-ignore
-import Marker from '@editorjs/marker';
-import {Shell} from "./shell/shell";
-// @ts-ignore
-import Alert from 'editorjs-alert';
-// @ts-ignore
-import Checklist from '@editorjs/checklist';
-// @ts-ignore
-import Embed from '@editorjs/embed';
-// @ts-ignore
-import InlineImage from 'editorjs-inline-image';
-// @ts-ignore
-import Button from "./cellTypes/Button.js";
-// @ts-ignore
-import BreakLine from 'editorjs-break-line';
 import * as brotli from '../assets/brotli_wasm/brotli_wasm';
-import {CodeBlock} from "./cellTypes/CodeBlock";
 
 @Component({
   selector: 'app-root', templateUrl: './app.component.html', styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  editor: EditorJS | null = null;
-
   async ngOnInit() {
-    this.editor = new EditorJS({
+    const EditorJS = await import("@editorjs/editorjs");
+    const editor = new EditorJS.default({
       holder: 'editor-js',
       autofocus: true,
       // @ts-ignore
       logLevel: "ERROR",
       tools: {
         header: {
-          class: Header,
+          // @ts-ignore
+          class: await import("@editorjs/header").then(x => x.default),
           inlineToolbar: ['link']
         },
         list: {
-          class: List,
+          // @ts-ignore
+          class: await import("@editorjs/list").then(x => x.default),
           inlineToolbar: ['link', 'bold']
         },
         marker: {
-          class: Marker
+          // @ts-ignore
+          class: await import("@editorjs/marker").then(x => x.default),
         },
         code: {
-          class: CodeBlock,
+          class: await import("./cellTypes/CodeBlock").then(x => x.CodeBlock),
           config: {
             language: 'javascript'
           },
           inlineToolbar: true
         },
-        button: Button,
         checklist: {
-          class: Checklist,
-          inlineToolbar: true,
-        },
-        breakLine: {
-          class: BreakLine,
+          // @ts-ignore
+          class: await import("@editorjs/checklist").then(x => x.default),
           inlineToolbar: true,
         },
         embed: {
-          class: Embed,
+          // @ts-ignore
+          class: await import("@editorjs/embed").then(x => x.default),
           inlineToolbar: true,
         },
         image: {
-          class: InlineImage,
+          // @ts-ignore
+          class: await import("editorjs-inline-image").then(x => x.default),
           inlineToolbar: true,
           config: {
             embed: {
@@ -80,7 +59,8 @@ export class AppComponent implements OnInit {
           }
         },
         alert: {
-          class: Alert,
+          // @ts-ignore
+          class: await import("editorjs-alert").then(x => x.default),
           inlineToolbar: true,
           config: {
             defaultType: 'primary',
@@ -89,9 +69,9 @@ export class AppComponent implements OnInit {
         }
       }
     });
-    this.editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ =>
-      new Shell(this.editor as EditorJS, window, brotli).start()
-    );
+    editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ =>
+      import("./shell/shell").then(lib => new lib.Shell(editor as any, window, brotli).start())
+    ).then();
   }
 
 }
