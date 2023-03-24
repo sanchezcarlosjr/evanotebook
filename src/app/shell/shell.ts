@@ -1,6 +1,6 @@
 import EditorJS from "@editorjs/editorjs";
 import {interval, Observable, Subscription} from 'rxjs';
-import {BrotliWasmType} from "brotli-wasm";
+import * as BrotliWasmType from "../../assets/brotli_wasm/brotli_wasm";
 
 function save(query: string, expression: string) {
   const url = new URL(window.location.toString());
@@ -31,7 +31,7 @@ export class Shell {
   private textEncoder = new TextEncoder();
   private textDecoder = new TextDecoder();
 
-  constructor(private editor: EditorJS, private environment: any, private brotli: BrotliWasmType) {
+  constructor(private editor: EditorJS, private environment: any, private brotli: typeof BrotliWasmType) {
     this.sharedWorker = new SharedWorker(new URL('./database.worker', import.meta.url), {
       type: 'module', name: "database"
     });
