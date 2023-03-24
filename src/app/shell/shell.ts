@@ -164,6 +164,7 @@ export class Shell {
     if (outputData.blocks.length === 0) {
       return;
     }
+    this.environment.dispatchEvent(new CustomEvent('saving', {bubbles: true}));
     save('c', this.compress((JSON.stringify(outputData))));
   }
 

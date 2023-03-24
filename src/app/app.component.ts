@@ -1,10 +1,12 @@
 import {Component, OnInit} from '@angular/core';
 import * as brotli from '../assets/brotli_wasm/brotli_wasm';
+import {Shell} from "./shell/shell";
 
 @Component({
   selector: 'app-root', templateUrl: './app.component.html', styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+  isSaving = false;
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
     const editor = new EditorJS.default({
@@ -69,9 +71,13 @@ export class AppComponent implements OnInit {
         }
       }
     });
-    editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ =>
-      import("./shell/shell").then(lib => new lib.Shell(editor as any, window, brotli).start())
-    ).then();
+    editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ => new Shell(editor as any, window, brotli).start()).then();
+    window.addEventListener('saving', () => {
+      this.isSaving = true;
+      setTimeout(() => {
+        this.isSaving = false;
+      }, 2000);
+    });
   }
 
 }
