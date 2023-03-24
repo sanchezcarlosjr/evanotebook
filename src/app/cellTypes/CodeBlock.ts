@@ -146,6 +146,7 @@ export class CodeBlock {
     this.cell?.appendChild(this.input);
     this.input.addEventListener('keydown', (event) => {
       if (event.key === "Enter") {
+        event.stopPropagation();
         window.dispatchEvent(new CustomEvent('shell.Prompt', {
           bubbles: true, detail: {
             payload: {
