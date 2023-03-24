@@ -21,6 +21,8 @@ import {searchKeymap} from "@codemirror/search";
 // @ts-ignore
 import * as eslint from "eslint-linter-browserify";
 import {Block} from "./Block";
+import Chart, {ChartType} from 'chart.js/auto';
+
 
 const config = {
   // eslint configuration
@@ -58,8 +60,6 @@ export class CodeBlock {
       event: "clear",
     }
   ];
-
-
   constructor(private obj: Block) {
     this.obj.data.language = (obj.data.language === undefined) ? obj.config.language : obj.data.language;
     this.obj.data.code = (obj.data.code === undefined) ? "" : obj.data.code;
@@ -126,6 +126,22 @@ export class CodeBlock {
     if (node) {
       this.cell?.removeChild(node);
     }
+  }
+
+  transferControlToOffscreen() {
+    const canvas = document.createElement("canvas");
+    this.cell?.appendChild(canvas);
+    const offscreenCanvas = canvas.transferControlToOffscreen();
+    window.dispatchEvent(new CustomEvent('shell.transferControlToOffscreen', {
+      bubbles: true, detail: {
+        payload: {
+          canvas: offscreenCanvas,
+          width: this.cell?.clientWidth,
+          height: 400,
+          threadId: this.obj.block?.id
+        }
+      }
+    }));
   }
 
   prompt(payload: {placeholder?: string, type?: string}) {

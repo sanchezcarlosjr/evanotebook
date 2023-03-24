@@ -60,6 +60,19 @@ export class Shell {
     environment.addEventListener('localecho.println', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('println', event.detail.payload.text);
     });
+    //@ts-ignore
+    environment.addEventListener('plot', (event: CustomEvent) => {
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('transferControlToOffscreen');
+    });
+    environment.addEventListener('shell.transferControlToOffscreen', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'transferControlToOffscreen', payload: {
+          canvas: event.detail.payload.canvas,
+          width: event.detail.payload.width,
+          height: event.detail.payload.height,
+        }
+      },[event.detail.payload.canvas]);
+    });
     environment.addEventListener('shell.Stop', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker.terminate();
       this.jobs.get(event.detail.payload.threadId)?.subscription.unsubscribe();

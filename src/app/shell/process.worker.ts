@@ -3,8 +3,10 @@ import {
   catchError,
   delay,
   delayWhen,
-  filter, first,
-  from, generate,
+  filter,
+  first,
+  from,
+  generate,
   interval,
   lastValueFrom,
   map,
@@ -20,7 +22,8 @@ import {
   switchMap,
   switchScan,
   take,
-  tap, UnaryFunction
+  tap,
+  UnaryFunction
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
 import * as protocols from './protocols';
@@ -28,19 +31,8 @@ import * as jp from 'jsonpath';
 import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as Immutable from "immutable";
 import Indexed = Immutable.Seq.Indexed;
-
-// @ts-ignore
-globalThis.P = P
-// @ts-ignore
-globalThis.Pattern = Pattern
-// @ts-ignore
-globalThis.isMatching = isMatching
-// @ts-ignore
-globalThis.match = match
-// @ts-ignore
-globalThis.regex = (expr: RegExp) => P.when((str: string): str is never => expr.test(str));
-// @ts-ignore
-globalThis.Immutable = Immutable;
+import Chart, {ChartTypeRegistry} from "chart.js/auto";
+import * as CHelper from 'chart.js/helpers';
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -106,6 +98,15 @@ function observeResource(event: string, request: any): Observable<any> {
 function requestFile(options: object): Promise<string | null> {
   return requestResource('shell.InputFile', {
     event: 'file', payload: {
+      threadId: self.name,
+      ...options
+    }
+  });
+}
+
+function requestPlot(options: object): Promise<string | null> {
+  return requestResource('transferControlToOffscreen', {
+    event: 'plot', payload: {
       threadId: self.name,
       ...options
     }
@@ -212,8 +213,50 @@ interface PromptInputParams {
   type: string;
 }
 
+async function* buildChart(config: any) {
+  const payload = await requestPlot({
+    event: 'plot', payload: {
+      threadId: self.name
+    }
+  }) as any;
+  console.log(payload);
+  const chart = new Chart(payload.canvas, {
+    type: 'bar',
+    data: {
+      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+      datasets: [{
+        label: '# of Votes',
+        data: [12, 19, 3, 5, 2, 3],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  // Resizing the chart must be done manually, since OffscreenCanvas does not include event listeners.
+  payload.canvas.width = payload.width;
+  payload.canvas.height = payload.height;
+  chart.resize();
+  while (true) {
+    yield chart;
+    chart.clear();
+    chart.update();
+  }
+}
+
 class ProcessWorker {
   constructor(private environment: any, private localEcho: LocalEcho, private terminal: Terminal) {
+    environment.P = P
+    environment.Pattern = Pattern
+    environment.isMatching = isMatching
+    environment.match = match
+    environment.regex = (expr: RegExp) => P.when((str: string): str is never => expr.test(str));
+    environment.Immutable = Immutable;
     environment.clear = tap(() => this.terminal.clear());
     environment.help = from([
       'clear - clears the output',
@@ -249,7 +292,8 @@ class ProcessWorker {
                   }), Immutable.List<any>([])
                 )
               })
-            ).otherwise(x => x);
+            ) .with(P.instanceOf(Function), (func: Function) => func.toString())
+            .otherwise(x => x);
         }, spaces);
       } catch (e) {
         return obj.toString();
@@ -275,10 +319,11 @@ class ProcessWorker {
     environment.take = take;
     environment.switchMap = switchMap;
     environment.rx = rx;
-    environment.doAside = (...operations: UnaryFunction<any, any>[]) => {
+    environment.CHelper = CHelper;
+    environment.doAside = (...operations: UnaryFunction<any, any>[]) =>
       // @ts-ignore
-      return tap((value: any) => of(value).pipe(...operations).subscribe());
-    };
+      tap((value: any) => of(value).pipe(...operations).subscribe())
+    ;
     environment.sendSMS = (options: { passcode: string, path: string, recipients: string[] }) => switchMap(message =>
       fromFetch(options.path, {
         method: 'POST',
@@ -327,7 +372,7 @@ class ProcessWorker {
           }).pipe(map(_ => state))
       );
     environment.display = tap(observerOrNext =>
-       this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"))
+      this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"))
     );
     environment.log = tap(observer => console.log(observer));
     environment.input = (options: PromptInputParams) =>
@@ -339,7 +384,7 @@ class ProcessWorker {
         }
       });
     environment.prompt = (options: PromptInputParams) => switchMap(_ => environment.input(options));
-    environment.compress = (options: {quality: number}) => switchMap((input: string) => observeResource('compress', {
+    environment.compress = (options: { quality: number }) => switchMap((input: string) => observeResource('compress', {
       event: 'compress',
       payload: {
         threadId: self.name,
@@ -363,11 +408,24 @@ class ProcessWorker {
     environment.sendOverProtocol = tap((configuration: any) => configuration.connection.send(configuration.message));
     environment.randomBetween = (max = 0, min = 10) => Math.floor(Math.random() * (max - min + 1)) + min;
     environment.fromFetch = (input: string | Request, init?: RequestInit | undefined) => fromFetch(input, init).pipe(
-      switchMap((response: any) => response.ok ? response.json() :
-        of({
-          error: true,
-          message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
-        })
+      switchMap((response) => {
+          if (response.ok && /JSON/gi.test(response.headers.get("Content-Type") ?? "")) {
+            return from(response.json());
+          }
+          if (response.ok && /octet-stream/gi.test(response.headers.get("Content-Type") ?? "")) {
+            return from(response.blob());
+          }
+          if (response.ok && /form-data/gi.test(response.headers.get("Content-Type") ?? "")) {
+            return from(response.formData());
+          }
+          if (response.ok) {
+            return from(response.text());
+          }
+          return of({
+            error: true,
+            message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
+          });
+        }
       ),
       catchError(err => of({error: true, message: err.message}))
     );
@@ -379,6 +437,9 @@ class ProcessWorker {
       switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
     environment.importFiles = (options: any) => from(requestFile(options));
+    environment.plot = (config: {type: keyof ChartTypeRegistry, options: any}) => pipe(
+      scan((acc) => acc, buildChart(config).next())
+    );
     environment.importJSON = (options: any) => environment.importFiles({
       ...options,
       accept: "application/json"
@@ -387,7 +448,7 @@ class ProcessWorker {
       map((file: { text: string }) => environment.deserialize(file.text))
     );
     environment.filterErrors = pipe(map(
-      (x: {message: string}) => x.message), environment.display, filter((x: { error: boolean }) => x.error));
+      (x: { message: string }) => x.message), environment.display, filter((x: { error: boolean }) => x.error));
     environment.jp = jp;
     environment.jpquery = (path: string) => map((ob: object) => jp.query(ob, path));
     environment.jpapply = (path: string, fn: (x: any) => any) => map((ob: object) => jp.apply(ob, path, fn));
@@ -461,4 +522,4 @@ self.onmessage = (event) => globalThis.dispatchEvent(new CustomEvent(event.data.
   detail: {
     payload: event.data.payload
   }
-}))
+}));
