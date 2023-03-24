@@ -32,6 +32,8 @@ export class Shell {
   })
   private jobs = new Map<string, { worker: Worker, code: string, status: number, data: {}, subscription: Subscription; }>();
   private sharedWorker: SharedWorker;
+  // https://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it?lq=1
+  private txt = document.createElement("textarea");
   private textEncoder = new TextEncoder();
   private textDecoder = new TextDecoder();
 
@@ -111,6 +113,12 @@ export class Shell {
     environment.addEventListener('localStorage.removeItem', (event: CustomEvent) => localStorage.removeItem(event.detail.payload.key));
   }
 
+  decodeHtmlEntities(html: string) {
+    this.txt.innerHTML = html;
+    return this.txt.value;
+  }
+
+
   fork(code: string, threadId: string) {
     const worker = new Worker(new URL('./process.worker', import.meta.url), {type: 'module', name: threadId});
     const channel = new MessageChannel();
@@ -146,7 +154,7 @@ export class Shell {
   start() {
     const c = retrieve("c") as string;
     if (c) {
-      this.editor.render(JSON.parse(this.decompress(c)));
+      this.editor.render(JSON.parse(this.decodeHtmlEntities(this.decompress(c))));
     }
     this.environment.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
       if (keyboardEvent.key === "s" && keyboardEvent.ctrlKey) {

@@ -16,11 +16,11 @@ import Embed from '@editorjs/embed';
 // @ts-ignore
 import InlineImage from 'editorjs-inline-image';
 // @ts-ignore
-import Button from "./Button.js";
-import {Cell} from "./cell";
+import Button from "./cellTypes/Button.js";
 // @ts-ignore
 import BreakLine from 'editorjs-break-line';
 import * as brotli from '../assets/brotli_wasm/brotli_wasm';
+import {CodeBlock} from "./cellTypes/CodeBlock";
 
 @Component({
   selector: 'app-root', templateUrl: './app.component.html', styleUrls: ['./app.component.css']
@@ -47,10 +47,11 @@ export class AppComponent implements OnInit {
           class: Marker
         },
         code: {
-          class: Cell,
+          class: CodeBlock,
           config: {
             language: 'javascript'
-          }
+          },
+          inlineToolbar: true
         },
         button: Button,
         checklist: {

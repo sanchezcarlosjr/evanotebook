@@ -425,8 +425,8 @@ class ProcessWorker {
       of({error: true, message: `Error: ${protocol} is not available.`})
   }
 
-  spawn(action: string) {
-    return new Function(`return ${action}`);
+  spawn(content: string) {
+    return new Function(`return (async () => eval(${content}))()`);
   }
 
   exec(action: string) {

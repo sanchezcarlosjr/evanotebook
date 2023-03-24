@@ -29,7 +29,7 @@
               "src/styles.css"
             ],
             "scripts": [
-              "src/app/peer.js"
+              "src/app/shell/peer.js"
             ],
             "webWorkerTsConfig": "tsconfig.worker.json",
             "serviceWorker": true,

@@ -4,7 +4,11 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
 }
-
+.cdx-settings-button {
+  font-size: 14px;
+  min-height: fit-content !important;
+  width: 95%;
+}
 .output {
   display: flex;
   position: relative;
@@ -31,22 +35,6 @@ body {
   font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
 }
 
-.codeflask.codeflask--has-line-numbers {
-  z-index: 0 !important;
-}
-
-.nice-select {
-  width: 100% !important;
-}
-
-.codeflask__textarea {
-  overflow-y: hidden!important;
-}
-
-.editor {
-  position: relative;
-}
-
 .cell {
   width: 100%;
   flex-wrap: wrap;
@@ -54,19 +42,14 @@ body {
   margin-bottom: 0.3em;
 }
 
-.progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  padding: 23px 17px;
-}
-
 .cdx-loader:before {
   width: 11px;
   height: 11px;
 }
-.hide{
-  display: none !important;
+
+.progress {
+  border: 1px solid #C1E2F8 !important;
+  border-radius: 5px;
 }
 
 .anyButtonContainer{
@@ -123,8 +106,6 @@ body {
 .anyButtonContainer__anyButtonHolder{
   text-align: center;
 }
-
-
 
 .btn{
   display: inline-block;
@@ -246,14 +227,6 @@ body {
   font-size: 0.7em;
 }
 
-.editorjs-codeFlask_Wrapper {
-  margin-bottom: 0 !important;
-}
-
-.codeflask__flatten {
-  position: absolute!important;
-}
-
 .getting-started {
   display: flex;
   align-items: center;
@@ -283,4 +256,9 @@ body {
 
 .codex-editor {
   width: 100%;
+}
+
+.ce-block__content,
+.ce-toolbar__content {
+  max-width: 70%;  /* example value, adjust for your own use case */
 }
