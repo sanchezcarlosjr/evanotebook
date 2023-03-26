@@ -9,7 +9,6 @@ export class CodeBlock {
     MathfieldElement.soundsDirectory = "/assets/sounds/";
     this.mfe = new MathfieldElement();
     this.mfe.addEventListener('keydown', (event) => {
-      console.log(event);
       if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
         event.stopPropagation();
       }
