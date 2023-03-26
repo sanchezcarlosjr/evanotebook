@@ -7,7 +7,7 @@ https://notebook.sanchezcarlosjr.com/
 # Features
 * A user interface as Notion. What You See Is What You Get.
 * It supports MQTT, WebRTC, HTTP, WebSocket protocols out-of-box.
-* Each cell is a different thread.
+* Each cell is a different web worker.
 * Peer to peer collaboration. We don't save anything about you and your peers.
 
 
