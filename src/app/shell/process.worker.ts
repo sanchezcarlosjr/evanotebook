@@ -11,7 +11,8 @@ import {
   lastValueFrom,
   map,
   mergeScan,
-  mergeWith, NEVER,
+  mergeWith,
+  NEVER,
   Observable,
   of,
   pipe,
@@ -22,7 +23,8 @@ import {
   switchMap,
   switchScan,
   take,
-  tap, throttleTime,
+  tap,
+  throttleTime,
   UnaryFunction
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
@@ -30,11 +32,11 @@ import * as protocols from './protocols';
 import * as jp from 'jsonpath';
 import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as Immutable from "immutable";
-import Chart, {ChartData, ChartDataset, ChartTypeRegistry, DefaultDataPoint} from "chart.js/auto";
-import Indexed = Immutable.Seq.Indexed;
+import Chart, {ChartComponent, ChartData, ChartDataset, ChartTypeRegistry, DefaultDataPoint} from "chart.js/auto";
 import * as math from 'mathjs'
 import annotationPlugin from 'chartjs-plugin-annotation';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import Indexed = Immutable.Seq.Indexed;
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -185,7 +187,7 @@ interface ConfigurationChart {
   type: keyof ChartTypeRegistry;
   data: any;
   options?: any;
-  plugins?: any[];
+  plugins?: ChartComponent[];
   scan?: (stateChart: StateChart) => void;
 }
 
@@ -195,8 +197,8 @@ async function buildChart(config: ConfigurationChart) {
       threadId: self.name
     }
   }) as any;
+  Chart.register(config.plugins ?? []);
   const chart = new Chart(payload.canvas, {
-    plugins: config.plugins,
     type: config.type,
     data: config.data,
     options: config.options
@@ -329,7 +331,7 @@ class ProcessWorker {
               })
           }).pipe(map(_ => state))
       );
-    environment.meanAnnotation = (datasetIndex=0, borderColor='black') => ({
+    environment.meanAnnotation = (datasetIndex = 0, borderColor = 'black') => ({
       type: 'line',
       borderColor,
       borderDash: [6, 6],
@@ -344,7 +346,7 @@ class ProcessWorker {
       value: (ctx: any) => math.mean(ctx.chart.data.datasets[datasetIndex].data)
     });
     environment.simpleDataLabels = () => ({
-      backgroundColor: function(context: any) {
+      backgroundColor: function (context: any) {
         return context.dataset.backgroundColor
       },
       borderRadius: 4,
@@ -355,7 +357,7 @@ class ProcessWorker {
       formatter: Math.round,
       padding: 6
     });
-    environment.minAnnotation = (datasetIndex=0, borderColor='black') => ({
+    environment.minAnnotation = (datasetIndex = 0, borderColor = 'black') => ({
       type: 'line',
       borderColor,
       borderWidth: 3,
@@ -371,7 +373,7 @@ class ProcessWorker {
       scaleID: 'y',
       value: (ctx: any) => math.min(ctx.chart.data.datasets[datasetIndex].data).toFixed(2)
     });
-    environment.maxAnnotation = (datasetIndex=0, borderColor='black') => ({
+    environment.maxAnnotation = (datasetIndex = 0, borderColor = 'black') => ({
       type: 'line',
       borderColor,
       borderWidth: 3,
@@ -387,7 +389,7 @@ class ProcessWorker {
       scaleID: 'y',
       value: (ctx: any) => math.max(ctx.chart.data.datasets[datasetIndex].data).toFixed(2)
     });
-    environment.meanPlusStandardDeviationAnnotation = (datasetIndex=0, borderColor='black') => ({
+    environment.meanPlusStandardDeviationAnnotation = (datasetIndex = 0, borderColor = 'black') => ({
       type: 'line',
       borderColor: 'rgba(102, 102, 102, 0.5)',
       borderDash: [6, 6],
@@ -397,13 +399,13 @@ class ProcessWorker {
         display: true,
         backgroundColor: 'rgba(102, 102, 102, 0.5)',
         color: 'black',
-        content: (ctx: any) => "x̄+σ:"+(math.mean(ctx.chart.data.datasets[datasetIndex].data) + math.std(ctx.chart.data.datasets[datasetIndex].data)).toFixed(2),
+        content: (ctx: any) => "x̄+σ:" + (math.mean(ctx.chart.data.datasets[datasetIndex].data) + math.std(ctx.chart.data.datasets[datasetIndex].data)).toFixed(2),
         position: 'start'
       },
       scaleID: 'y',
       value: (ctx: any) => math.mean(ctx.chart.data.datasets[datasetIndex].data) + math.std(ctx.chart.data.datasets[datasetIndex].data)
     });
-    environment.meanMinusStandardDeviationAnnotation = (datasetIndex=0, borderColor='black') => ({
+    environment.meanMinusStandardDeviationAnnotation = (datasetIndex = 0, borderColor = 'black') => ({
       type: 'line',
       borderColor: 'rgba(102, 102, 102, 0.5)',
       borderDash: [6, 6],
@@ -413,7 +415,7 @@ class ProcessWorker {
         display: true,
         backgroundColor: 'rgba(102, 102, 102, 0.5)',
         color: 'black',
-        content: (ctx: any) => "x̄-σ:"+(math.mean(ctx.chart.data.datasets[datasetIndex].data) - math.std(ctx.chart.data.datasets[datasetIndex].data)).toFixed(2),
+        content: (ctx: any) => "x̄-σ:" + (math.mean(ctx.chart.data.datasets[datasetIndex].data) - math.std(ctx.chart.data.datasets[datasetIndex].data)).toFixed(2),
         position: 'start'
       },
       scaleID: 'y',
@@ -424,12 +426,12 @@ class ProcessWorker {
     }
     environment.annotationPlugin = annotationPlugin;
     environment.ChartDataLabels = ChartDataLabels;
-    environment.basicStatisticsAnnotations = (datasetIndex=0, borderColor='black') => ({
-      meanAnnotation:  environment.meanAnnotation(datasetIndex, borderColor),
-      minAnnotation:  environment.minAnnotation(datasetIndex, borderColor),
-      maxAnnotation:  environment.maxAnnotation(datasetIndex, borderColor),
-      meanMinusStandardDeviationAnnotation:  environment.meanMinusStandardDeviationAnnotation(datasetIndex, borderColor),
-      meanPlusStandardDeviationAnnotation:  environment.meanPlusStandardDeviationAnnotation(datasetIndex, borderColor),
+    environment.basicStatisticsAnnotations = (datasetIndex = 0, borderColor = 'black') => ({
+      meanAnnotation: environment.meanAnnotation(datasetIndex, borderColor),
+      minAnnotation: environment.minAnnotation(datasetIndex, borderColor),
+      maxAnnotation: environment.maxAnnotation(datasetIndex, borderColor),
+      meanMinusStandardDeviationAnnotation: environment.meanMinusStandardDeviationAnnotation(datasetIndex, borderColor),
+      meanPlusStandardDeviationAnnotation: environment.meanPlusStandardDeviationAnnotation(datasetIndex, borderColor),
     });
     environment.println = (observerOrNext: any) => this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"));
     environment.display = tap(environment.println);
@@ -471,20 +473,19 @@ class ProcessWorker {
     environment.randint = (min = 0, max = 10) => Math.floor(Math.random() * (max - min)) + min;
     environment.fromFetch = (input: string | Request, init?: RequestInit | undefined) => fromFetch(input, init).pipe(
       switchMap((response) =>
-          match(response).with(
-            P.when(r => r.ok && /JSON/gi.test(r.headers.get("Content-Type") ?? "")),
-            (r) => from(r.json())
-          ).with(
-            P.when(r => r.ok && /octet-stream/gi.test(r.headers.get("Content-Type") ?? "")),
-            (r) => from(r.blob())
-          ).with(
-            P.when(r => r.ok && /form-data/gi.test(r.headers.get("Content-Type") ?? "")),
-            (r) => from(r.formData())
-          ).with(P.when(r => r.ok), (r) => from(r.text())).
-          otherwise(() => of({
-            error: true,
-            message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
-          }))
+        match(response).with(
+          P.when(r => r.ok && /JSON/gi.test(r.headers.get("Content-Type") ?? "")),
+          (r) => from(r.json())
+        ).with(
+          P.when(r => r.ok && /octet-stream/gi.test(r.headers.get("Content-Type") ?? "")),
+          (r) => from(r.blob())
+        ).with(
+          P.when(r => r.ok && /form-data/gi.test(r.headers.get("Content-Type") ?? "")),
+          (r) => from(r.formData())
+        ).with(P.when(r => r.ok), (r) => from(r.text())).otherwise(() => of({
+          error: true,
+          message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
+        }))
       ),
       catchError(err => of({error: true, message: err.message}))
     );
@@ -506,7 +507,7 @@ class ProcessWorker {
       environment.forever
     );
     environment.chart = (config: ConfigurationChart) => of(undefined).pipe(environment.plot(config));
-    environment.delayEach = (milliseconds: number) => delayWhen((_,i) => interval(i*milliseconds));
+    environment.delayEach = (milliseconds: number) => delayWhen((_, i) => interval(i * milliseconds));
     environment.importJSON = (options: any) => environment.importFiles({
       ...options,
       accept: "application/json"
