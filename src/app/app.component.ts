@@ -85,4 +85,11 @@ export class AppComponent implements OnInit {
     });
   }
 
+  runAll() {
+    window.dispatchEvent(new CustomEvent('shell.RunAll'));
+  }
+
+  stopAll() {
+    window.dispatchEvent(new CustomEvent('shell.StopAll'));
+  }
 }

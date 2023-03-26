@@ -56,6 +56,22 @@ export class Shell {
         subscription: observable.subscribe()
       });
     });
+    environment.addEventListener('shell.RunAll', () => {
+      for(let i=0; i<this.editor.blocks.getBlocksCount(); i++) {
+        const block = this.editor.blocks.getBlockByIndex(i);
+        if(block?.name === 'code') {
+          block.call('dispatchShellRun');
+        }
+      }
+    });
+    environment.addEventListener('shell.StopAll', () => {
+      for(let i=0; i<this.editor.blocks.getBlocksCount(); i++) {
+        const block = this.editor.blocks.getBlockByIndex(i);
+        if(block?.name === 'code') {
+          block.call('dispatchShellStop');
+        }
+      }
+    });
     //@ts-ignore
     environment.addEventListener('localecho.println', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('println', event.detail.payload.text);
