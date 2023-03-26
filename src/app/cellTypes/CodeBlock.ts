@@ -21,6 +21,7 @@ import {searchKeymap} from "@codemirror/search";
 // @ts-ignore
 import * as eslint from "eslint-linter-browserify";
 import {Block} from "./Block";
+import {InteractiveBlock} from "./InteractiveBlock";
 
 
 const config = {
@@ -38,31 +39,15 @@ const config = {
   },
 };
 
-export class CodeBlock {
+export class CodeBlock extends InteractiveBlock {
   private editorView: EditorView | undefined;
   private cell: HTMLDivElement | undefined;
   private input: HTMLInputElement | null = null;
-  private shellOptions: any[] = [
-    {
-      cmd: "Run (Ctrl+Alt+M)",
-      listener: () => this.dispatchShellRun(),
-      event: "shell.Run",
-    },
-    {
-      cmd: "Stop (Ctrl+Alt+C)",
-      listener: () => this.dispatchShellStop(),
-      event: "shell.Stop",
-    },
-    {
-      cmd: "Clear",
-      listener: () => this.clear(),
-      event: "clear",
-    }
-  ];
   constructor(private obj: Block) {
+    super(obj);
     this.obj.data.language = (obj.data.language === undefined) ? obj.config.language : obj.data.language;
-    this.obj.data.code = (obj.data.code === undefined) ? "" : obj.data.code;
-    this.obj.data.output = (obj.data.output === undefined) ? "" : obj.data.output;
+    this.obj.data.code = obj.data.code ?? "";
+    this.obj.data.output = obj.data.output ?? "";
   }
 
   static get toolbox() {
@@ -107,7 +92,7 @@ export class CodeBlock {
     }, false);
   }
 
-  clear() {
+  override clear() {
     //@ts-ignore
     this.cell.children[1].innerHTML = "";
   }
@@ -170,7 +155,7 @@ export class CodeBlock {
     });
   }
 
-  dispatchShellRun() {
+  override dispatchShellRun() {
     this.clear();
     this.dispatchShellStop();
     window.dispatchEvent(new CustomEvent('shell.Run', {
@@ -184,7 +169,7 @@ export class CodeBlock {
     this.run();
   }
 
-  dispatchShellStop() {
+  override dispatchShellStop() {
     window.dispatchEvent(new CustomEvent('shell.Stop', {
       bubbles: true, detail: {
         payload: {
@@ -192,21 +177,6 @@ export class CodeBlock {
         }
       }
     }));
-  }
-
-  renderSettings() {
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('ce-popover__items');
-    this.shellOptions.forEach( tune => {
-      let button = document.createElement('div');
-      button.classList.add('cdx-settings-button');
-      button.innerHTML = tune.cmd;
-      wrapper.appendChild(button);
-      button.addEventListener('click', () => {
-        tune.listener();
-      });
-    });
-    return wrapper;
   }
 
   render() {
@@ -286,7 +256,7 @@ export class CodeBlock {
     return this.cell;
   }
 
-  save(blockContent: any) {
+  override save(blockContent: any): any {
     return {
       code: this.editorView?.state.doc.toString(),
       language: "javascript",

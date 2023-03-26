@@ -59,17 +59,13 @@ export class Shell {
     environment.addEventListener('shell.RunAll', () => {
       for(let i=0; i<this.editor.blocks.getBlocksCount(); i++) {
         const block = this.editor.blocks.getBlockByIndex(i);
-        if(block?.name === 'code') {
-          block.call('dispatchShellRun');
-        }
+        block?.call('dispatchShellRun');
       }
     });
     environment.addEventListener('shell.StopAll', () => {
       for(let i=0; i<this.editor.blocks.getBlocksCount(); i++) {
         const block = this.editor.blocks.getBlockByIndex(i);
-        if(block?.name === 'code') {
-          block.call('dispatchShellStop');
-        }
+        block?.call('dispatchShellStop');
       }
     });
     //@ts-ignore

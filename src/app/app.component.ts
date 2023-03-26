@@ -41,7 +41,7 @@ export class AppComponent implements OnInit {
           inlineToolbar: true,
         },
         mathlive: {
-          class: await import("./cellTypes/MathBlock").then(x => x.CodeBlock),
+          class: await import("./cellTypes/MathBlock").then(x => x.MathBlock),
           inlineToolbar: true,
         },
         embed: {

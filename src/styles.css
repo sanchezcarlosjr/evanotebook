@@ -107,3 +107,12 @@ body {
 math-field {
   width: 100%;
 }
+
+.output-math-field {
+  border: none !important;
+  outline: none !important;
+}
+
+.hide {
+  display: none;
+}
