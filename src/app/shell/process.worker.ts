@@ -277,7 +277,7 @@ class ProcessWorker {
     environment.speak = tap((text: string) => speechSynthesis.speak(text));
     environment.take = take;
     environment.switchMap = switchMap;
-    environment.rx = rx;
+    environment.Rx = rx;
     environment.doAside = (...operations: UnaryFunction<any, any>[]) =>
       // @ts-ignore
       tap((value: any) => of(value).pipe(...operations).subscribe())
