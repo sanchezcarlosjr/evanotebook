@@ -38,6 +38,8 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Indexed = Immutable.Seq.Indexed;
 
+import {ComputeEngine} from "@cortex-js/compute-engine";
+
 function sendMessage(message: any) {
   self.postMessage(message);
 }
@@ -297,6 +299,7 @@ class ProcessWorker {
         }),
       }).pipe(catchError(err => of({error: true, message: err.message})), map(_ => message))
     );
+    environment.ce = new ComputeEngine();
     environment.sendEmail = (options: { type?: string, provider?: string, personalizations?: any, token: string, proxy?: string, to: string | string[], from: string, subject: string }) =>
       switchMap(state =>
         fromFetch(

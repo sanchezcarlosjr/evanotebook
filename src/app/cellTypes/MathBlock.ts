@@ -9,6 +9,28 @@ export class MathBlock extends InteractiveBlock {
   private readonly inputMathFieldElement: MathfieldElement;
   private computeEngine: ComputeEngine;
   private readonly outputMathField: MathfieldElement;
+  protected override shellOptions: any[] = [
+    {
+      cmd: "Evaluate (Ctrl+Alt+M)",
+      listener: () => this.dispatchShellRun(),
+      event: "shell.math.Evaluate"
+    },
+    {
+      cmd: "Simplify (Ctrl+Alt+S)",
+      listener: () => this.simplify(),
+      event: "shell.math.Simplify",
+    },
+    {
+      cmd: "Numeric approximation (Ctrl+Alt+N)",
+      listener: () => this.dispatchNumericApproximation(),
+      event: "shell.math.N",
+    },
+    {
+      cmd: "Clear",
+      listener: () => this.clear(),
+      event: "clear",
+    }
+  ];
   constructor(block: Block) {
     super(block);
     this.computeEngine = new ComputeEngine();
@@ -63,10 +85,18 @@ export class MathBlock extends InteractiveBlock {
   }
 
   override dispatchShellRun() {
-    this.changeOutputMathField(this.computeEngine.parse(this.inputMathFieldElement?.value).N().latex ?? "");
+    this.changeOutputMathField(this.computeEngine.parse(this.inputMathFieldElement?.value).evaluate().latex ?? "");
   }
 
   override clear() {
     this.changeOutputMathField("");
+  }
+
+  private simplify() {
+    this.changeOutputMathField(this.computeEngine.parse(this.inputMathFieldElement?.value).simplify().latex ?? "");
+  }
+
+  private dispatchNumericApproximation() {
+    this.changeOutputMathField(this.computeEngine.parse(this.inputMathFieldElement?.value).N().latex ?? "");
   }
 }
