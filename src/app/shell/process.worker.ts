@@ -11,7 +11,7 @@ import {
   lastValueFrom,
   map,
   mergeScan,
-  mergeWith,
+  mergeWith, NEVER,
   Observable,
   of,
   pipe,
@@ -22,7 +22,7 @@ import {
   switchMap,
   switchScan,
   take,
-  tap,
+  tap, throttleTime,
   UnaryFunction
 } from "rxjs";
 import {fromFetch} from "rxjs/fetch";
@@ -30,9 +30,11 @@ import * as protocols from './protocols';
 import * as jp from 'jsonpath';
 import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as Immutable from "immutable";
+import Chart, {ChartData, ChartDataset, ChartTypeRegistry, DefaultDataPoint} from "chart.js/auto";
 import Indexed = Immutable.Seq.Indexed;
-import Chart, {ChartTypeRegistry} from "chart.js/auto";
-import * as CHelper from 'chart.js/helpers';
+import * as math from 'mathjs'
+import annotationPlugin from 'chartjs-plugin-annotation';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -43,33 +45,6 @@ class RequestError extends Error {
     super(message);
     this.name = "RequestError";
   }
-}
-
-// @ts-ignore
-globalThis.database = {
-  retrieve: (key: string) => new Promise((resolve, reject) => {
-    // @ts-ignore
-    globalThis.addEventListener('localStorage.getItem', (event: CustomEvent) => {
-      resolve(event.detail.payload);
-      // @ts-ignore
-      globalThis.removeEventListener('localStorage.getItem', null);
-    });
-    sendMessage({event: 'localStorage.getItem', payload: {key}});
-  }),
-  save: (key: string, value: string) => new Promise((resolve, reject) => {
-    resolve(value);
-    if (!value)
-      return null;
-    sendMessage({event: 'localStorage.setItem', payload: {key, value}});
-    return value;
-  }),
-  removeItem: (key: string) => new Promise((resolve, reject) => {
-    resolve(key);
-    if (!key)
-      return null;
-    sendMessage({event: 'localStorage.removeItem', payload: {key}});
-    return key;
-  })
 }
 
 function requestResource(event: string, request: any): Promise<any> {
@@ -118,21 +93,6 @@ const speechSynthesis = {
     // @ts-ignore
     sendMessage({event: 'speak', payload: text});
   }
-}
-
-//@ts-ignore
-globalThis.throwError = (error: Error) => {
-  throw error;
-}
-
-async function retrieveFromCache(key: string) {
-  // @ts-ignore
-  const token = await globalThis.database.retrieve(key) ?? await globalThis.database.save(key, await requestPrompt(`Write your ${key}. We save tokens on your local storage.`));
-  if (!token) {
-    //@ts-ignore
-    globalThis.throwError(new ReferenceError(`${key} is not defined.`));
-  }
-  return token;
 }
 
 async function generateChatGPTRequest(content: string, options: { token: string, messages: { role: string, content: string }[] }) {
@@ -213,40 +173,38 @@ interface PromptInputParams {
   type: string;
 }
 
-async function* buildChart(config: any) {
+interface StateChart {
+  next: any;
+  dataset: ChartDataset<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar", DefaultDataPoint<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar">>;
+  datasets: ChartDataset<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar", DefaultDataPoint<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar">>[];
+  data: ChartData<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar", DefaultDataPoint<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar">, unknown>;
+  chart: Chart<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar", DefaultDataPoint<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar">, unknown>;
+}
+
+interface ConfigurationChart {
+  type: keyof ChartTypeRegistry;
+  data: any;
+  options?: any;
+  plugins?: any[];
+  scan?: (stateChart: StateChart) => void;
+}
+
+async function buildChart(config: ConfigurationChart) {
   const payload = await requestPlot({
     event: 'plot', payload: {
       threadId: self.name
     }
   }) as any;
-  console.log(payload);
   const chart = new Chart(payload.canvas, {
-    type: 'bar',
-    data: {
-      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-      datasets: [{
-        label: '# of Votes',
-        data: [12, 19, 3, 5, 2, 3],
-        borderWidth: 1
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
+    plugins: config.plugins,
+    type: config.type,
+    data: config.data,
+    options: config.options
   });
-  // Resizing the chart must be done manually, since OffscreenCanvas does not include event listeners.
   payload.canvas.width = payload.width;
   payload.canvas.height = payload.height;
   chart.resize();
-  while (true) {
-    yield chart;
-    chart.clear();
-    chart.update();
-  }
+  return chart;
 }
 
 class ProcessWorker {
@@ -269,6 +227,7 @@ class ProcessWorker {
     environment.tap = tap;
     environment.map = map;
     environment.reduce = reduce;
+    environment.math = math;
     environment.generate = generate;
     environment.scan = scan;
     environment.filter = filter;
@@ -292,7 +251,7 @@ class ProcessWorker {
                   }), Immutable.List<any>([])
                 )
               })
-            ) .with(P.instanceOf(Function), (func: Function) => func.toString())
+            ).with(P.instanceOf(Function), (func: Function) => func.toString())
             .otherwise(x => x);
         }, spaces);
       } catch (e) {
@@ -319,7 +278,6 @@ class ProcessWorker {
     environment.take = take;
     environment.switchMap = switchMap;
     environment.rx = rx;
-    environment.CHelper = CHelper;
     environment.doAside = (...operations: UnaryFunction<any, any>[]) =>
       // @ts-ignore
       tap((value: any) => of(value).pipe(...operations).subscribe())
@@ -371,9 +329,110 @@ class ProcessWorker {
               })
           }).pipe(map(_ => state))
       );
-    environment.display = tap(observerOrNext =>
-      this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"))
-    );
+    environment.meanAnnotation = (datasetIndex=0, borderColor='black') => ({
+      type: 'line',
+      borderColor,
+      borderDash: [6, 6],
+      borderDashOffset: 0,
+      borderWidth: 3,
+      label: {
+        display: true,
+        content: (ctx: any) => 'Mean: ' + math.mean(ctx.chart.data.datasets[datasetIndex].data).toFixed(2),
+        position: 'end'
+      },
+      scaleID: 'y',
+      value: (ctx: any) => math.mean(ctx.chart.data.datasets[datasetIndex].data)
+    });
+    environment.simpleDataLabels = () => ({
+      backgroundColor: function(context: any) {
+        return context.dataset.backgroundColor
+      },
+      borderRadius: 4,
+      color: 'white',
+      font: {
+        weight: 'bold'
+      },
+      formatter: Math.round,
+      padding: 6
+    });
+    environment.minAnnotation = (datasetIndex=0, borderColor='black') => ({
+      type: 'line',
+      borderColor,
+      borderWidth: 3,
+      label: {
+        display: true,
+        backgroundColor: 'black',
+        borderColor: 'black',
+        borderRadius: 10,
+        borderWidth: 2,
+        content: (ctx: any) => 'Lower bound: ' + math.min(ctx.chart.data.datasets[datasetIndex].data).toFixed(2),
+        rotation: 'auto'
+      },
+      scaleID: 'y',
+      value: (ctx: any) => math.min(ctx.chart.data.datasets[datasetIndex].data).toFixed(2)
+    });
+    environment.maxAnnotation = (datasetIndex=0, borderColor='black') => ({
+      type: 'line',
+      borderColor,
+      borderWidth: 3,
+      label: {
+        display: true,
+        backgroundColor: 'black',
+        borderColor: 'black',
+        borderRadius: 10,
+        borderWidth: 2,
+        content: (ctx: any) => 'Upper bound: ' + math.max(ctx.chart.data.datasets[datasetIndex].data).toFixed(2),
+        rotation: 'auto'
+      },
+      scaleID: 'y',
+      value: (ctx: any) => math.max(ctx.chart.data.datasets[datasetIndex].data).toFixed(2)
+    });
+    environment.meanPlusStandardDeviationAnnotation = (datasetIndex=0, borderColor='black') => ({
+      type: 'line',
+      borderColor: 'rgba(102, 102, 102, 0.5)',
+      borderDash: [6, 6],
+      borderDashOffset: 0,
+      borderWidth: 3,
+      label: {
+        display: true,
+        backgroundColor: 'rgba(102, 102, 102, 0.5)',
+        color: 'black',
+        content: (ctx: any) => "x̄+σ:"+(math.mean(ctx.chart.data.datasets[datasetIndex].data) + math.std(ctx.chart.data.datasets[datasetIndex].data)).toFixed(2),
+        position: 'start'
+      },
+      scaleID: 'y',
+      value: (ctx: any) => math.mean(ctx.chart.data.datasets[datasetIndex].data) + math.std(ctx.chart.data.datasets[datasetIndex].data)
+    });
+    environment.meanMinusStandardDeviationAnnotation = (datasetIndex=0, borderColor='black') => ({
+      type: 'line',
+      borderColor: 'rgba(102, 102, 102, 0.5)',
+      borderDash: [6, 6],
+      borderDashOffset: 0,
+      borderWidth: 3,
+      label: {
+        display: true,
+        backgroundColor: 'rgba(102, 102, 102, 0.5)',
+        color: 'black',
+        content: (ctx: any) => "x̄-σ:"+(math.mean(ctx.chart.data.datasets[datasetIndex].data) - math.std(ctx.chart.data.datasets[datasetIndex].data)).toFixed(2),
+        position: 'start'
+      },
+      scaleID: 'y',
+      value: (ctx: any) => math.mean(ctx.chart.data.datasets[datasetIndex].data) - math.std(ctx.chart.data.datasets[datasetIndex].data)
+    });
+    environment.throwError = (error: Error) => {
+      throw error;
+    }
+    environment.annotationPlugin = annotationPlugin;
+    environment.ChartDataLabels = ChartDataLabels;
+    environment.basicStatisticsAnnotations = (datasetIndex=0, borderColor='black') => ({
+      meanAnnotation:  environment.meanAnnotation(datasetIndex, borderColor),
+      minAnnotation:  environment.minAnnotation(datasetIndex, borderColor),
+      maxAnnotation:  environment.maxAnnotation(datasetIndex, borderColor),
+      meanMinusStandardDeviationAnnotation:  environment.meanMinusStandardDeviationAnnotation(datasetIndex, borderColor),
+      meanPlusStandardDeviationAnnotation:  environment.meanPlusStandardDeviationAnnotation(datasetIndex, borderColor),
+    });
+    environment.println = (observerOrNext: any) => this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"));
+    environment.display = tap(environment.println);
     environment.log = tap(observer => console.log(observer));
     environment.input = (options: PromptInputParams) =>
       observeResource('prompt', {
@@ -400,32 +459,32 @@ class ProcessWorker {
       }
     }).pipe(first()));
     environment.pipe = pipe;
+    environment.NEVER = NEVER;
+    environment.throttleTime = throttleTime;
+    environment.forever = switchMap(() => NEVER);
     environment.chat = (observable: Observable<any> | Function) => pipe(
       filter((configuration: any) => configuration.ready),
       switchMap((configuration: any) =>
         (typeof observable === "function" ? observable(configuration.message) : observable).pipe(tap(next => configuration.connection.send(next))))
     );
     environment.sendOverProtocol = tap((configuration: any) => configuration.connection.send(configuration.message));
-    environment.randomBetween = (max = 0, min = 10) => Math.floor(Math.random() * (max - min + 1)) + min;
+    environment.randint = (min = 0, max = 10) => Math.floor(Math.random() * (max - min)) + min;
     environment.fromFetch = (input: string | Request, init?: RequestInit | undefined) => fromFetch(input, init).pipe(
-      switchMap((response) => {
-          if (response.ok && /JSON/gi.test(response.headers.get("Content-Type") ?? "")) {
-            return from(response.json());
-          }
-          if (response.ok && /octet-stream/gi.test(response.headers.get("Content-Type") ?? "")) {
-            return from(response.blob());
-          }
-          if (response.ok && /form-data/gi.test(response.headers.get("Content-Type") ?? "")) {
-            return from(response.formData());
-          }
-          if (response.ok) {
-            return from(response.text());
-          }
-          return of({
+      switchMap((response) =>
+          match(response).with(
+            P.when(r => r.ok && /JSON/gi.test(r.headers.get("Content-Type") ?? "")),
+            (r) => from(r.json())
+          ).with(
+            P.when(r => r.ok && /octet-stream/gi.test(r.headers.get("Content-Type") ?? "")),
+            (r) => from(r.blob())
+          ).with(
+            P.when(r => r.ok && /form-data/gi.test(r.headers.get("Content-Type") ?? "")),
+            (r) => from(r.formData())
+          ).with(P.when(r => r.ok), (r) => from(r.text())).
+          otherwise(() => of({
             error: true,
             message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
-          });
-        }
+          }))
       ),
       catchError(err => of({error: true, message: err.message}))
     );
@@ -437,9 +496,17 @@ class ProcessWorker {
       switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
     environment.importFiles = (options: any) => from(requestFile(options));
-    environment.plot = (config: {type: keyof ChartTypeRegistry, options: any}) => pipe(
-      scan((acc) => acc, buildChart(config).next())
+    environment.plot = (config: ConfigurationChart) => pipe(
+      switchScan(async (acc, next) => {
+        const chart = await acc;
+        config.scan?.({dataset: chart.data.datasets[0], next, datasets: chart.data.datasets, data: chart.data, chart});
+        chart.update();
+        return acc;
+      }, buildChart(config)),
+      environment.forever
     );
+    environment.chart = (config: ConfigurationChart) => of(undefined).pipe(environment.plot(config));
+    environment.delayEach = (milliseconds: number) => delayWhen((_,i) => interval(i*milliseconds));
     environment.importJSON = (options: any) => environment.importFiles({
       ...options,
       accept: "application/json"
@@ -486,12 +553,16 @@ class ProcessWorker {
       of({error: true, message: `Error: ${protocol} is not available.`})
   }
 
+  println(next: any) {
+    this.environment.println(next);
+  }
+
   spawn(content: string) {
-    return new Function(`return (async () => eval(${content}))()`);
+    return eval(content);
   }
 
   exec(action: string) {
-    return this.spawn(action)();
+    return this.spawn(action);
   }
 }
 
@@ -503,10 +574,13 @@ globalThis.addEventListener('exec', async (event: CustomEvent) => {
     sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
     return;
   }
-  // @ts-ignore
-  globalThis.db = event.detail.payload.database;
   try {
     const response = await processWorker.exec(event.detail.payload.code);
+    if (!(response instanceof Observable)) {
+      processWorker.println(response);
+      sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
+      return;
+    }
     response.subscribe({
       // @ts-ignore
       complete: () => sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}})

@@ -21,7 +21,6 @@ import {searchKeymap} from "@codemirror/search";
 // @ts-ignore
 import * as eslint from "eslint-linter-browserify";
 import {Block} from "./Block";
-import Chart, {ChartType} from 'chart.js/auto';
 
 
 const config = {

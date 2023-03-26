@@ -50,8 +50,10 @@ body {
 }
 
 .progress {
-  border: 1px solid #C1E2F8 !important;
+  box-sizing: border-box;
   border-radius: 5px;
+  border: 1px solid #C1E2F8 !important;
+  box-shadow: 0 0 0 2px #fff inset;
 }
 
 .cdx-button{
