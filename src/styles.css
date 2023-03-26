@@ -6,11 +6,14 @@ body {
 }
 
 .cdx-settings-button {
-  font-size: 14px;
+  font-size: 0.7em;
   min-height: fit-content !important;
   width: 95%;
 }
 
+.ce-popover--opened {
+  max-height: fit-content;
+}
 .output {
   display: flex;
   position: relative;

@@ -49,5 +49,7 @@ export class InteractiveBlock {
   }
   clear() {
   }
-  dispatchShellStop() {}
+  dispatchShellStop() {
+    this.clear();
+  }
 }

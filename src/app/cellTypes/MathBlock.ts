@@ -11,17 +11,17 @@ export class MathBlock extends InteractiveBlock {
   private readonly outputMathField: MathfieldElement;
   protected override shellOptions: any[] = [
     {
-      cmd: "Evaluate (Ctrl+Alt+M)",
+      cmd: "Evaluate (Ctrl+Alt+m)",
       listener: () => this.dispatchShellRun(),
       event: "shell.math.Evaluate"
     },
     {
-      cmd: "Simplify (Ctrl+Alt+S)",
+      cmd: "Simplify (Ctrl+Alt+i)",
       listener: () => this.simplify(),
       event: "shell.math.Simplify",
     },
     {
-      cmd: "Numeric approximation (Ctrl+Alt+N)",
+      cmd: "Approximate (Ctrl+Alt+n)",
       listener: () => this.dispatchNumericApproximation(),
       event: "shell.math.N",
     },
@@ -55,6 +55,14 @@ export class MathBlock extends InteractiveBlock {
       if (keyboardEvent.key === "m" && keyboardEvent.ctrlKey && keyboardEvent.altKey) {
         keyboardEvent.preventDefault();
         this.dispatchShellRun();
+      }
+      if (keyboardEvent.key === "i" && keyboardEvent.ctrlKey && keyboardEvent.altKey) {
+        keyboardEvent.preventDefault();
+        this.simplify();
+      }
+      if (keyboardEvent.key === "n" && keyboardEvent.ctrlKey && keyboardEvent.altKey) {
+        keyboardEvent.preventDefault();
+        this.dispatchNumericApproximation();
       }
     }, false);
     this.inputMathFieldElement.value = this.block.data.doc ?? "";
