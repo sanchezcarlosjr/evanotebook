@@ -8,7 +8,7 @@ https://notebook.sanchezcarlosjr.com/
 * A user interface similar to Notion's WYSIWYG (What You See Is What You Get) interface.
 * Built-in support for MQTT, WebRTC, HTTP, and WebSocket protocols.
 * Each cell is run in a separate web worker for increased performance and stability.
-* Peer-to-peer collaboration, with no data saved about you or your peers.
+* Real Peer-to-peer collaboration and replication, with no data saved about you or your peers.
 * Reactive charts, forms, email senders, and other interactive elements.
 
 # Alternatives
