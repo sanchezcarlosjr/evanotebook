@@ -1,5 +1,5 @@
 # EvaNotebook
-A collaborative notebook peer to peer for Javascript in browsers based on reactive observables.
+A collaborative peer-to-peer notebook for JavaScript in browsers based on reactive observables.
 
 # Demo
 https://notebook.sanchezcarlosjr.com/
@@ -9,6 +9,7 @@ https://notebook.sanchezcarlosjr.com/
 * It supports MQTT, WebRTC, HTTP, WebSocket protocols out-of-box.
 * Each cell is a different web worker.
 * Peer to peer collaboration. We don't save anything about you and your peers.
+* Reactive charts, forms, email senders and so on. 
 
 
 # Alternatives
