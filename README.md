@@ -1,16 +1,15 @@
 # EvaNotebook
-A collaborative peer-to-peer notebook for JavaScript in browsers based on reactive observables.
+A collaborative peer-to-peer notebook for Web Technologies based on reactive observables, designed to run primarily in modern web browsers.
 
 # Demo
 https://notebook.sanchezcarlosjr.com/
 
 # Features
-* A user interface as Notion. What You See Is What You Get.
-* It supports MQTT, WebRTC, HTTP, WebSocket protocols out-of-box.
-* Each cell is a different web worker.
-* Peer to peer collaboration. We don't save anything about you and your peers.
-* Reactive charts, forms, email senders and so on. 
-
+* A user interface similar to Notion's WYSIWYG (What You See Is What You Get) interface.
+* Built-in support for MQTT, WebRTC, HTTP, and WebSocket protocols.
+* Each cell is run in a separate web worker for increased performance and stability.
+* Peer-to-peer collaboration, with no data saved about you or your peers.
+* Reactive charts, forms, email senders, and other interactive elements.
 
 # Alternatives
 [ObservableHQ](https://observablehq.com/)
