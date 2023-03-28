@@ -30,6 +30,7 @@ body {
     bottom: 0;
     right: 0;
     width: 100%;
+    border-width: 0;
     border: none;
     height: 100%;
     overflow: hidden;

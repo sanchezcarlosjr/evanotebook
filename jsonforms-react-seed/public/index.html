@@ -21,6 +21,20 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>jsonforms-react-seed</title>
+        <script>
+          // Listen parent messages
+          window.addEventListener("message", (e) => {
+            if (e?.ports.length > 0) {
+              // @ts-ignore
+              window.evanotebook_port = e.ports[0];
+              window.evanotebook_port.onmessage = (event) => {
+                window.evanotebook_schema = event.data.schema;
+                window.evanotebook_data = event.data.data;
+                window.evanotebook_uischema = event.data.uischema;
+              };
+            }
+          });
+        </script>
   </head>
   <body>
     <noscript>

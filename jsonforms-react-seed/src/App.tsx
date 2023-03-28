@@ -26,16 +26,20 @@ const App = () => {
   const [uischema, setUISchema] = useState<any>(null);
 
   useEffect(() => {
-    window.addEventListener("message", (e) => {
-     if (e?.ports.length > 0) {
-      setPort(e.ports[0]);
-      e.ports[0].onmessage = (event: MessageEvent) => {
+    // @ts-ignore
+    setPort(window.evanotebook_port);
+    // @ts-ignore
+    setSchema(window.evanotebook_schema);
+    // @ts-ignore
+    setData(window.evanotebook_data);
+    // @ts-ignore
+    setUISchema(window.evanotebook_uischema);
+
+    port.onmessage = (event: MessageEvent) => {
         setSchema(event.data.schema);
         setData(event.data.data);
         setUISchema(event.data.uischema);
-      };
-     }
-    });
+    };
   }, [])
 
   if (schema === null || data === null) {
