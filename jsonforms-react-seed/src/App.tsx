@@ -20,21 +20,22 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
 }
 
 const App = () => {
-  const [data, setData] = useState<any>({});
-  const [port, setPort] = useState<any>(null);
-  const [schema, setSchema] = useState<any>(null);
-  const [uischema, setUISchema] = useState<any>(null);
+  // @ts-ignore
+  const [data, setData] = useState<any>(window?.evanotebook_data ?? null);
+  // @ts-ignore
+  const [port, setPort] = useState<any>(window?.evanotebook_port ?? null);
+  // @ts-ignore
+  const [schema, setSchema] = useState<any>(window?.evanotebook_schema ?? null);
+  // @ts-ignore
+  const [uischema, setUISchema] = useState<any>(window?.evanotebook_uischema ?? null);
 
-  window.addEventListener("message", (e) => {
-    if (e?.ports.length > 0) {
-      setPort(e.ports[0]);
-      e.ports[0].onmessage = (event: MessageEvent) => {
+  if (port) {
+      port.onmessage = (event: MessageEvent) => {
         setSchema(event.data.schema);
         setData(event.data.data);
         setUISchema(event.data.uischema);
       };
-    }
-  });
+  }
 
   if (schema === null || data === null) {
     return <div></div>;
