@@ -16,6 +16,13 @@ https://notebook.sanchezcarlosjr.com/
 
 [Starboard notebook](https://github.com/gzuidhof/starboard-notebook)
 
+[JSNB](https://github.com/gopi-suvanam/jsnb)
+
+[Dnotebook](https://dnotebook.jsdata.org/getting-started)
+
+[Kajero](https://github.com/JoelOtter/kajero)
+
+[Jbook](https://jbook.qiushiyan.dev/)
 
 
 ## Contribuitors
