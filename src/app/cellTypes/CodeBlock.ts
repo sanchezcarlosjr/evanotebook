@@ -141,15 +141,19 @@ export class CodeBlock extends InteractiveBlock {
     htmliFrameElement.addEventListener("load", () => {
       htmliFrameElement?.contentWindow?.postMessage("init", "*", [channel.port2]);
       port1.onmessage = (event: MessageEvent) => {
-        window.dispatchEvent(new CustomEvent('shell.FormResponse', {
-          bubbles: true, detail: {
-            payload: {
-              response: event.data,
-              threadId: this.obj.block?.id
+        if (event.data.type === "ready") {
+          port1.postMessage(options);
+        }
+        if (event.data.type === "formResponse") {
+          window.dispatchEvent(new CustomEvent('shell.FormResponse', {
+            bubbles: true, detail: {
+              payload: {
+                response: event.data.data,
+                threadId: this.obj.block?.id
+              }
             }
-          }
-        }));
-        port1.postMessage(options);
+          }));
+        }
       };
     });
   }
