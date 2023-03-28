@@ -1,0 +1,15 @@
+body {
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@font-face {
+  font-family: "Fira Code Regular";
+  src: url(FiraCode-Regular.woff);
+}
+
+* {
+  font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
+}

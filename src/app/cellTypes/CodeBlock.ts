@@ -128,6 +128,29 @@ export class CodeBlock extends InteractiveBlock {
     }));
   }
 
+  form(options: {uischema: any; schema: any; data: any}) {
+    const htmliFrameElement = document.createElement("iframe");
+    htmliFrameElement.src = "https://notebook.sanchezcarlosjr.com/form";
+    htmliFrameElement.classList.add('iframe-cell-code');
+    this.cell?.appendChild(htmliFrameElement);
+    const channel = new MessageChannel();
+    const port1 = channel.port1;
+    htmliFrameElement.addEventListener("load", () => {
+      htmliFrameElement?.contentWindow?.postMessage("init", "*", [channel.port2]);
+      port1.postMessage(options);
+      port1.onmessage = (event: MessageEvent) => {
+        window.dispatchEvent(new CustomEvent('shell.FormResponse', {
+          bubbles: true, detail: {
+            payload: {
+              response: event.data,
+              threadId: this.obj.block?.id
+            }
+          }
+        }));
+      };
+    });
+  }
+
   prompt(payload: {placeholder?: string, type?: string}) {
     if (this.input) {
       return;

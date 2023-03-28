@@ -5,10 +5,25 @@ body {
   overflow-x: hidden;
 }
 
+@font-face {
+  font-family: "Fira Code Regular";
+  src: url(/assets/fonts/FiraCode-Regular.woff);
+}
+
+* {
+  font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
+}
+
+
 .cdx-settings-button {
   font-size: 0.7em;
   min-height: fit-content !important;
   width: 95%;
+}
+
+.iframe-cell-code {
+  border: none;
+  width: 100%;
 }
 
 .ce-popover--opened {
@@ -20,7 +35,8 @@ body {
   width: 100%;
   height: max-content;
   margin: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
+  overflow-y: hidden;
   word-wrap: anywhere;
   flex-wrap: wrap;
   white-space: pre-wrap;       /* Since CSS 2.1 */
@@ -31,13 +47,9 @@ body {
   background-color: #f0f2f5;
 }
 
-@font-face {
-  font-family: "Fira Code Regular";
-  src: url(/assets/fonts/FiraCode-Regular.woff);
-}
-
-* {
-  font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
+.output > ul {
+  padding: 0 0 0 1.5em;
+  margin: 0;
 }
 
 .cell {

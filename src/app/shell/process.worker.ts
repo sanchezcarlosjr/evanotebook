@@ -500,6 +500,14 @@ class ProcessWorker {
       switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
     environment.importFiles = (options: any) => from(requestFile(options));
+    // https://jsonforms.io/
+    environment.form = (options: {uischema: object, schema: object, data: any}) =>   observeResource('form', {
+      event: 'form',
+      payload: {
+        threadId: self.name,
+        options
+      }
+    });
     environment.plot = (config: ConfigurationChart) => pipe(
       switchScan(async (acc, next) => {
         const chart = await acc;
@@ -524,6 +532,7 @@ class ProcessWorker {
     environment.jpquery = (path: string) => map((ob: object) => jp.query(ob, path));
     environment.jpapply = (path: string, fn: (x: any) => any) => map((ob: object) => jp.apply(ob, path, fn));
     environment.write = (f = identity) => tap((observerOrNext: string) => this.terminal?.write(f(observerOrNext)));
+    environment.render = (x: string) => of(x).pipe(environment.write());
     environment.printWide =
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display);

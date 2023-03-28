@@ -46,6 +46,14 @@ export class Shell {
       this.editor.blocks.insert('code', {code: event.detail.code, language: 'javascript'});
       this.editor.blocks.getBlockByIndex(this.editor.blocks.getCurrentBlockIndex())?.call('dispatchShellRun');
     });
+    environment.addEventListener('shell.FormResponse', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'form', payload: event.detail.payload.response
+      });
+    });
+    environment.addEventListener('form', (event: CustomEvent) => {
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('form', event.detail.payload.options);
+    });
     environment.addEventListener('shell.Run', (event: CustomEvent) => {
       const {worker, observable} = this.fork(event.detail.payload.code, event.detail.payload.threadId);
       this.jobs.set(event.detail.payload.threadId, {
