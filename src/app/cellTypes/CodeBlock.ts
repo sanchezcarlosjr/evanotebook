@@ -71,7 +71,8 @@ export class CodeBlock extends InteractiveBlock {
         h2: true,
         h3: true,
         span: true,
-        svg: true
+        svg: true,
+        img: true
       },
       output: {
         p: true,
@@ -83,7 +84,8 @@ export class CodeBlock extends InteractiveBlock {
         h2: true,
         h3: true,
         span: true,
-        svg: true
+        svg: true,
+        img: true
       }
     }
   }
