@@ -1,7 +1,7 @@
-import {useState} from 'react';
-import {JsonForms} from '@jsonforms/react';
+import { materialCells, materialRenderers } from '@jsonforms/material-renderers';
+import { JsonForms } from '@jsonforms/react';
+import { useState } from 'react';
 import './App.css';
-import {materialCells, materialRenderers,} from '@jsonforms/material-renderers';
 import RatingControl from './RatingControl';
 import ratingControlTester from './ratingControlTester';
 
@@ -15,7 +15,10 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
   if (port === null || !data || Object.entries(data).length === 0) {
     return (<div></div>);
   }
-  port.postMessage(data);
+  port.postMessage({
+    "type": "formResponse",
+    "data": data,
+  });
   return (<div></div>);
 }
 
@@ -33,6 +36,9 @@ const App = () => {
         setData(event.data.data);
         setUISchema(event.data.uischema);
       };
+      e.ports[0].postMessage({
+        "type": "ready"
+      });
     }
   });
 

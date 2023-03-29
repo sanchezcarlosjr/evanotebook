@@ -1,3 +1,9 @@
+import Chart, { ChartComponent, ChartData, ChartDataset, ChartTypeRegistry, DefaultDataPoint } from "chart.js/auto";
+import annotationPlugin from 'chartjs-plugin-annotation';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import * as Immutable from "immutable";
+import * as jp from 'jsonpath';
+import * as math from 'mathjs';
 import * as rx from "rxjs";
 import {
   catchError,
@@ -27,18 +33,12 @@ import {
   throttleTime,
   UnaryFunction
 } from "rxjs";
-import {fromFetch} from "rxjs/fetch";
+import { fromFetch } from "rxjs/fetch";
+import { isMatching, match, P, Pattern } from 'ts-pattern';
 import * as protocols from './protocols';
-import * as jp from 'jsonpath';
-import {isMatching, match, P, Pattern} from 'ts-pattern';
-import * as Immutable from "immutable";
-import Chart, {ChartComponent, ChartData, ChartDataset, ChartTypeRegistry, DefaultDataPoint} from "chart.js/auto";
-import * as math from 'mathjs'
-import annotationPlugin from 'chartjs-plugin-annotation';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Indexed = Immutable.Seq.Indexed;
 
-import {ComputeEngine} from "@cortex-js/compute-engine";
+import { ComputeEngine } from "@cortex-js/compute-engine";
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -95,7 +95,7 @@ function requestPlot(options: object): Promise<string | null> {
 const speechSynthesis = {
   speak: (text: string) => {
     // @ts-ignore
-    sendMessage({event: 'speak', payload: text});
+    sendMessage({ event: 'speak', payload: text });
   }
 }
 
@@ -285,7 +285,7 @@ class ProcessWorker {
     environment.doAside = (...operations: UnaryFunction<any, any>[]) =>
       // @ts-ignore
       tap((value: any) => of(value).pipe(...operations).subscribe())
-    ;
+      ;
     environment.sendSMS = (options: { passcode: string, path: string, recipients: string[] }) => switchMap(message =>
       fromFetch(options.path, {
         method: 'POST',
@@ -297,7 +297,7 @@ class ProcessWorker {
           message,
           recipients: options.recipients.join(',')
         }),
-      }).pipe(catchError(err => of({error: true, message: err.message})), map(_ => message))
+      }).pipe(catchError(err => of({ error: true, message: err.message })), map(_ => message))
     );
     environment.ce = new ComputeEngine();
     environment.sendEmail = (options: { type?: string, provider?: string, personalizations?: any, token: string, proxy?: string, to: string | string[], from: string, subject: string }) =>
@@ -314,7 +314,7 @@ class ProcessWorker {
               {
                 "personalizations": options.personalizations ?? [
                   {
-                    "to": Array.isArray(options?.to) ? options.to.map(email => ({email})) : [
+                    "to": Array.isArray(options?.to) ? options.to.map(email => ({ email })) : [
                       {
                         email: options?.to ?? ""
                       }
@@ -490,18 +490,18 @@ class ProcessWorker {
           message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
         }))
       ),
-      catchError(err => of({error: true, message: err.message}))
+      catchError(err => of({ error: true, message: err.message }))
     );
     environment.readFiles = pipe(
       map((fileList: FileList) => Immutable.Range(0, fileList.length).map(
-          (index) => from(readFile(index, fileList)) as Observable<any>
-        )
+        (index) => from(readFile(index, fileList)) as Observable<any>
+      )
       ),
       switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
     environment.importFiles = (options: any) => from(requestFile(options));
     // https://jsonforms.io/
-    environment.form = (options: {uischema: object, schema: object, data: any}) =>   observeResource('form', {
+    environment.form = (options: { uischema: object, schema: object, data: any }) => observeResource('form', {
       event: 'form',
       payload: {
         threadId: self.name,
@@ -511,7 +511,7 @@ class ProcessWorker {
     environment.plot = (config: ConfigurationChart) => pipe(
       switchScan(async (acc, next) => {
         const chart = await acc;
-        config.scan?.({dataset: chart.data.datasets[0], next, datasets: chart.data.datasets, data: chart.data, chart});
+        config.scan?.({ dataset: chart.data.datasets[0], next, datasets: chart.data.datasets, data: chart.data, chart });
         chart.update();
         return acc;
       }, buildChart(config)),
@@ -540,33 +540,25 @@ class ProcessWorker {
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display);
     environment.publishMQTT =
-      (topic: string, payloadName: string = "text", options = {publication: {}, message: {}}) =>
+      (topic: string, payloadName: string = "text", options = { publication: {}, message: {} }) =>
         map((payload: string) => ({
           topic,
-          message: environment.serialize({[`${payloadName}`]: payload, ...options.message}),
+          message: environment.serialize({ [`${payloadName}`]: payload, ...options.message }),
           ...options.publication
         }));
     environment.sayHermes = environment.publishMQTT("hermes/tts/say");
     environment.gpt = (options: any) => switchMap((message: string) =>
       from(generateChatGPTRequest(message, options)).pipe(switchMap(request => environment.fromFetch(request)
         .pipe(
-          tap((x: { error: boolean }) => {
-            if (x.error) {
-              // @ts-ignore
-              globalThis.database.removeItem("token-OpenIA");
-              // @ts-ignore
-              globalThis.throwError(new RequestError(`${x.message}`));
-            }
-          }),
           filter((x: any) => !x.error),
-          map((response: any) => response.choices[environment.randomBetween(response.choices.length - 1, 0)].message.content)
+          map((response: any) => response.choices[0].message.content)
         )))
     );
     // @ts-ignore
     environment.connect = (protocol: string, options: any) => protocols[protocol] ?
       // @ts-ignore
       (new protocols[protocol]()).connect(options) :
-      of({error: true, message: `Error: ${protocol} is not available.`})
+      of({ error: true, message: `Error: ${protocol} is not available.` })
   }
 
   println(next: any) {
@@ -587,23 +579,23 @@ const processWorker = new ProcessWorker(globalThis, new LocalEcho(), new Termina
 // @ts-ignore
 globalThis.addEventListener('exec', async (event: CustomEvent) => {
   if (!event.detail.payload) {
-    sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
+    sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } });
     return;
   }
   try {
     const response = await processWorker.exec(event.detail.payload.code);
     if (!(response instanceof Observable)) {
       processWorker.println(response);
-      sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
+      sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } });
       return;
     }
     response.subscribe({
       // @ts-ignore
-      complete: () => sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}})
+      complete: () => sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } })
     });
   } catch (e) {
     // @ts-ignore
-    sendMessage({'event': 'shell.error', payload: {threadId: self.name, text: `${e.name}: ${e.message}`}});
+    sendMessage({ 'event': 'shell.error', payload: { threadId: self.name, text: `${e.name}: ${e.message}` } });
   }
 });
 

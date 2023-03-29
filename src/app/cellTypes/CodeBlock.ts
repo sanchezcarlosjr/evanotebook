@@ -167,22 +167,31 @@ export class CodeBlock extends InteractiveBlock {
   form(options: { uischema: any; schema: any; data: any }) {
     const htmliFrameElement = document.createElement("iframe");
     htmliFrameElement.src = "https://notebook.sanchezcarlosjr.com/form";
-    htmliFrameElement.classList.add('iframe-cell-code');
-    this.cell?.appendChild(htmliFrameElement);
+    htmliFrameElement.classList.add('responsive-iframe');
+    const container = document.createElement('div');
+    container.classList.add('container-iframe');
+    container.appendChild(htmliFrameElement);
+    this.cell?.appendChild(container);
     const channel = new MessageChannel();
     const port1 = channel.port1;
-    htmliFrameElement?.contentWindow?.postMessage("init", "*", [channel.port2]);
-    port1.postMessage(options);
-    port1.onmessage = (event: MessageEvent) => {
-      window.dispatchEvent(new CustomEvent('shell.FormResponse', {
-        bubbles: true, detail: {
-          payload: {
-            response: event.data,
-            threadId: this.obj.block?.id
-          }
+    htmliFrameElement.addEventListener("load", () => {
+      htmliFrameElement?.contentWindow?.postMessage("init", "*", [channel.port2]);
+      port1.onmessage = (event: MessageEvent) => {
+        if (event.data.type === "ready") {
+          port1.postMessage(options);
         }
-      }));
-    };
+        if (event.data.type === "formResponse") {
+          window.dispatchEvent(new CustomEvent('shell.FormResponse', {
+            bubbles: true, detail: {
+              payload: {
+                response: event.data.data,
+                threadId: this.obj.block?.id
+              }
+            }
+          }));
+        }
+      };
+    });
   }
 
   prompt(payload: { placeholder?: string, type?: string }) {
