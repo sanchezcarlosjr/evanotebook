@@ -8,7 +8,7 @@ import {retrieve} from "./shell/url-database";
 export class AppComponent implements OnInit {
   isSaving = false;
   isMode2: boolean = true;
-
+  loading: boolean = true;
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
     this.isMode2 = retrieve("m") === "2";
@@ -68,6 +68,8 @@ export class AppComponent implements OnInit {
             }
           }
         },
+        // @ts-ignore
+        mermaid: await import("editorjs-mermaid").then(x => x.default),
         alert: {
           // @ts-ignore
           class: await import("editorjs-alert").then(x => x.default),
@@ -79,9 +81,9 @@ export class AppComponent implements OnInit {
         }
       }
     });
+    this.loading = false;
     editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ =>
-      import("./shell/shell").then(lib => new lib.Shell(editor as any, window, brotli).start(this.isMode2)))
-      .then();
+      import("./shell/shell").then(lib => new lib.Shell(editor as any, window, brotli).start(this.isMode2))).then();
     if (!this.isMode2) {
       window.addEventListener('saving', () => {
         this.isSaving = true;

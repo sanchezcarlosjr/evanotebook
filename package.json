@@ -34,6 +34,7 @@
     "editorjs-alert": "^1.0.3",
     "editorjs-break-line": "^1.0.9",
     "editorjs-inline-image": "^1.2.4",
+    "editorjs-mermaid": "^1.0.0",
     "eslint-linter-browserify": "^8.36.0",
     "immutable": "^4.3.0",
     "jsonpath": "^1.1.1",
