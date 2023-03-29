@@ -1,17 +1,7 @@
 import EditorJS from "@editorjs/editorjs";
 import {interval, Observable, Subscription} from 'rxjs';
 import * as BrotliWasmType from "../../assets/brotli_wasm/brotli_wasm";
-
-function save(query: string, expression: string) {
-  const url = new URL(window.location.toString());
-  url.searchParams.set(query, expression);
-  window.history.pushState({}, "", url);
-  return expression;
-}
-
-function retrieve(query: string, defaultValue = "") {
-  return (new URL(document.location.toString())).searchParams.get(query) || defaultValue;
-}
+import {retrieve, urlDatabase} from "./url-database";
 
 // https://github.com/httptoolkit/brotli-wasm/blob/main/test/brotli.spec.ts
 const dataToBase64 = (data: Uint8Array | number[]) => btoa(String.fromCharCode(...data));
@@ -178,18 +168,26 @@ export class Shell {
     }
   }
 
-  start() {
+  start(isMode2: boolean) {
     const c = retrieve("c") as string;
     if (c) {
-      this.editor.render(JSON.parse(this.decodeHtmlEntities(this.decompress(c))));
+      this.editor.render(JSON.parse(this.decodeHtmlEntities(this.decompress(c)))).then(
+        () => {
+          if (isMode2) {
+            window.dispatchEvent(new CustomEvent('shell.RunAll'));
+          }
+        }
+      );
     }
-    this.environment.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
-      if (keyboardEvent.key === "s" && keyboardEvent.ctrlKey) {
-        keyboardEvent.preventDefault();
-        this.checkpoint();
-      }
-    });
-    interval(1000 * 35).subscribe(() => this.checkpoint());
+    if (!isMode2) {
+      this.environment.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
+        if (keyboardEvent.key === "s" && keyboardEvent.ctrlKey) {
+          keyboardEvent.preventDefault();
+          this.checkpoint();
+        }
+      });
+      interval(1000 * 35).subscribe(() => this.checkpoint());
+    }
   }
 
   private async checkpoint() {
@@ -198,7 +196,7 @@ export class Shell {
       return;
     }
     this.environment.dispatchEvent(new CustomEvent('saving', {bubbles: true}));
-    save('c', this.compress((JSON.stringify(outputData))));
+    urlDatabase('c', this.compress((JSON.stringify(outputData))));
   }
 
   private compress(input: string, options?: any) {

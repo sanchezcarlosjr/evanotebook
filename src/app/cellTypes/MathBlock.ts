@@ -8,7 +8,7 @@ MathfieldElement.soundsDirectory = "/assets/sounds/";
 export class MathBlock extends InteractiveBlock {
   private readonly inputMathFieldElement: MathfieldElement;
   private computeEngine: ComputeEngine;
-  private readonly outputMathField: MathfieldElement;
+  private outputMathField: MathfieldElement | undefined;
   protected override shellOptions: any[] = [
     {
       cmd: "Evaluate (Ctrl+Alt+m)",
@@ -35,14 +35,26 @@ export class MathBlock extends InteractiveBlock {
     super(block);
     this.computeEngine = new ComputeEngine();
     this.inputMathFieldElement = new MathfieldElement();
-    this.outputMathField = new MathfieldElement();
-    this.outputMathField.readonly  = true;
-    this.outputMathField.classList.add('output-math-field', 'hide');
+    this.inputMathFieldElement.readonly = !!block?.readOnly;
+    if (!block?.readOnly) {
+      this.outputMathField = new MathfieldElement();
+      this.outputMathField.readonly  = true;
+      this.outputMathField.classList.add('output-math-field', 'hide');
+    }
   }
   render(){
     const mathBlock = document.createElement('section');
     mathBlock.appendChild(this.inputMathFieldElement);
-    mathBlock.appendChild(this.outputMathField);
+    this.inputMathFieldElement.value = this.block.data.doc ?? "";
+    if (!this.block.readOnly) {
+      this.loadEvents();
+      mathBlock.appendChild(this.outputMathField as MathfieldElement);
+      this.changeOutputMathField(this.block.data.output ?? "");
+    }
+    return mathBlock;
+  }
+
+  private loadEvents() {
     this.inputMathFieldElement.addEventListener('keydown', (event) => {
       if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
         event.stopPropagation();
@@ -65,9 +77,10 @@ export class MathBlock extends InteractiveBlock {
         this.dispatchNumericApproximation();
       }
     }, false);
-    this.inputMathFieldElement.value = this.block.data.doc ?? "";
-    this.changeOutputMathField(this.block.data.output ?? "");
-    return mathBlock;
+  }
+
+  static get isReadOnlySupported(): boolean {
+    return true;
   }
 
   override get doc() {
@@ -88,7 +101,9 @@ export class MathBlock extends InteractiveBlock {
   }
 
   changeOutputMathField(value: string) {
+    // @ts-ignore
     this.outputMathField.value = value;
+    // @ts-ignore
     this.outputMathField.classList[value === "" ? "add" : "remove"]("hide");
   }
 

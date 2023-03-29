@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   padding: 0;
   margin: 0;
@@ -29,6 +33,31 @@ body {
 .ce-popover--opened {
   max-height: fit-content;
 }
+
+h1 {
+  font-size: 2em;
+}
+
+h2 {
+  font-size: 1.5em;
+}
+
+h3 {
+  font-size: 1.17em;
+}
+
+h4 {
+  font-size: 1em;
+}
+
+h5 {
+  font-size: 0.83em;
+}
+
+h6 {
+  font-size: 0.75em;
+}
+
 .output {
   display: flex;
   position: relative;
@@ -44,7 +73,7 @@ body {
   white-space: -pre-wrap;      /* Opera 4-6 */
   white-space: -o-pre-wrap;    /* Opera 7 */
   font-size: 0.7em;
-  background-color: #f0f2f5;
+  background-color: #ffffff;
 }
 
 .output > ul {
@@ -121,6 +150,9 @@ body {
 
 math-field {
   width: 100%;
+  padding: 0 0;
+  outline: none;
+  border: 0;
 }
 
 .output-math-field {

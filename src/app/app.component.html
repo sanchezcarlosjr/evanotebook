@@ -1,4 +1,4 @@
-<nav>
+<nav *ngIf="!isMode2">
   <ul class="menu">
     <li><h1>EvaNotebook</h1></li>
     <li><a target="_blank" href="https://github.com/sanchezcarlosjr/javascript-notebook/issues/1">Examples</a></li>
@@ -8,6 +8,5 @@
     <li *ngIf="isSaving"><span class="saving" >Saving...</span></li>
   </ul>
 </nav>
-
 
 <section id="editor-js"></section>

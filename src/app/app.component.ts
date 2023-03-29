@@ -1,16 +1,21 @@
 import {Component, OnInit} from '@angular/core';
 import * as brotli from '../assets/brotli_wasm/brotli_wasm';
+import {retrieve} from "./shell/url-database";
 
 @Component({
   selector: 'app-root', templateUrl: './app.component.html', styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
   isSaving = false;
+  isMode2: boolean = true;
+
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
+    this.isMode2 = retrieve("m") === "2";
     const editor = new EditorJS.default({
       holder: 'editor-js',
       autofocus: true,
+      readOnly: this.isMode2,
       // @ts-ignore
       logLevel: "ERROR",
       tools: {
@@ -75,14 +80,16 @@ export class AppComponent implements OnInit {
       }
     });
     editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ =>
-      import("./shell/shell").then(lib => new lib.Shell(editor as any, window, brotli).start()))
+      import("./shell/shell").then(lib => new lib.Shell(editor as any, window, brotli).start(this.isMode2)))
       .then();
-    window.addEventListener('saving', () => {
-      this.isSaving = true;
-      setTimeout(() => {
-        this.isSaving = false;
-      }, 2000);
-    });
+    if (!this.isMode2) {
+      window.addEventListener('saving', () => {
+        this.isSaving = true;
+        setTimeout(() => {
+          this.isSaving = false;
+        }, 2000);
+      });
+    }
   }
 
   runAll() {

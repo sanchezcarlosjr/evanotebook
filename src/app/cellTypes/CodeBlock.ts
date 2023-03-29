@@ -43,6 +43,7 @@ export class CodeBlock extends InteractiveBlock {
   private editorView: EditorView | undefined;
   private cell: HTMLDivElement | undefined;
   private input: HTMLInputElement | null = null;
+
   constructor(private obj: Block) {
     super(obj);
     this.obj.data.language = (obj.data.language === undefined) ? obj.config.language : obj.data.language;
@@ -57,14 +58,49 @@ export class CodeBlock extends InteractiveBlock {
     };
   }
 
+  static get sanitize(){
+    return {
+      language: false,
+      code: {
+        p: true,
+        div: true,
+        ul: true,
+        li: true,
+        button: true,
+        h1: true,
+        h2: true,
+        h3: true,
+        span: true
+      },
+      output: {
+        p: true,
+        div: true,
+        ul: true,
+        li: true,
+        button: true,
+        h1: true,
+        h2: true,
+        h3: true,
+        span: true
+      }
+    }
+  }
+
+  static get isReadOnlySupported(): boolean {
+    return true
+  }
 
   run() {
-    this.cell?.children[0].classList.add('progress');
+    if (!this.obj.readOnly) {
+      this.cell?.children[0].classList.add('progress');
+    }
   }
 
   stop() {
-    this.cell?.children[0].classList.remove('progress');
-    for (let i=(this.cell?.children.length ?? 0)-1; i > 1; i--) {
+    if (!this.obj.readOnly) {
+      this.cell?.children[0].classList.remove('progress');
+    }
+    for (let i = (this.cell?.children.length ?? 0) - 1; i > 1; i--) {
       this.cell?.removeChild(this.cell?.children[i]);
     }
     this.input = null;
@@ -128,30 +164,28 @@ export class CodeBlock extends InteractiveBlock {
     }));
   }
 
-  form(options: {uischema: any; schema: any; data: any}) {
+  form(options: { uischema: any; schema: any; data: any }) {
     const htmliFrameElement = document.createElement("iframe");
     htmliFrameElement.src = "https://notebook.sanchezcarlosjr.com/form";
     htmliFrameElement.classList.add('iframe-cell-code');
     this.cell?.appendChild(htmliFrameElement);
     const channel = new MessageChannel();
     const port1 = channel.port1;
-    htmliFrameElement.addEventListener("load", () => {
-      htmliFrameElement?.contentWindow?.postMessage("init", "*", [channel.port2]);
-      port1.postMessage(options);
-      port1.onmessage = (event: MessageEvent) => {
-        window.dispatchEvent(new CustomEvent('shell.FormResponse', {
-          bubbles: true, detail: {
-            payload: {
-              response: event.data,
-              threadId: this.obj.block?.id
-            }
+    htmliFrameElement?.contentWindow?.postMessage("init", "*", [channel.port2]);
+    port1.postMessage(options);
+    port1.onmessage = (event: MessageEvent) => {
+      window.dispatchEvent(new CustomEvent('shell.FormResponse', {
+        bubbles: true, detail: {
+          payload: {
+            response: event.data,
+            threadId: this.obj.block?.id
           }
-        }));
-      };
-    });
+        }
+      }));
+    };
   }
 
-  prompt(payload: {placeholder?: string, type?: string}) {
+  prompt(payload: { placeholder?: string, type?: string }) {
     if (this.input) {
       return;
     }
@@ -184,7 +218,7 @@ export class CodeBlock extends InteractiveBlock {
     window.dispatchEvent(new CustomEvent('shell.Run', {
       bubbles: true, detail: {
         payload: {
-          code: this.editorView?.state.doc.toString(),
+          code: this.editorView?.state?.doc?.toString() ?? this.obj.data.code,
           threadId: this.obj.block?.id
         }
       }
@@ -207,12 +241,27 @@ export class CodeBlock extends InteractiveBlock {
     this.cell.classList.add('cell');
     const editor = document.createElement('section');
     editor.classList.add('editor');
+    // @ts-ignore
     this.cell.appendChild(editor);
-    const output = document.createElement('samp');
+    if (!this.obj.readOnly) {
+      this.loadEditor(editor);
+    }
+    const output = document.createElement('section');
     output.classList.add('output');
     this.cell.appendChild(output);
     output.innerHTML = this.obj.data.output;
+    return this.cell;
+  }
 
+  override save(blockContent: any): any {
+    return {
+      code: this.editorView?.state.doc.toString(),
+      language: "javascript",
+      output: this.cell?.children[1].innerHTML ?? ""
+    }
+  }
+
+  private loadEditor(editor: HTMLElement) {
     this.editorView = new EditorView({
       parent: editor,
       state: EditorState.create({
@@ -266,6 +315,7 @@ export class CodeBlock extends InteractiveBlock {
     this.editorView.dom.addEventListener('paste', (event) => {
       event.stopPropagation();
     });
+    // @ts-ignore
     this.cell.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
       if (keyboardEvent.key === "m" && keyboardEvent.ctrlKey && keyboardEvent.altKey) {
         keyboardEvent.preventDefault();
@@ -276,14 +326,5 @@ export class CodeBlock extends InteractiveBlock {
         this.dispatchShellStop();
       }
     }, false);
-    return this.cell;
-  }
-
-  override save(blockContent: any): any {
-    return {
-      code: this.editorView?.state.doc.toString(),
-      language: "javascript",
-      output: this.cell?.children[1].innerHTML ?? ""
-    }
   }
 }

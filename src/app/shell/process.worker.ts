@@ -532,7 +532,10 @@ class ProcessWorker {
     environment.jpquery = (path: string) => map((ob: object) => jp.query(ob, path));
     environment.jpapply = (path: string, fn: (x: any) => any) => map((ob: object) => jp.apply(ob, path, fn));
     environment.write = (f = identity) => tap((observerOrNext: string) => this.terminal?.write(f(observerOrNext)));
-    environment.render = (x: string) => of(x).pipe(environment.write());
+    environment.render = (x: string) => of(x).pipe(
+      map(x => x.replace(/\n|\n\r|\r\n|\r/gm, '')),
+      environment.write()
+    );
     environment.printWide =
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display);

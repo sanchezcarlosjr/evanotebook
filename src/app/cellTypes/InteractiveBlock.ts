@@ -1,6 +1,7 @@
+import { BlockTool } from "@editorjs/editorjs";
 import {Block} from "./Block";
 
-export class InteractiveBlock {
+export abstract class InteractiveBlock implements BlockTool {
   protected shellOptions: any[] = [
     {
       cmd: "Run (Ctrl+Alt+M)",
@@ -18,7 +19,7 @@ export class InteractiveBlock {
       event: "clear",
     }
   ];
-  constructor(protected block: Block) {}
+  protected constructor(protected block: Block) {}
   renderSettings() {
     const wrapper = document.createElement('div');
     wrapper.classList.add('ce-popover__items');
@@ -52,4 +53,5 @@ export class InteractiveBlock {
   dispatchShellStop() {
     this.clear();
   }
+  abstract render(): HTMLElement;
 }
