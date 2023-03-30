@@ -27,7 +27,8 @@ const App = () => {
   const [schema, setSchema] = useState<any>(undefined);
   const [uischema, setUISchema] = useState<any>(undefined);
   useEffect(() => {
-    window.onmessage = function(e) {
+    console.log("APP TSX, on mount");
+    window.addEventListener('message', (e) => {
       console.log("APP TSX, on message", e);
       if (e.data.type === "init_message_channel") {
         setPort(e.ports[0]);
@@ -38,7 +39,7 @@ const App = () => {
           setUISchema(event.data.uischema ?? undefined);
         };
       }
-    };
+    });
   }, []);
 
   if (schema === undefined) {
