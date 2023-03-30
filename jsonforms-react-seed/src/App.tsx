@@ -16,7 +16,6 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
     return (<div></div>);
   }
   port.postMessage({type: 'data', data: data});
-  window.parent.postMessage({type: 'render_iframe'}, '*');
   return (<div></div>);
 }
 
@@ -64,6 +63,7 @@ const App = () => {
   if (schema === undefined) {
     return <div></div>;
   }
+  window.parent.postMessage({type: 'render_iframe'}, '*');
 
   return (
     <>

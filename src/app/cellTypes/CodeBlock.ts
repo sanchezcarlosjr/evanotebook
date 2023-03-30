@@ -201,10 +201,12 @@ export class CodeBlock extends InteractiveBlock {
         }
       }));
       try {
-        frameElement.contentWindow?.addEventListener('message', (event) => {
-          console.log("framelElement", event);
-          // @ts-ignore
-          frameElement.height = frameElement.contentWindow?.document.body.scrollHeight ?? "0";
+        window.addEventListener('message', (event) => {
+          console.log("frameElement", event);
+          if (event.data.type === "render_iframe") {
+            // @ts-ignore
+            frameElement.height = frameElement.contentWindow?.document.body.scrollHeight ?? "150px";
+          }
         });
       }
       catch (e) { }
