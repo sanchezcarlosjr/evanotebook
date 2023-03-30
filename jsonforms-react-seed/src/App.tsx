@@ -16,6 +16,7 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
     return (<div></div>);
   }
   port.postMessage(data);
+  window.parent.postMessage({}, '*');
   return (<div></div>);
 }
 
@@ -38,7 +39,12 @@ const App = () => {
   }, []);
 
   if (schema === undefined) {
-    return <div></div>;
+    return <div className="lds-ring">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>;
   }
 
   return (

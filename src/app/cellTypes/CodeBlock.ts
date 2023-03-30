@@ -199,11 +199,10 @@ export class CodeBlock extends InteractiveBlock {
         }
       }));
       frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
-      // @ts-ignore
-      frameElement.contentWindow.onmessage = () => {
+      frameElement.contentWindow?.addEventListener('message', (event) => {
         // @ts-ignore
-        frameElement.height = frameElement.contentWindow?.document.body.clientHeight ?? "0px";
-      };
+        frameElement.height = frameElement.contentWindow?.document.body.clientHeight ?? "0";
+      });
     });
   }
 
