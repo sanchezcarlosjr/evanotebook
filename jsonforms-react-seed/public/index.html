@@ -22,7 +22,9 @@
     -->
     <script>
       window.addEventListener('message', (e) => {
-        console.log("IFRAME MESSAGE", e);
+         if (e?.ports.length > 0) {
+           window.form_message_port  = e.ports[0];
+         }
       });
     </script>
     <title>jsonforms-react-seed</title>

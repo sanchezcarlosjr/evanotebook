@@ -28,7 +28,7 @@ import {
   startWith,
   switchMap,
   switchScan,
-  take,
+  take, takeUntil, takeWhile,
   tap,
   throttleTime,
   UnaryFunction
@@ -512,12 +512,25 @@ class ProcessWorker {
         threadId: self.name
       }
     }).pipe(first(),switchMap((port: MessagePort) => new Observable((observer) => {
+      let ready = false;
+      console.log("Worker", port, options);
       port.onmessage = (event: MessageEvent) => {
-         console.log(event)
-         observer.next(event.data);
+        ready = true;
+        console.log("Worker. Data ", event.data);
+        if (event.data.type === "ready") {
+          port.postMessage({type: "setOptions", options});
+        }
+        if (event.data.type === "data") {
+          observer.next(event.data);
+        }
       };
-      console.log(port, options);
-      port.postMessage(options);
+      interval(200).pipe(
+        startWith(0),
+        takeWhile(_ => !ready)
+      ).subscribe(_ => {
+        port.postMessage({type: "ready"});
+        console.log("Worker", "ready", ready);
+      });
     })));
     environment.plot = (config: ConfigurationChart) => pipe(
       switchScan(async (acc, next) => {

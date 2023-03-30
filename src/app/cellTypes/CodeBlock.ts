@@ -185,7 +185,7 @@ export class CodeBlock extends InteractiveBlock {
 
   form() {
     const frameElement = document.createElement("iframe");
-    frameElement.src = "https://notebook.sanchezcarlosjr.com/form/";
+    frameElement.src = environment.formElement.src;
     frameElement.classList.add('responsive-iframe');
     this.cell?.children[1].appendChild(frameElement);
     const channel = new MessageChannel();
@@ -200,6 +200,14 @@ export class CodeBlock extends InteractiveBlock {
           }
         }
       }));
+      try {
+        frameElement.contentWindow?.addEventListener('message', (event) => {
+          console.log("framelElement", event);
+          // @ts-ignore
+          frameElement.height = frameElement.contentWindow?.document.body.scrollHeight ?? "0";
+        });
+      }
+      catch (e) { }
     });
   }
 
