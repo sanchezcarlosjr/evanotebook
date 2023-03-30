@@ -505,7 +505,7 @@ class ProcessWorker {
         ...options
       }
     });
-    // https://jsonforms.io/
+    // Consult https://jsonforms.io/ to learn more about options.
     environment.form = (options: { uischema: object, schema: object, data: any }) => observeResource('form', {
       event: 'form',
       payload: {
@@ -513,10 +513,8 @@ class ProcessWorker {
       }
     }).pipe(first(),switchMap((port: MessagePort) => new Observable((observer) => {
       let ready = false;
-      console.log("Worker", port, options);
       port.onmessage = (event: MessageEvent) => {
         ready = true;
-        console.log("Worker. Data ", event.data);
         if (event.data.type === "ready") {
           port.postMessage({type: "setOptions", options});
         }
@@ -527,10 +525,9 @@ class ProcessWorker {
       interval(200).pipe(
         startWith(0),
         takeWhile(_ => !ready)
-      ).subscribe(_ => {
-        port.postMessage({type: "ready"});
-        console.log("Worker", "ready", ready);
-      });
+      ).subscribe(_ =>
+        port.postMessage({type: "ready"})
+      );
     })));
     environment.plot = (config: ConfigurationChart) => pipe(
       switchScan(async (acc, next) => {

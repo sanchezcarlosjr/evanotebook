@@ -36,7 +36,6 @@ function requestPort(): Promise<MessagePort> {
 }
 
 const App = () => {
-  console.log("APP TSX, on load");
   const [data, setData] = useState<any>({});
   const [port, setPort] = useState<any>(undefined);
   const [schema, setSchema] = useState<any>(undefined);
@@ -45,7 +44,6 @@ const App = () => {
     (async () => {
       const port = await requestPort();
       port.onmessage = (event: MessageEvent) => {
-        console.log("APP TSX, on message", event);
         if (event.data.type === 'setOptions') {
           setSchema(event.data.options.schema ?? undefined);
           setData(event.data.options.data ?? {});
@@ -56,7 +54,6 @@ const App = () => {
       setPort(port);
       // @ts-ignore
       port.postMessage({type: 'ready'});
-      console.log("APP TSX, on ready");
     })();
   }, []);
 

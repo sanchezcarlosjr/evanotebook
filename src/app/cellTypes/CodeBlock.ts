@@ -190,7 +190,6 @@ export class CodeBlock extends InteractiveBlock {
     this.cell?.children[1].appendChild(frameElement);
     const channel = new MessageChannel();
     frameElement.addEventListener("load", () => {
-      console.log("LOAD FROM CODE BLOCK");
       frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
       window.dispatchEvent(new CustomEvent('shell.FormMessageChannel', {
         bubbles: true, detail: {
@@ -202,7 +201,6 @@ export class CodeBlock extends InteractiveBlock {
       }));
       try {
         window.addEventListener('message', (event) => {
-          console.log("frameElement", event);
           if (event.data.type === "render_iframe") {
             // @ts-ignore
             frameElement.height = frameElement.contentWindow?.document.body.scrollHeight ?? "150px";
