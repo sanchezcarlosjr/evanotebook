@@ -185,12 +185,11 @@ export class CodeBlock extends InteractiveBlock {
 
   form() {
     const frameElement = document.createElement("iframe");
-    frameElement.src = "http://localhost:3000/form";
+    frameElement.src = environment.formElement.src;
     frameElement.classList.add('responsive-iframe');
     this.cell?.children[1].appendChild(frameElement);
     const channel = new MessageChannel();
     frameElement.addEventListener("load", () => {
-      frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
       window.dispatchEvent(new CustomEvent('shell.FormMessageChannel', {
         bubbles: true, detail: {
           payload: {
@@ -199,6 +198,13 @@ export class CodeBlock extends InteractiveBlock {
           }
         }
       }));
+      frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
+      frameElement.contentWindow?.addEventListener('message', (event) => {
+        if (event.data.type === "render_iframe") {
+          // @ts-ignore
+          frameElement.height = frameElement.contentWindow?.document.body.clientHeight ?? "0";
+        }
+      });
     });
   }
 

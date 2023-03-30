@@ -16,6 +16,7 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
     return (<div></div>);
   }
   port.postMessage(data);
+  window.parent.postMessage({type: 'render_iframe'}, '*');
   return (<div></div>);
 }
 
