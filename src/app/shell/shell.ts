@@ -36,11 +36,6 @@ export class Shell {
       this.editor.blocks.insert('code', {code: event.detail.code, language: 'javascript'});
       this.editor.blocks.getBlockByIndex(this.editor.blocks.getCurrentBlockIndex())?.call('dispatchShellRun');
     });
-    environment.addEventListener('shell.FormResponse', (event: CustomEvent) => {
-      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
-        event: 'form', payload: event.detail.payload.response
-      });
-    });
     environment.addEventListener('form', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('form', event.detail.payload.options);
     });
@@ -92,6 +87,9 @@ export class Shell {
     environment.addEventListener('terminal.write', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('write', event.detail.payload.text);
     });
+    environment.addEventListener('terminal.rewrite', (event: CustomEvent) => {
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('rewrite', event.detail.payload.text);
+    });
     environment.addEventListener('compress', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'compress', payload: this.compress(event.detail.payload.input, event.detail.payload.options)
@@ -116,6 +114,11 @@ export class Shell {
           payload: {threadId: event.detail.payload.threadId}
         }
       }));
+    });
+    environment.addEventListener('shell.FormMessageChannel', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'form', payload: event.detail.payload.port
+      }, [event.detail.payload.port]);
     });
     environment.addEventListener('shell.InputFile', (event: CustomEvent) => this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
       event: 'shell.InputFile', payload: event.detail.payload.response

@@ -1,6 +1,6 @@
 import { materialCells, materialRenderers } from '@jsonforms/material-renderers';
 import { JsonForms } from '@jsonforms/react';
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import './App.css';
 import RatingControl from './RatingControl';
 import ratingControlTester from './ratingControlTester';
@@ -15,34 +15,29 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
   if (port === null || !data || Object.entries(data).length === 0) {
     return (<div></div>);
   }
-  port.postMessage({
-    "type": "formResponse",
-    "data": data,
-  });
+  port.postMessage(data);
   return (<div></div>);
 }
 
 const App = () => {
   const [data, setData] = useState<any>({});
-  const [port, setPort] = useState<any>(null);
-  const [schema, setSchema] = useState<any>(null);
-  const [uischema, setUISchema] = useState<any>(null);
+  const [port, setPort] = useState<any>(undefined);
+  const [schema, setSchema] = useState<any>(undefined);
+  const [uischema, setUISchema] = useState<any>(undefined);
+  useEffect(() => {
+    window.onmessage = function(e) {
+      if (e.ports.length > 0) {
+        setPort(e.ports[0]);
+        e.ports[0].onmessage = (event: MessageEvent) => {
+          setSchema(event.data.schema ?? undefined);
+          setData(event.data.data ?? {});
+          setUISchema(event.data.uischema ?? undefined);
+        };
+      }
+    };
+  }, []);
 
-  window.addEventListener("message", (e) => {
-    if (e?.ports.length > 0) {
-      setPort(e.ports[0]);
-      e.ports[0].onmessage = (event: MessageEvent) => {
-        setSchema(event.data.schema);
-        setData(event.data.data);
-        setUISchema(event.data.uischema);
-      };
-      e.ports[0].postMessage({
-        "type": "ready"
-      });
-    }
-  });
-
-  if (schema === null || data === null) {
+  if (schema === undefined) {
     return <div></div>;
   }
 

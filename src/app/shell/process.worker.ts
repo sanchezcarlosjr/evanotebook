@@ -74,15 +74,6 @@ function observeResource(event: string, request: any): Observable<any> {
   });
 }
 
-function requestFile(options: object): Promise<string | null> {
-  return requestResource('shell.InputFile', {
-    event: 'file', payload: {
-      threadId: self.name,
-      ...options
-    }
-  });
-}
-
 function requestPlot(options: object): Promise<string | null> {
   return requestResource('transferControlToOffscreen', {
     event: 'plot', payload: {
@@ -131,6 +122,15 @@ class Terminal {
   write(text: string) {
     sendMessage({
       event: 'terminal.write', payload: {
+        text,
+        threadId: self.name
+      }
+    });
+  }
+
+  rewrite(text: string) {
+    sendMessage({
+      event: 'terminal.rewrite', payload: {
         text,
         threadId: self.name
       }
@@ -499,15 +499,24 @@ class ProcessWorker {
       ),
       switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
-    environment.importFiles = (options: any) => from(requestFile(options));
+    environment.importFiles = (options: any) => observeResource('shell.InputFile', {
+      event: 'file', payload: {
+        threadId: self.name,
+        ...options
+      }
+    });
     // https://jsonforms.io/
     environment.form = (options: { uischema: object, schema: object, data: any }) => observeResource('form', {
       event: 'form',
       payload: {
-        threadId: self.name,
-        options
+        threadId: self.name
       }
-    });
+    }).pipe(first(),switchMap((port: MessagePort) => new Observable((observer) => {
+      port.onmessage = (event: MessageEvent) => {
+         observer.next(event.data);
+      };
+      port.postMessage(options);
+    })));
     environment.plot = (config: ConfigurationChart) => pipe(
       switchScan(async (acc, next) => {
         const chart = await acc;
@@ -532,6 +541,7 @@ class ProcessWorker {
     environment.jpquery = (path: string) => map((ob: object) => jp.query(ob, path));
     environment.jpapply = (path: string, fn: (x: any) => any) => map((ob: object) => jp.apply(ob, path, fn));
     environment.write = (f = identity) => tap((observerOrNext: string) => this.terminal?.write(f(observerOrNext)));
+    environment.rewrite = (f = identity) => tap((observerOrNext: string) => this.terminal?.rewrite(f(observerOrNext)));
     environment.render = (x: string) => of(x).pipe(
       map(x => x.replace(/\n|\n\r|\r\n|\r/gm, '')),
       environment.write()

@@ -22,7 +22,7 @@ import {searchKeymap} from "@codemirror/search";
 import * as eslint from "eslint-linter-browserify";
 import {Block} from "./Block";
 import {InteractiveBlock} from "./InteractiveBlock";
-
+import {environment} from "../../environments/environment";
 
 const config = {
   // eslint configuration
@@ -38,6 +38,17 @@ const config = {
     semi: ["error", "never"]
   },
 };
+/**
+ * From https://gomakethings.com/converting-a-string-into-markup-with-vanilla-js/
+ * Convert a template string into HTML DOM nodes
+ * @param  {String} str The template string
+ * @return {Node}       The template HTML
+ */
+function stringToHTML(str: string) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(str, 'text/html');
+  return doc.body.firstChild;
+}
 
 export class CodeBlock extends InteractiveBlock {
   private editorView: EditorView | undefined;
@@ -72,7 +83,11 @@ export class CodeBlock extends InteractiveBlock {
         h3: true,
         span: true,
         svg: true,
-        img: true
+        iframe: true,
+        audio: true,
+        img: true,
+        input: true,
+        canvas: true
       },
       output: {
         p: true,
@@ -84,8 +99,13 @@ export class CodeBlock extends InteractiveBlock {
         h2: true,
         h3: true,
         span: true,
+        iframe: true,
+        audio: true,
         svg: true,
-        img: true
+        img: true,
+        canvas: true,
+        input: true,
+        "iframe-channel": true
       }
     }
   }
@@ -104,16 +124,13 @@ export class CodeBlock extends InteractiveBlock {
     if (!this.obj.readOnly) {
       this.cell?.children[0].classList.remove('progress');
     }
-    for (let i = (this.cell?.children.length ?? 0) - 1; i > 1; i--) {
-      this.cell?.removeChild(this.cell?.children[i]);
-    }
     this.input = null;
   }
 
   inputFile(options: any) {
     const input = document.createElement('input');
     input.classList.add('prompt', 'cdx-button');
-    this.cell?.appendChild(input);
+    this.cell?.children[1].appendChild(input);
     input.multiple = true;
     input.type = "file";
     input.accept = options?.accept ?? "";
@@ -128,7 +145,6 @@ export class CodeBlock extends InteractiveBlock {
           }
         }
       }));
-      this.cell?.removeChild(input);
     }, false);
   }
 
@@ -139,22 +155,21 @@ export class CodeBlock extends InteractiveBlock {
 
   write(text: string) {
     //@ts-ignore
-    this.cell.children[1].innerHTML += text;
+    this.cell.children[1].appendChild(stringToHTML(text));
+  }
+
+  rewrite(text: string) {
+    //@ts-ignore
+    this.cell.children[1].innerHTML = text;
   }
 
   println(text: any) {
     this.write(text + "\n");
   }
 
-  removeNode(node?: HTMLElement) {
-    if (node) {
-      this.cell?.removeChild(node);
-    }
-  }
-
   transferControlToOffscreen() {
     const canvas = document.createElement("canvas");
-    this.cell?.appendChild(canvas);
+    this.cell?.children[1].appendChild(canvas);
     const offscreenCanvas = canvas.transferControlToOffscreen();
     window.dispatchEvent(new CustomEvent('shell.transferControlToOffscreen', {
       bubbles: true, detail: {
@@ -168,32 +183,26 @@ export class CodeBlock extends InteractiveBlock {
     }));
   }
 
-  form(options: { uischema: any; schema: any; data: any }) {
-    const htmliFrameElement = document.createElement("iframe");
-    htmliFrameElement.src = "https://notebook.sanchezcarlosjr.com/form";
-    htmliFrameElement.classList.add('responsive-iframe');
-    const container = document.createElement('div');
-    container.classList.add('container-iframe');
-    container.appendChild(htmliFrameElement);
-    this.cell?.appendChild(container);
+  form() {
+    const frameElement = document.createElement("iframe");
+    frameElement.src = environment.formElement.src;
+    frameElement.classList.add('responsive-iframe');
+    this.cell?.children[1].appendChild(frameElement);
     const channel = new MessageChannel();
-    const port1 = channel.port1;
-    htmliFrameElement.addEventListener("load", () => {
-      htmliFrameElement?.contentWindow?.postMessage("init", "*", [channel.port2]);
-      port1.onmessage = (event: MessageEvent) => {
-        if (event.data.type === "ready") {
-          port1.postMessage(options);
+    frameElement.addEventListener("load", () => {
+      window.dispatchEvent(new CustomEvent('shell.FormMessageChannel', {
+        bubbles: true, detail: {
+          payload: {
+            port: channel.port1,
+            threadId: this.obj.block?.id
+          }
         }
-        if (event.data.type === "formResponse") {
-          window.dispatchEvent(new CustomEvent('shell.FormResponse', {
-            bubbles: true, detail: {
-              payload: {
-                response: event.data.data,
-                threadId: this.obj.block?.id
-              }
-            }
-          }));
-        }
+      }));
+      frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
+      // @ts-ignore
+      frameElement.contentWindow.onmessage = () => {
+        // @ts-ignore
+        frameElement.height = frameElement.contentWindow?.document.body.clientHeight ?? "0px";
       };
     });
   }
@@ -206,7 +215,7 @@ export class CodeBlock extends InteractiveBlock {
     this.input.classList.add('prompt', 'cdx-input');
     this.input.placeholder = payload?.placeholder ?? "Write your message";
     this.input.type = payload?.type ?? "text";
-    this.cell?.appendChild(this.input);
+    this.cell?.children[1].appendChild(this.input);
     this.input.addEventListener('keydown', (event) => {
       if (event.key === "Enter") {
         event.stopPropagation();
