@@ -37,7 +37,7 @@ export class Shell {
       this.editor.blocks.getBlockByIndex(this.editor.blocks.getCurrentBlockIndex())?.call('dispatchShellRun');
     });
     environment.addEventListener('form', (event: CustomEvent) => {
-      this.editor.blocks.getById(event.detail.payload.threadId)?.call('form', event.detail.payload.options);
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('form');
     });
     environment.addEventListener('shell.Run', (event: CustomEvent) => {
       const {worker, observable} = this.fork(event.detail.payload.code, event.detail.payload.threadId);

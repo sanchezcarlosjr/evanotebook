@@ -16,7 +16,6 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
     return (<div></div>);
   }
   port.postMessage(data);
-  window.parent.postMessage({}, '*');
   return (<div></div>);
 }
 
@@ -27,7 +26,7 @@ const App = () => {
   const [uischema, setUISchema] = useState<any>(undefined);
   useEffect(() => {
     window.onmessage = function(e) {
-      if (e.ports.length > 0) {
+      if (e.data.type === "init_message_channel") {
         setPort(e.ports[0]);
         e.ports[0].onmessage = (event: MessageEvent) => {
           setSchema(event.data.schema ?? undefined);
@@ -39,12 +38,7 @@ const App = () => {
   }, []);
 
   if (schema === undefined) {
-    return <div className="lds-ring">
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>;
+    return <div></div>;
   }
 
   return (

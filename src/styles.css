@@ -21,7 +21,7 @@ body {
 .responsive-iframe {
   width: 100%;
   border: 0 none;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .cdx-settings-button {

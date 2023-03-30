@@ -511,7 +511,7 @@ class ProcessWorker {
       payload: {
         threadId: self.name
       }
-    }).pipe(switchMap((port: MessagePort) => new Observable((observer) => {
+    }).pipe(first(),switchMap((port: MessagePort) => new Observable((observer) => {
       port.onmessage = (event: MessageEvent) => {
          observer.next(event.data);
       };
