@@ -185,7 +185,7 @@ export class CodeBlock extends InteractiveBlock {
 
   form() {
     const frameElement = document.createElement("iframe");
-    frameElement.src = "http://192.168.16.1:8082/form/";
+    frameElement.src = "https://notebook.sanchezcarlosjr.com/form/";
     frameElement.classList.add('responsive-iframe');
     this.cell?.children[1].appendChild(frameElement);
     const channel = new MessageChannel();
