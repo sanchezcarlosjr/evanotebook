@@ -519,7 +519,7 @@ class ProcessWorker {
           port.postMessage({type: "setOptions", options});
         }
         if (event.data.type === "data") {
-          observer.next(event.data);
+          observer.next(event.data.data);
         }
       };
       interval(200).pipe(
