@@ -185,11 +185,13 @@ export class CodeBlock extends InteractiveBlock {
 
   form() {
     const frameElement = document.createElement("iframe");
-    frameElement.src = environment.formElement.src;
+    frameElement.src = "https://notebook.sanchezcarlosjr.com/form/";
     frameElement.classList.add('responsive-iframe');
     this.cell?.children[1].appendChild(frameElement);
     const channel = new MessageChannel();
     frameElement.addEventListener("load", () => {
+      console.log("LOAD FROM CODE BLOCK");
+      frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
       window.dispatchEvent(new CustomEvent('shell.FormMessageChannel', {
         bubbles: true, detail: {
           payload: {
@@ -198,13 +200,6 @@ export class CodeBlock extends InteractiveBlock {
           }
         }
       }));
-      frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
-      frameElement.contentWindow?.addEventListener('message', (event) => {
-        if (event.data.type === "render_iframe") {
-          // @ts-ignore
-          frameElement.height = frameElement.contentWindow?.document.body.clientHeight ?? "0";
-        }
-      });
     });
   }
 

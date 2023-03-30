@@ -513,8 +513,10 @@ class ProcessWorker {
       }
     }).pipe(first(),switchMap((port: MessagePort) => new Observable((observer) => {
       port.onmessage = (event: MessageEvent) => {
+         console.log(event)
          observer.next(event.data);
       };
+      console.log(port, options);
       port.postMessage(options);
     })));
     environment.plot = (config: ConfigurationChart) => pipe(

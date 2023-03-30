@@ -21,15 +21,18 @@ const SenderControl = ({port, data}: { data: any, port: MessagePort | null }) =>
 }
 
 const App = () => {
+  console.log("APP TSX");
   const [data, setData] = useState<any>({});
   const [port, setPort] = useState<any>(undefined);
   const [schema, setSchema] = useState<any>(undefined);
   const [uischema, setUISchema] = useState<any>(undefined);
   useEffect(() => {
     window.onmessage = function(e) {
+      console.log("APP TSX, on message", e);
       if (e.data.type === "init_message_channel") {
         setPort(e.ports[0]);
         e.ports[0].onmessage = (event: MessageEvent) => {
+          console.log("APP TSX, port", event);
           setSchema(event.data.schema ?? undefined);
           setData(event.data.data ?? {});
           setUISchema(event.data.uischema ?? undefined);
