@@ -5,10 +5,10 @@ A collaborative peer-to-peer notebook for Web Technologies based on reactive obs
 https://notebook.sanchezcarlosjr.com/
 
 # Features
-* A user interface similar to Notion's WYSIWYG (What You See Is What You Get) interface.
-* Built-in support for MQTT, WebRTC, HTTP, and WebSocket protocols.
+* A user interface similar to Notion's WYSIWYG (What You See Is What You Get) interface thanks to [EditorJS](https://editorjs.io).
+* Built-in support for MQTT, WebRTC, HTTP, and WebSocket protocols. We're working on Bluetooth and SSH protocols .
 * Each cell is run in a separate web worker for increased performance and stability.
-* Real Peer-to-peer collaboration and replication, with no data saved about you or your peers.
+* Real Peer-to-peer collaboration and replication, with no data saved about you or your peers thanks to RxDB.
 * Reactive charts, forms, email senders, and other interactive elements.
 
 # Alternatives
