@@ -45,14 +45,38 @@ export class AppComponent implements OnInit {
           class: await import("@editorjs/checklist").then(x => x.default),
           inlineToolbar: true,
         },
+        Color: {
+          // @ts-ignore
+          class: await import("editorjs-text-color-plugin").then(x => x.default),
+          config: {
+            colorCollections: ['#EC7878','#9C27B0','#673AB7','#3F51B5','#0070FF','#03A9F4','#00BCD4','#4CAF50','#8BC34A','#CDDC39', '#FFF'],
+            defaultColor: '#FF1300',
+            type: 'text',
+            customPicker: true
+          }
+        },
         mathlive: {
           class: await import("./cellTypes/MathBlock").then(x => x.MathBlock),
           inlineToolbar: true,
         },
+        // @ts-ignore
+        delimiter: await import("@editorjs/delimiter").then(x => x.default),
+        // @ts-ignore
+        Strikethrough: await import("@sotaproject/strikethrough").then(x => x.default),
+        // @ts-ignore
         embed: {
           // @ts-ignore
           class: await import("@editorjs/embed").then(x => x.default),
           inlineToolbar: true,
+        },
+        table: {
+          // @ts-ignore
+          class: await import("@editorjs/table").then(x => x.default),
+          inlineToolbar: true,
+          config: {
+            rows: 2,
+            cols: 3,
+          },
         },
         image: {
           // @ts-ignore
@@ -79,6 +103,10 @@ export class AppComponent implements OnInit {
             messagePlaceholder: 'Enter something'
           },
         }
+      },
+      onReady() {
+        // @ts-ignore
+        import("editorjs-drag-drop").then(x => x.default).then(DragDrop => new DragDrop(editor));
       }
     });
     this.loading = false;

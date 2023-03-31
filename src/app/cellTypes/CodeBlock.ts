@@ -104,8 +104,7 @@ export class CodeBlock extends InteractiveBlock {
         svg: true,
         img: true,
         canvas: true,
-        input: true,
-        "iframe-channel": true
+        input: true
       }
     }
   }
