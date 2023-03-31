@@ -286,18 +286,20 @@ class ProcessWorker {
       // @ts-ignore
       tap((value: any) => of(value).pipe(...operations).subscribe())
       ;
-    environment.sendSMS = (options: { passcode: string, path: string, recipients: string[] }) => switchMap(message =>
-      fromFetch(options.path, {
+    // Consult https://www.twilio.com/docs/sms/api#send-messages-with-the-sms-api
+    environment.sendSMS = (options: { from?: string, to?: string, account_sid: string, auth_token: string}) => switchMap((body: any) =>
+      fromFetch(`https://api.twilio.com/2010-04-01/Accounts/${options.account_sid}/Messages.json`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa(`${options.account_sid}:${options.auth_token}`),
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: JSON.stringify({
-          passcode: options.passcode,
-          message,
-          recipients: options.recipients.join(',')
-        }),
-      }).pipe(catchError(err => of({ error: true, message: err.message })), map(_ => message))
+        body: new URLSearchParams({
+          'From': body?.From  ?? options.from,
+          'Body': body?.Body ?? body,
+          'To': body?.To ?? options.to
+        })
+      }).pipe(catchError(err => of({ error: true, message: err.message })), map(_ => body))
     );
     environment.ce = new ComputeEngine();
     environment.sendEmail = (options: { type?: string, provider?: string, personalizations?: any, token: string, proxy?: string, to: string | string[], from: string, subject: string }) =>
