@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Build
-        run: ng run terminal:prerender
+        run: npm run prerender
       - name: Build jsonforms
         run: cd jsonforms-react-seed && yarn && yarn build
       - name: Setup Pages
