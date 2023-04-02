@@ -57,6 +57,21 @@ export class NotebookComponent implements OnInit {
             customPicker: true
           }
         },
+        attaches: {
+          // @ts-ignore
+          class: await import("@editorjs/attaches").then(x => x.default),
+          config: {
+            uploader: {
+              uploadByFile(file: File){
+                return new Promise(resolve => resolve({success: 1, file: {
+                    url: URL.createObjectURL(file),
+                    name: file.name,
+                    size: file.size
+                }}))
+              },
+            }
+          }
+        },
         mathlive: {
           class: await import("./cellTypes/MathBlock").then(x => x.MathBlock),
           inlineToolbar: true,

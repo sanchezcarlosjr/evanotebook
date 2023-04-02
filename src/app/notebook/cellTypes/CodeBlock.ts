@@ -85,6 +85,7 @@ export class CodeBlock extends InteractiveBlock {
         svg: true,
         iframe: true,
         audio: true,
+        video: true,
         img: true,
         input: true,
         canvas: true
@@ -93,6 +94,7 @@ export class CodeBlock extends InteractiveBlock {
         p: true,
         div: true,
         ul: true,
+        video: true,
         li: true,
         button: true,
         h1: true,
