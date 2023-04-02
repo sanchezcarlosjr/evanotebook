@@ -29,7 +29,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "BUILD_PATH='../dist/terminal/browser' react-scripts build",
+    "build": "BUILD_PATH='../dist/terminal/browser/form' react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run --config video=false",
