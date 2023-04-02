@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Build
-        run: yarn build
+        run: ng run terminal:prerender
       - name: Build jsonforms
         run: cd jsonforms-react-seed && yarn && yarn build
       - name: Setup Pages
@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           # Upload entire repository
-          path: './dist'
+          path: './dist/terminal/browser'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
