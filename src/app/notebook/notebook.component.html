@@ -1,0 +1,34 @@
+<nav *ngIf="!isMode2">
+  <ul class="menu nested-dropdowns">
+    <li class="element"  role="button">
+      <div class="nested-dropdowns__item">
+        File
+      </div>
+      <ul class="bg-white">
+        <li><button (click)="createNewNotebook()">New notebook</button></li>
+      </ul>
+    </li>
+    <li class="element"  role="button">
+      <div class="nested-dropdowns__item">
+        Runtime
+      </div>
+      <ul class="bg-white">
+        <li><button (click)="runAll()">Run all (Ctrl+F9)</button></li>
+        <li><button (click)="stopAll()">Stop all</button></li>
+      </ul>
+    </li>
+    <li class="element">
+      <div class="nested-dropdowns__item" role="button">
+        Help
+      </div>
+      <ul class="bg-white">
+        <li><a target="_blank" href="https://github.com/sanchezcarlosjr/javascript-notebook/issues/1">Examples</a></li>
+        <li><a target="_blank" href="">Docs</a></li>
+        <li><a target="_blank" href="https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b">About</a></li>
+      </ul>
+    </li>
+    <li *ngIf="isSaving"><span class="saving" >Saving...</span></li>
+  </ul>
+</nav>
+
+<section id="editor-js"><p *ngIf="loading">Loading...</p></section>

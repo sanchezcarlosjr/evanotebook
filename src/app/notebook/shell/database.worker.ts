@@ -6,7 +6,6 @@ import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
     name: 'EvaNotebook',
     storage: getRxStorageDexie()
   });
-
   database.addCollections({
     humans: {
       schema: {
@@ -17,7 +16,7 @@ import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
         properties: {
           passportId: {
             type: 'string',
-            maxLength: 100 // <- the primary key must have set maxLength
+            maxLength: 100 // <- the primary key must have url maxLength
           },
           firstName: {
             type: 'string'
@@ -29,7 +28,7 @@ import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
             description: 'age in years',
             type: 'integer',
 
-            // number fields that are used in an index, must have set minimum, maximum and multipleOf
+            // number fields that are used in an index, must have url minimum, maximum and multipleOf
             minimum: 0,
             maximum: 150,
             multipleOf: 1

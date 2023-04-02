@@ -1,7 +1,7 @@
 import EditorJS from "@editorjs/editorjs";
 import {interval, Observable, Subscription} from 'rxjs';
-import * as BrotliWasmType from "../../assets/brotli_wasm/brotli_wasm";
-import {retrieve, urlDatabase} from "./url-database";
+import * as BrotliWasmType from "../../../assets/brotli_wasm/brotli_wasm";
+import * as url from "./url";
 
 // https://github.com/httptoolkit/brotli-wasm/blob/main/test/brotli.spec.ts
 const dataToBase64 = (data: Uint8Array | number[]) => btoa(String.fromCharCode(...data));
@@ -31,6 +31,11 @@ export class Shell {
     this.sharedWorker.port.postMessage({event: 'start'});
     environment.addEventListener('terminal.clear', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('clear');
+    });
+    environment.addEventListener('shell.CreateNewNotebook', (event: CustomEvent) => {
+      this.editor.clear();
+      url.set('c', '');
+      window.dispatchEvent(new CustomEvent('shell.StopAll'));
     });
     environment.addEventListener('shell.Fork', (event: CustomEvent) => {
       this.editor.blocks.insert('code', {code: event.detail.code, language: 'javascript'});
@@ -172,7 +177,7 @@ export class Shell {
   }
 
   start(isMode2: boolean) {
-    const c = retrieve("c") as string;
+    const c = url.retrieve("c") as string;
     if (c) {
       this.editor.render(JSON.parse(this.decodeHtmlEntities(this.decompress(c)))).then(
         () => {
@@ -199,7 +204,7 @@ export class Shell {
       return;
     }
     this.environment.dispatchEvent(new CustomEvent('saving', {bubbles: true}));
-    urlDatabase('c', this.compress((JSON.stringify(outputData))));
+    url.set('c', this.compress((JSON.stringify(outputData))));
   }
 
   private compress(input: string, options?: any) {

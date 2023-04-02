@@ -1,12 +1,1 @@
-<nav *ngIf="!isMode2">
-  <ul class="menu">
-    <li><h1>EvaNotebook</h1></li>
-    <li><a target="_blank" href="https://github.com/sanchezcarlosjr/javascript-notebook/issues/1">Examples</a></li>
-    <li><a target="_blank" href="https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b">Docs</a></li>
-    <li><button (click)="runAll()">Run all</button></li>
-    <li><button (click)="stopAll()">Stop all</button></li>
-    <li *ngIf="isSaving"><span class="saving" >Saving...</span></li>
-  </ul>
-</nav>
-
-<section id="editor-js"><p *ngIf="loading">Loading...</p></section>
+<router-outlet></router-outlet>

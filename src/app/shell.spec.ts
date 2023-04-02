@@ -1,4 +1,4 @@
-import {Shell} from './shell/shell';
+import {Shell} from './notebook/shell/shell';
 describe('shell', () => {
   let terminal = {
     underlying: {

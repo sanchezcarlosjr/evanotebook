@@ -1,4 +1,4 @@
-export function urlDatabase(query: string, expression: string) {
+export function set(query: string, expression: string) {
   const url = new URL(window.location.toString());
   url.searchParams.set(query, expression);
   window.history.pushState({}, "", url);

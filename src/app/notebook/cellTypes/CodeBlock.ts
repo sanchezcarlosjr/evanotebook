@@ -22,7 +22,7 @@ import {searchKeymap} from "@codemirror/search";
 import * as eslint from "eslint-linter-browserify";
 import {Block} from "./Block";
 import {InteractiveBlock} from "./InteractiveBlock";
-import {environment} from "../../environments/environment";
+import {environment} from "../../../environments/environment";
 
 const config = {
   // eslint configuration
