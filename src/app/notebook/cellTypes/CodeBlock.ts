@@ -185,31 +185,20 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   form() {
-    const frameElement = document.createElement("iframe");
-    frameElement.src = environment.formElement.src;
-    frameElement.classList.add('responsive-iframe');
-    this.cell?.children[1].appendChild(frameElement);
+    const frameElement = document.createElement("nk-form");
+    frameElement.classList.add('w100');
     const channel = new MessageChannel();
-    frameElement.addEventListener("load", () => {
-      frameElement?.contentWindow?.postMessage({type: "init_message_channel"}, "*", [channel.port2]);
-      window.dispatchEvent(new CustomEvent('shell.FormMessageChannel', {
-        bubbles: true, detail: {
-          payload: {
-            port: channel.port1,
-            threadId: this.obj.block?.id
-          }
+    window.dispatchEvent(new CustomEvent('shell.FormMessageChannel', {
+      bubbles: true, detail: {
+        payload: {
+          port: channel.port2,
+          threadId: this.obj.block?.id
         }
-      }));
-      try {
-        window.addEventListener('message', (event) => {
-          if (event.data.type === "render_iframe") {
-            // @ts-ignore
-            frameElement.height = frameElement.contentWindow?.document.body.scrollHeight ?? "150px";
-          }
-        });
       }
-      catch (e) { }
-    });
+    }));
+    // @ts-ignore
+    frameElement.port  = channel.port1;
+    this.cell?.children[1].appendChild(frameElement);
   }
 
   prompt(payload: { placeholder?: string, type?: string }) {

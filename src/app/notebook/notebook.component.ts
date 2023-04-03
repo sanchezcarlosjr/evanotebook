@@ -1,6 +1,9 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Injector, OnInit} from '@angular/core';
 import * as url from "./shell/url";
 import * as brotli from "../../assets/brotli_wasm/brotli_wasm";
+import { createCustomElement } from '@angular/elements';
+import {FormComponent} from "./form/form.component";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-notebook',
@@ -11,6 +14,10 @@ export class NotebookComponent implements OnInit {
   isSaving = false;
   isMode2: boolean = true;
   loading: boolean = true;
+  constructor(injector: Injector,private _snackBar: MatSnackBar) {
+    const formElement = createCustomElement(FormComponent, {injector});
+    customElements.define('nk-form', formElement);
+  }
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
     this.isMode2 = url.retrieve("m") === "2";
@@ -142,6 +149,10 @@ export class NotebookComponent implements OnInit {
         }
       });
     }
+    // @ts-ignore
+    window.addEventListener('openSnackBar' , (e: CustomEvent) =>
+      this._snackBar.open(e.detail.payload.message, e.detail.payload.action)
+    );
   }
 
   runAll() {

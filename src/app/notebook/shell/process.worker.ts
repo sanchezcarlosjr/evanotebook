@@ -438,6 +438,8 @@ class ProcessWorker {
       meanMinusStandardDeviationAnnotation: environment.meanMinusStandardDeviationAnnotation(datasetIndex, borderColor),
       meanPlusStandardDeviationAnnotation: environment.meanPlusStandardDeviationAnnotation(datasetIndex, borderColor),
     });
+    environment.openSnackbar = tap(({message, action}: {message: string, action: string}) =>
+      postMessage({'event': 'openSnackBar', 'payload': {message, action}}));
     environment.println = (observerOrNext: any) => this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"));
     environment.display = tap(environment.println);
     environment.log = tap(observer => console.log(observer));

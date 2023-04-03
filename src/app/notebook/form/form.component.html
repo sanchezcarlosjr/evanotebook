@@ -1,0 +1,8 @@
+<jsonforms
+  *ngIf="isValidForm"
+  [data]="data"
+  [schema]="schema"
+  [uischema]="uischema"
+  [renderers]="renderers"
+  (dataChange)="dataChange($event)"
+></jsonforms>
