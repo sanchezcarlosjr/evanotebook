@@ -70,6 +70,9 @@ export class NotebookComponent implements OnInit {
           config: {
             uploader: {
               uploadByFile(file: File){
+                if (file.type.startsWith("text/")) {
+                  file = new File([file], file.name, { type: "text/plain" });
+                }
                 return new Promise(resolve => resolve({success: 1, file: {
                     url: URL.createObjectURL(file),
                     name: file.name,
