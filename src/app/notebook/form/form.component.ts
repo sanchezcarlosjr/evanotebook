@@ -14,6 +14,8 @@ export class FormComponent implements OnInit {
   data = null;
   schema = {};
   renderers = angularMaterialRenderers;
+  readonly: boolean = false;
+  state: any = {};
   ngOnInit(): void {
     // @ts-ignore
     this.port.onmessage = (event: MessageEvent) => {
@@ -21,6 +23,7 @@ export class FormComponent implements OnInit {
         this.data = event.data.options.data ?? null;
         this.schema  = event.data.options.schema ?? undefined;
         this.uischema = event.data.options.uischema ?? Generate.uiSchema(this.schema);
+        this.readonly = !!event.data.options.readonly;
       }
     };
     this.port?.postMessage({'type': 'ready'});
@@ -31,6 +34,20 @@ export class FormComponent implements OnInit {
   dataChange(data: any) {
     if (data === null)
       return;
-    this.port?.postMessage({'type': 'data', data});
+    this.state['data'] = data;
+    this.postValidMessage();
+  }
+  onErrorChange(errors?: any[]) {
+    // @ts-ignore
+    this.state['hasErrors'] = errors?.length > 0;
+    this.postValidMessage();
+
+  }
+  postValidMessage() {
+    if(!('hasErrors' in this.state) || this.state['hasErrors'] || !('data' in this.state)) {
+      return;
+    }
+    this.port?.postMessage({'type': 'data', data: this.state['data']});
+    this.state = {};
   }
 }
