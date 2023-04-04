@@ -1,0 +1,10 @@
+<jsonforms
+  *ngIf="isValidForm"
+  [data]="data"
+  [schema]="schema"
+  [uischema]="uischema"
+  [renderers]="renderers"
+  [readonly]="readonly"
+  (dataChange)="dataChange($event)"
+  (errors)="onErrorChange($event)"
+></jsonforms>
