@@ -15,20 +15,12 @@ enum JobStatus {
 
 export class Shell {
   private jobs = new Map<string, { worker: Worker, code: string, status: number, data: {}, subscription: Subscription; }>();
-  private sharedWorker: SharedWorker;
   // https://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it?lq=1
   private txt = document.createElement("textarea");
   private textEncoder = new TextEncoder();
   private textDecoder = new TextDecoder();
 
   constructor(private editor: EditorJS, private environment: any, private brotli: typeof BrotliWasmType) {
-    this.sharedWorker = new SharedWorker(new URL('./database.worker', import.meta.url), {
-      type: 'module', name: "database"
-    });
-    this.sharedWorker.port.onmessage = (e: MessageEvent) => {
-      console.log(e.data);
-    };
-    this.sharedWorker.port.postMessage({event: 'start'});
     environment.addEventListener('terminal.clear', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('clear');
     });
@@ -141,8 +133,6 @@ export class Shell {
 
   fork(code: string, threadId: string) {
     const worker = new Worker(new URL('./process.worker', import.meta.url), {type: 'module', name: threadId});
-    const channel = new MessageChannel();
-    this.sharedWorker.port.postMessage({event: 'fork', payload: channel.port2}, [channel.port2]);
     return {
       worker, observable: new Observable((subscriber) => {
         worker.onmessage = (event) => {
@@ -164,9 +154,9 @@ export class Shell {
         };
         worker.postMessage({
           event: 'exec', payload: {
-            code, database: channel.port1
+            code
           }
-        }, [channel.port1]);
+        });
       })
     }
   }
