@@ -6,6 +6,9 @@ import * as jp from 'jsonpath';
 import * as math from 'mathjs';
 import * as rx from "rxjs";
 import {
+  NEVER,
+  Observable,
+  UnaryFunction,
   catchError,
   delay,
   delayWhen,
@@ -18,8 +21,6 @@ import {
   map,
   mergeScan,
   mergeWith,
-  NEVER,
-  Observable,
   of,
   pipe,
   range,
@@ -28,13 +29,13 @@ import {
   startWith,
   switchMap,
   switchScan,
-  take, takeUntil, takeWhile,
+  take,
+  takeWhile,
   tap,
-  throttleTime,
-  UnaryFunction
+  throttleTime
 } from "rxjs";
 import { fromFetch } from "rxjs/fetch";
-import { isMatching, match, P, Pattern } from 'ts-pattern';
+import { P, Pattern, isMatching, match } from 'ts-pattern';
 import * as protocols from './protocols';
 import Indexed = Immutable.Seq.Indexed;
 import * as _ from 'lodash';
@@ -291,7 +292,7 @@ class ProcessWorker {
       tap((value: any) => of(value).pipe(...operations).subscribe())
       ;
     // Consult https://www.twilio.com/docs/sms/api#send-messages-with-the-sms-api
-    environment.sendSMS = (options: { from?: string, to?: string, account_sid: string, auth_token: string}) => switchMap((body: any) =>
+    environment.sendSMS = (options: { from?: string, to?: string, account_sid: string, auth_token: string }) => switchMap((body: any) =>
       fromFetch(`https://api.twilio.com/2010-04-01/Accounts/${options.account_sid}/Messages.json`, {
         method: 'POST',
         headers: {
@@ -299,7 +300,7 @@ class ProcessWorker {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: new URLSearchParams({
-          'From': body?.From  ?? options.from,
+          'From': body?.From ?? options.from,
           'Body': body?.Body ?? body,
           'To': body?.To ?? options.to
         })
@@ -528,12 +529,12 @@ class ProcessWorker {
       payload: {
         threadId: self.name
       }
-    }).pipe(first(),switchMap((port: MessagePort) => new Observable((observer) => {
+    }).pipe(first(), switchMap((port: MessagePort) => new Observable((observer) => {
       let ready = false;
       port.onmessage = (event: MessageEvent) => {
         ready = true;
         if (event.data.type === "ready") {
-          port.postMessage({type: "setOptions", options});
+          port.postMessage({ type: "setOptions", options });
         }
         if (event.data.type === "data") {
           observer.next(event.data.data);
@@ -543,7 +544,7 @@ class ProcessWorker {
         startWith(0),
         takeWhile(_ => !ready)
       ).subscribe(_ =>
-        port.postMessage({type: "ready"})
+        port.postMessage({ type: "ready" })
       );
     })));
     environment.plot = (config: ConfigurationChart) => pipe(
@@ -619,7 +620,7 @@ const processWorker = new ProcessWorker(globalThis, new LocalEcho(), new Termina
 
 // @ts-ignore
 globalThis.addEventListener('exec', async (event: CustomEvent) => {
-  if (!event.detail.payload) {
+  if (!event.detail.payload || !event.detail.payload.code) {
     sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } });
     return;
   }
