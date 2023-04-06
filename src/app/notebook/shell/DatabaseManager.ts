@@ -1,4 +1,4 @@
-import {BehaviorSubject, skip, filter, map, Observable} from "rxjs";
+import {BehaviorSubject, filter, map, Observable} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
@@ -10,9 +10,12 @@ import {replicateRxCollection} from "rxdb/plugins/replication";
 import {getCRDTSchemaPart, RxDBcrdtPlugin} from 'rxdb/plugins/crdt';
 import {OutputBlockData} from "@editorjs/editorjs/types/data-formats/output-data";
 import * as _ from 'lodash';
+import {RxDBJsonDumpPlugin} from 'rxdb/plugins/json-dump';
+import {replicateP2P} from "rxdb/plugins/replication-p2p";
+import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
+
 addRxPlugin(RxDBUpdatePlugin);
 addRxPlugin(RxDBcrdtPlugin);
-import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump';
 addRxPlugin(RxDBJsonDumpPlugin);
 // https://github.com/httptoolkit/brotli-wasm/blob/main/test/brotli.spec.ts
 export const dataToBase64 = (data: Uint8Array | number[]) => btoa(String.fromCharCode(...data));
@@ -83,11 +86,12 @@ export class DatabaseManager {
         }
       }
     });
-    this._uuid = await this.setupPeer();
+    this._uuid = this.setupPeer();
     await this.registerPreviousVersion();
-    window.addEventListener('beforeunload', async () => {
-      await this.destroy();
-    });
+    try {
+      // @ts-ignore
+      await this.replicatePool(this._database.blocks);
+    } catch (e){}
   }
 
   private async registerPreviousVersion() {
@@ -103,6 +107,19 @@ export class DatabaseManager {
         this.writeCollectionFromURL(await this._database?.blocks.find().exec());
       }
     });
+  }
+
+  async replicatePool(collection: any) {
+    return await replicateP2P(
+      {
+        collection: collection,
+        secret: "",
+        topic: this._uuid as string,
+        connectionHandlerCreator: getConnectionHandlerPeerJS(this._uuid),
+        pull: {},
+        push: {}
+      }
+    );
   }
 
   replicateWithURL(collection: {[name: string]: RxCollection<any, {}, {}, {}>}) {
@@ -240,9 +257,8 @@ export class DatabaseManager {
   writeCollectionFromURL(collection: any, key: string = "c") {
     url.write(key, this.compress(JSON.stringify(collection)));
   }
-  async setupPeer() {
-    const peerId = crypto.randomUUID();
-    return url.write("p", peerId);
+  setupPeer() {
+    return url.read("p") || url.write("p", crypto.randomUUID());
   }
   createNewDatabase() {
     return undefined;
@@ -294,6 +310,7 @@ export class DatabaseManager {
 
   removeAllBlocks() {
     // @ts-ignore
-    this._database.blocks.find().remove();
+    return this._database.blocks.find().remove();
   }
+
 }

@@ -59,7 +59,7 @@ export class Shell {
     environment.addEventListener('shell.CreateNewNotebook', (event: CustomEvent) => {
       this.editor.clear();
       window.dispatchEvent(new CustomEvent('shell.StopAll'));
-      this.databaseManager.removeAllBlocks();
+      this.databaseManager.removeAllBlocks().then();
     });
     environment.addEventListener('shell.ExportNotebook', (event: CustomEvent) => {
       this.databaseManager.exportDatabase()?.then((data) => {

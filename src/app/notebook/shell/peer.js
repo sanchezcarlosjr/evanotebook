@@ -54,5 +54,3 @@ function startPeerConnection(subscriber) {
   subscriber.send = state.send;
   return state;
 }
-
-window.startPeerConnection = startPeerConnection;
