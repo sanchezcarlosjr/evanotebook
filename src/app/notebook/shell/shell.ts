@@ -232,9 +232,7 @@ export class Shell {
   }
 
   start(isMode2: boolean) {
-    if (!isMode2) {
-      this.renderFromDatabase(isMode2);
-    }
+    this.renderFromDatabase(isMode2);
     return this;
   }
 
@@ -259,7 +257,14 @@ export class Shell {
           this.editor.render({
             version: '2.26.5',
             blocks
+          }).then(_ => {
+            if (isMode2) {
+              window.dispatchEvent(new CustomEvent('shell.RunAll'));
+            }
           });
+        }
+        if (isMode2) {
+          return;
         }
         this.databaseManager.insert$().subscribe((block: any) => {
           this.blockAddedMonitor = true;

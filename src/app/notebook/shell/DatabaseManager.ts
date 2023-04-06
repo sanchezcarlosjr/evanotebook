@@ -96,15 +96,20 @@ export class DatabaseManager {
 
   private async registerPreviousVersion() {
     if (url.has("c")) {
-      const blocks = await this.readBlocksFromURL();
+      const editor = await this.readBlocksFromURL();
+      await this.removeAllBlocks();
+      editor.blocks.map((block: any, index: number) => block.index = index);
       // @ts-ignore
-      await this._database?.blocks.bulkInsert(blocks);
+      await this._database?.blocks.bulkInsert(editor.blocks);
     }
     window.addEventListener('keydown', async (event: KeyboardEvent )=>{
       if (event.ctrlKey && event.key === 's') {
         event.preventDefault();
-        // @ts-ignore
-        this.writeCollectionFromURL(await this._database?.blocks.find().exec());
+        this.writeCollectionURL({
+          version: '2.26.5',
+          // @ts-ignore
+          blocks: await this._database?.blocks.find().exec()
+        });
       }
     });
   }
@@ -133,7 +138,7 @@ export class DatabaseManager {
       autoStart: true,
       push: {
         async handler(docs) {
-          self.writeCollectionFromURL(docs);
+          self.writeCollectionURL(docs);
           return new Promise((resolve, reject) => resolve([]));
         },
         batchSize: 1,
@@ -254,7 +259,7 @@ export class DatabaseManager {
   readBlocksFromURL() {
     return JSON.parse(this.decodeHtmlEntities(this.decompress(url.read("c"))));
   }
-  writeCollectionFromURL(collection: any, key: string = "c") {
+  writeCollectionURL(collection: any, key: string = "c") {
     url.write(key, this.compress(JSON.stringify(collection)));
   }
   setupPeer() {
