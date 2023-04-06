@@ -37,12 +37,16 @@ import { fromFetch } from "rxjs/fetch";
 import { isMatching, match, P, Pattern } from 'ts-pattern';
 import * as protocols from './protocols';
 import Indexed = Immutable.Seq.Indexed;
+import * as _ from 'lodash';
 
 import { ComputeEngine } from "@cortex-js/compute-engine";
 
 function sendMessage(message: any) {
   self.postMessage(message);
 }
+
+// @ts-ignore
+globalThis.global = self;
 
 class RequestError extends Error {
   constructor(message: string) {
@@ -451,7 +455,15 @@ class ProcessWorker {
           options
         }
       });
+    environment.windowEvent = (event: any, options: any) => observeResource(event, {
+      event: options.event,
+      payload: {
+        threadId: self.name,
+        options
+      }
+    });
     environment.prompt = (options: PromptInputParams) => switchMap(_ => environment.input(options));
+    // TODO: Add support for compress and decompress
     environment.compress = (options: { quality: number }) => switchMap((input: string) => observeResource('compress', {
       event: 'compress',
       payload: {
@@ -468,6 +480,7 @@ class ProcessWorker {
       }
     }).pipe(first()));
     environment.pipe = pipe;
+    environment._ = _;
     environment.NEVER = NEVER;
     environment.throttleTime = throttleTime;
     environment.forever = switchMap(() => NEVER);
@@ -587,7 +600,6 @@ class ProcessWorker {
   }
 
   println(next: any) {
-    console.log(next)
     match(next)
       .with(
           P.string, (next: string) => this.terminal.rewrite(next)

@@ -4,6 +4,7 @@ import * as brotli from "../../assets/brotli_wasm/brotli_wasm";
 import { createCustomElement } from '@angular/elements';
 import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {API} from "@editorjs/editorjs";
 
 @Component({
   selector: 'app-notebook',
@@ -20,13 +21,16 @@ export class NotebookComponent implements OnInit {
   }
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
-    this.isMode2 = url.retrieve("m") === "2";
+    this.isMode2 = url.read("m") === "2";
     const editor = new EditorJS.default({
       holder: 'editor-js',
       autofocus: true,
       readOnly: this.isMode2,
       // @ts-ignore
       logLevel: "ERROR",
+      onChange(api: API, event: CustomEvent) {
+         window.dispatchEvent(event);
+      },
       tools: {
         header: {
           // @ts-ignore
@@ -114,8 +118,8 @@ export class NotebookComponent implements OnInit {
               display: true,
             },
             unsplash: {
-              appName: url.retrieve("ua"),
-              clientId: url.retrieve("uc")
+              appName: url.read("ua"),
+              clientId: url.read("uc")
             }
           }
         },
@@ -137,15 +141,10 @@ export class NotebookComponent implements OnInit {
       }
     });
     this.loading = false;
-    editor.isReady.then(() => brotli.default("/assets/brotli_wasm/brotli_wasm_bg.wasm")).then(_ =>
-      import("./shell/shell").then(lib => new lib.Shell(editor as any, window, brotli).start(this.isMode2))).then();
+    editor.isReady.then(() => import('./shell/DatabaseManager').then(lib => new lib.DatabaseManager()))
+      .then(manager => import("./shell/shell")
+        .then(lib => new lib.Shell(editor as any, window, manager).start(this.isMode2)));
     if (!this.isMode2) {
-      window.addEventListener('saving', () => {
-        this.isSaving = true;
-        setTimeout(() => {
-          this.isSaving = false;
-        }, 2000);
-      });
       window.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.ctrlKey && e.key === "F9") {
           this.runAll();
@@ -168,5 +167,14 @@ export class NotebookComponent implements OnInit {
 
   createNewNotebook() {
     window.dispatchEvent(new CustomEvent('shell.CreateNewNotebook'));
+  }
+
+  exportNotebook() {
+    window.dispatchEvent(new CustomEvent('shell.ExportNotebook'));
+  }
+
+  importNotebook(event: Event) {
+    // @ts-ignore
+    window.dispatchEvent(new CustomEvent('shell.ImportNotebook', {detail: {file: event.target.files.item(0)}}));
   }
 }

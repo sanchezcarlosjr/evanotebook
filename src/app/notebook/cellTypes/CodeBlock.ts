@@ -54,12 +54,15 @@ export class CodeBlock extends InteractiveBlock {
   private editorView: EditorView | undefined;
   private cell: HTMLDivElement | undefined;
   private input: HTMLInputElement | null = null;
+  private language: string;
+  private readonly outputCell: string;
+  private readonly code: string;
 
   constructor(private obj: Block) {
     super(obj);
-    this.obj.data.language = (obj.data.language === undefined) ? obj.config.language : obj.data.language;
-    this.obj.data.code = obj.data.code ?? "";
-    this.obj.data.output = obj.data.output ?? "";
+    this.language = (obj.data.language === undefined) ? obj.config.language : obj.data.language;
+    this.code = obj.data.code ?? "";
+    this.outputCell = obj.data.output ?? "";
   }
 
   static get toolbox() {
@@ -72,42 +75,8 @@ export class CodeBlock extends InteractiveBlock {
   static get sanitize(){
     return {
       language: false,
-      code: {
-        p: true,
-        div: true,
-        ul: true,
-        li: true,
-        button: true,
-        h1: true,
-        h2: true,
-        h3: true,
-        span: true,
-        svg: true,
-        iframe: true,
-        audio: true,
-        video: true,
-        img: true,
-        input: true,
-        canvas: true
-      },
-      output: {
-        p: true,
-        div: true,
-        ul: true,
-        video: true,
-        li: true,
-        button: true,
-        h1: true,
-        h2: true,
-        h3: true,
-        span: true,
-        iframe: true,
-        audio: true,
-        svg: true,
-        img: true,
-        canvas: true,
-        input: true
-      }
+      code: true,
+      output: true
     }
   }
 
@@ -234,7 +203,7 @@ export class CodeBlock extends InteractiveBlock {
     window.dispatchEvent(new CustomEvent('shell.Run', {
       bubbles: true, detail: {
         payload: {
-          code: this.editorView?.state?.doc?.toString() ?? this.obj.data.code,
+          code: this.editorView?.state?.doc?.toString() ?? this.code,
           threadId: this.obj.block?.id
         }
       }
@@ -265,7 +234,7 @@ export class CodeBlock extends InteractiveBlock {
     const output = document.createElement('section');
     output.classList.add('output');
     this.cell.appendChild(output);
-    output.innerHTML = this.obj.data.output;
+    output.innerHTML = this.outputCell;
     return this.cell;
   }
 
@@ -281,7 +250,7 @@ export class CodeBlock extends InteractiveBlock {
     this.editorView = new EditorView({
       parent: editor,
       state: EditorState.create({
-        doc: this.obj.data.code,
+        doc: this.code,
         extensions: [
           EditorView.lineWrapping,
           lineNumbers(),

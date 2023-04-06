@@ -1,0 +1,299 @@
+import {BehaviorSubject, skip, filter, map, Observable} from "rxjs";
+import {OutputData} from "@editorjs/editorjs";
+import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDumpDatabaseAny} from 'rxdb';
+import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
+import {RxDBUpdatePlugin} from 'rxdb/plugins/update';
+import brotli from "./brotli";
+import * as url from "./url";
+import * as Brotli from "../../../assets/brotli_wasm/brotli_wasm";
+import {replicateRxCollection} from "rxdb/plugins/replication";
+import {getCRDTSchemaPart, RxDBcrdtPlugin} from 'rxdb/plugins/crdt';
+import {OutputBlockData} from "@editorjs/editorjs/types/data-formats/output-data";
+import * as _ from 'lodash';
+addRxPlugin(RxDBUpdatePlugin);
+addRxPlugin(RxDBcrdtPlugin);
+import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump';
+addRxPlugin(RxDBJsonDumpPlugin);
+// https://github.com/httptoolkit/brotli-wasm/blob/main/test/brotli.spec.ts
+export const dataToBase64 = (data: Uint8Array | number[]) => btoa(String.fromCharCode(...data));
+export const base64ToData = (base64: string) => new Uint8Array(
+  [...atob(base64)].map(c => c.charCodeAt(0))
+);
+
+
+type BlockRow = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string};
+
+export class DatabaseManager {
+  private _uuid: string | undefined;
+  get database(): RxDatabaseBase<Promise<any>, any> | undefined {
+    return this._database;
+  }
+  private subject = new BehaviorSubject<{ type: string, payload: any }>({type: '', payload: null});
+  private _database: RxDatabaseBase<Promise<any>, any> | undefined;
+  private txt = document.createElement("textarea");
+  private textEncoder = new TextEncoder();
+  private textDecoder = new TextDecoder();
+  private brotli: typeof Brotli | undefined;
+
+  constructor() {
+  }
+
+  async start() {
+    this.brotli = await brotli;
+    this._database = await createRxDatabase({
+      name: 'eva_notebook',
+      storage: getRxStorageDexie()
+    });
+    await this._database.addCollections({
+      blocks: {
+        schema: {
+          title: 'blocks',
+          version: 0,
+          primaryKey: 'id',
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              maxLength: 100
+            },
+            lastEditedBy: {
+              type: 'string',
+            },
+            index: {
+              type: 'number'
+            },
+            createdBy: {
+              type: 'string',
+            },
+            type: {
+              type: 'string'
+            },
+            data: {
+              type: 'object'
+            },
+            tunes: {
+               type: 'object'
+            },
+            crdts: getCRDTSchemaPart()
+          },
+          required: ['id', 'type', 'data', 'lastEditedBy', 'createdBy'],
+          crdt: {
+            field: 'crdts'
+          }
+        }
+      }
+    });
+    this._uuid = await this.setupPeer();
+    await this.registerPreviousVersion();
+    window.addEventListener('beforeunload', async () => {
+      await this.destroy();
+    });
+  }
+
+  private async registerPreviousVersion() {
+    if (url.has("c")) {
+      const blocks = await this.readBlocksFromURL();
+      // @ts-ignore
+      await this._database?.blocks.bulkInsert(blocks);
+    }
+    window.addEventListener('keydown', async (event: KeyboardEvent )=>{
+      if (event.ctrlKey && event.key === 's') {
+        event.preventDefault();
+        // @ts-ignore
+        this.writeCollectionFromURL(await this._database?.blocks.find().exec());
+      }
+    });
+  }
+
+  replicateWithURL(collection: {[name: string]: RxCollection<any, {}, {}, {}>}) {
+    const self = this;
+    return replicateRxCollection({
+      collection,
+      replicationIdentifier: 'query-parameter://notebook.sanchezcarlosjr.com',
+      live: false,
+      retryTime: 5 * 1000,
+      waitForLeadership: false,
+      autoStart: true,
+      push: {
+        async handler(docs) {
+          self.writeCollectionFromURL(docs);
+          return new Promise((resolve, reject) => resolve([]));
+        },
+        batchSize: 1,
+        modifier: d => d
+      },
+      pull: {
+        async handler(lastCheckpoint, batchSize) {
+          let remoteDocuments = [];
+          try {
+            remoteDocuments = self.readBlocksFromURL();
+            console.log(remoteDocuments);
+          } catch (e) {}
+          return {
+            documents: remoteDocuments as {_deleted: boolean}[],
+            checkpoint: remoteDocuments.length === 0 ? lastCheckpoint : {
+              id: remoteDocuments[0].uuid,
+              time: remoteDocuments[0].time
+            }
+          };
+        },
+        batchSize: 2,
+        modifier: d => d
+      },
+    })
+  }
+
+  compress(input: string, options?: any) {
+    // @ts-ignore
+    return dataToBase64(this.brotli?.compress(this.textEncoder.encode(input), options));
+  }
+
+  decodeHtmlEntities(html: string) {
+    this.txt.innerHTML = html;
+    return this.txt.value;
+  }
+
+  upsert(data: any) {
+    // @ts-ignore
+    return this._database.blocks.insertCRDT({
+      selector: {
+        id: { $exists: false }
+      },
+      ifMatch: {
+        $set: data
+      },
+      ifNotMatch: {
+        $set: data
+      }
+    })
+  }
+
+  decompress(base64: string) {
+    return this.textDecoder.decode(this.brotli?.decompress(base64ToData(base64)));
+  }
+
+  collection(name: string): Observable<BlockRow[]> {
+    // @ts-ignore
+    return this._database[name]?.find({
+      sort: [{index: 'asc'}]
+    }).$.pipe(
+      filter(x => !!x)
+    );
+  }
+  insert$() {
+    // @ts-ignore
+    return this._database?.blocks.insert$.pipe(
+      map((x: any) => x.documentData),
+      filter((documentData: any) => documentData.lastEditedBy != this._uuid)
+    );
+  }
+  remove$() {
+    // @ts-ignore
+    return this._database?.blocks.remove$.pipe(
+      map((x: any) => x.documentData),
+      filter((documentData: any) => documentData.lastEditedBy != this._uuid)
+    );
+  }
+
+  exportDatabase() {
+    return this._database?.exportJSON();
+  }
+
+  importDatabase(json: RxDumpDatabaseAny<RxCollection>) {
+    return this._database?.importJSON(json);
+  }
+
+  update$() {
+    // @ts-ignore
+    return this._database?.blocks.update$.pipe(
+      map((x: any) => x.documentData),
+      filter((documentData: any) => documentData.lastEditedBy != this._uuid)
+    );
+  }
+
+  index(name: string) {
+    // @ts-ignore
+    return this._database[name]?.find().$.pipe(
+        map((x: any) => x)
+      );
+  }
+
+  loadChannel() {
+    return new MessageChannel();
+  }
+
+  async insert(name: string, outputData: OutputData) {
+    // @ts-ignore
+    return (await this._database[name].insertCRDT({
+      ifMatch: {
+        $set: outputData
+      },
+    }))._data;
+    // @ts-ignore
+  }
+  async destroy() {
+    await this._database?.destroy();
+  }
+  readBlocksFromURL() {
+    return JSON.parse(this.decodeHtmlEntities(this.decompress(url.read("c"))));
+  }
+  writeCollectionFromURL(collection: any, key: string = "c") {
+    url.write(key, this.compress(JSON.stringify(collection)));
+  }
+  async setupPeer() {
+    const peerId = crypto.randomUUID();
+    return url.write("p", peerId);
+  }
+  createNewDatabase() {
+    return undefined;
+  }
+  async addBlock(block: BlockRow) {
+    // @ts-ignore
+    block.createdBy = this._uuid;
+    block.lastEditedBy = this._uuid;
+    // @ts-ignore
+    await this._database?.blocks?.insertCRDT({
+      ifMatch: {
+        $set: block
+      }
+    });
+  }
+  async removeBlock(id: string) {
+    // @ts-ignore
+    const block = await this._database.blocks.findOne(id).exec();
+    block.updateCRDT({
+      ifMatch: {
+        $set: {
+          lastEditedBy: this._uuid
+        }
+      }
+    })
+    // @ts-ignore
+    return await block.remove();
+  }
+  async changeBlock(blockRow: BlockRow) {
+    // @ts-ignore
+    const block = await this._database.blocks.findOne(blockRow.id).exec();
+    if (!block) {
+      return block;
+    }
+    if (_.isEqual(blockRow.data, block._data.data)) {
+      return block;
+    }
+    return block.updateCRDT({
+      ifMatch: {
+        $set: {
+          data: blockRow.data,
+          index: blockRow.index,
+          lastEditedBy: this._uuid,
+          _deleted: false
+        }
+      }
+    });
+  }
+
+  removeAllBlocks() {
+    // @ts-ignore
+    this._database.blocks.find().remove();
+  }
+}
