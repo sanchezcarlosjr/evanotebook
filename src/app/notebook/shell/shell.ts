@@ -171,6 +171,7 @@ export class Shell {
     const readDetailFromBlockChanged = async (detail: any)  => ({index: detail.index, savedData: await detail.target.save()});
     blockChanges$.pipe(
       skip(1),
+      throttleTime(500),
       switchMap(detail => from(readDetailFromBlockChanged(detail))),
       filter(x => !!x),
     ).subscribe((next: {index: number, savedData: SavedData}) => {
