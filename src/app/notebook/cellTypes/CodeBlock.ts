@@ -285,6 +285,9 @@ export class CodeBlock extends InteractiveBlock {
           event.stopPropagation();
         }
       });
+      editor.addEventListener('paste', (event) => {
+        event.stopPropagation();
+      });
       const output = document.createElement('div');
       output.innerHTML = this.outputCell;
       output.id = randomCouchString(10);

@@ -1,5 +1,5 @@
 # EvaNotebook
-A collaborative peer-to-peer notebook for Web Technologies based on reactive observables, designed to run primarily in modern web browsers.
+A collaborative offline first notebook for Web Technologies (i.e. JavaScript, Pyscript, Protocols) based on reactive observables, designed to run primarily in modern web browsers.
 
 # Demo
 https://notebook.sanchezcarlosjr.com/
