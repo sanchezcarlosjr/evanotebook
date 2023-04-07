@@ -6,9 +6,9 @@ export function write(query: string, expression: string) {
 }
 
 export function read(query: string, defaultValue = "") {
-  return (new URL(document.location.toString())).searchParams.get(query) || defaultValue;
+  return new URLSearchParams(window.location.search).get(query) || defaultValue;
 }
 
 export function has(query: string): boolean {
-  return !!read(query);
+  return  new URLSearchParams(window.location.search).has(query);
 }

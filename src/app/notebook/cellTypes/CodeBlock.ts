@@ -286,6 +286,7 @@ export class CodeBlock extends InteractiveBlock {
         }
       });
       const output = document.createElement('div');
+      output.innerHTML = this.outputCell;
       output.id = randomCouchString(10);
       output.classList.add('output');
       editor.setAttribute('output', output.id);
@@ -295,9 +296,16 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   override save(blockContent: any): any {
+    let code = this.code;
+    try {
+      // @ts-ignore
+      code = this.editorView?.state.doc.toString() || this.cell?.children[0]?.getPySrc();
+      // @ts-ignore
+    } catch(e) {
+    }
     return {
       // @ts-ignore
-      code: this.editorView?.state.doc.toString() || this.cell?.children[0]?.getPySrc() || this.code,
+      code,
       language: this.language,
       output: this.cell?.children[1].innerHTML ?? ""
     }

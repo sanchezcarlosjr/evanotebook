@@ -11,8 +11,11 @@ import {
   switchMap, tap,
   throttleTime
 } from 'rxjs';
-import {DatabaseManager} from "./DatabaseManager";
+import {BlockRow, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
+import {OutputBlockData} from "@editorjs/editorjs";
+import {boolean} from "mathjs";
+import * as url from "./url";
 
 
 enum JobStatus {
@@ -242,24 +245,49 @@ export class Shell {
   }
 
   private renderFromDatabase(isMode2: boolean) {
-    this.databaseManager.start().then(blocks => {
-      blocks.pipe(
+    this.databaseManager.start().then(blockCollection => {
+      blockCollection.pipe(
         first()
-      ).subscribe((collection) => {
-        const documents = collection.map((block, index) =>{
-          if (!('index' in block._data) || block._data.index < 0) {
-            this.databaseManager.updateIndex(block, index).then();
-          }
-          return block._data;
-        });
+      ).subscribe((documents) => {
+        let blocks: BlockRow[] = [];
+        if (documents.length > 0) {
+          documents.forEach((block, index) =>{
+            if (!('index' in block._data) || block._data.index < 0) {
+              this.databaseManager.updateIndex(block, index).then();
+            }
+            blocks.push(block._data);
+          });
+        }
+        if (documents.length === 0) {
+          blocks.push(this.databaseManager.generateDefaultBlock());
+          this.databaseManager.upsert(blocks[0]);
+        }
         this.editor.render({
           'version': '2.26.5',
-          blocks: documents
-        }).then(() => {
-          if (isMode2) {
-            window.dispatchEvent(new CustomEvent('shell.RunAll'));
-            return;
-          }
+          blocks
+        }).then(_ => {
+          return this.databaseManager.registerPreviousVersion().then(blocks => {
+            if(blocks.length > 0) {
+              this.editor.render({
+                'version': '2.26.5',
+                blocks
+              }).then(
+                _ => {
+                  if (isMode2) {
+                    window.dispatchEvent(new CustomEvent('shell.RunAll'));
+                  }
+                }
+              ).then(async _ => {
+                await this.databaseManager.removeAllBlocks();
+                await this.databaseManager.bulkInsertBlocks(blocks);
+              });
+            } else {
+              if (isMode2) {
+                window.dispatchEvent(new CustomEvent('shell.RunAll'));
+              }
+            }
+          });
+        }).then(async _ => {
           this.databaseManager.insert$().subscribe((block: any) => {
             this.peerAddBlock = true;
             this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
@@ -277,6 +305,8 @@ export class Shell {
         });
       });
     });
+
+
   }
 
 }

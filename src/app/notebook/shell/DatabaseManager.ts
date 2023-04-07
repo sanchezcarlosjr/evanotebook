@@ -24,14 +24,13 @@ export const base64ToData = (base64: string) => new Uint8Array(
 );
 
 
-type BlockRow = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string};
+export type BlockRow = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string};
 
 export class DatabaseManager {
   private _uuid: string | undefined;
   get database(): RxDatabaseBase<Promise<any>, any> | undefined {
     return this._database;
   }
-  private subject = new BehaviorSubject<{ type: string, payload: any }>({type: '', payload: null});
   private _database: RxDatabaseBase<Promise<any>, any> | undefined;
   private txt = document.createElement("textarea");
   private textEncoder = new TextEncoder();
@@ -39,10 +38,10 @@ export class DatabaseManager {
   private brotli: typeof Brotli | undefined;
 
   constructor() {
+    this.setupPeer();
   }
 
   async start() {
-    this.brotli = await brotli;
     this._database = await createRxDatabase({
       name: 'eva_notebook',
       storage: getRxStorageDexie()
@@ -86,41 +85,32 @@ export class DatabaseManager {
         }
       }
     });
-    this._uuid = this.setupPeer();
-    await this.registerPreviousVersion();
-    if ((await collections.blocks.count().exec()) === 0) {
-      this.upsert({'id': '0', 'type': 'paragraph', data: {text: ''}});
-    }
-    // @ts-ignore
-    try {
-      // @ts-ignore
-      await this.replicatePool(this._database.blocks);
-    } catch (e){
-      console.log("DatabaseManager Pool", e);
-    }
+    window.addEventListener('keydown', (event: KeyboardEvent )=>{
+      if (event.ctrlKey && event.key === 's') {
+        event.preventDefault();
+        // @ts-ignore
+        this._database?.blocks.find().exec().then(blocks => this.writeCollectionURL({
+          version: '2.26.5',
+          blocks
+        }))
+      }
+    });
     return collections.blocks.find({
       sort: [{index: 'asc'}]
     }).$;
   }
 
-  private async registerPreviousVersion() {
+  async registerPreviousVersion() {
+    this.brotli = await brotli;
     if (url.has("c")) {
-      const editor = await this.readBlocksFromURL();
-      await this.removeAllBlocks();
-      editor.blocks.map((block: any, index: number) => block.index = index);
-      // @ts-ignore
-      await this._database?.blocks.bulkInsert(editor.blocks);
+      return (await this.readBlocksFromURL())?.blocks;
     }
-    window.addEventListener('keydown', async (event: KeyboardEvent )=>{
-      if (event.ctrlKey && event.key === 's') {
-        event.preventDefault();
-        this.writeCollectionURL({
-          version: '2.26.5',
-          // @ts-ignore
-          blocks: await this._database?.blocks.find().exec()
-        });
-      }
-    });
+    return [];
+  }
+
+  async replicateBlocks() {
+    // @ts-ignore
+    await this.replicatePool(this._database?.blocks);
   }
 
   async replicatePool(collection: any) {
@@ -134,6 +124,11 @@ export class DatabaseManager {
         push: {}
       }
     );
+  }
+
+  bulkInsertBlocks(blocks: BlockRow[]) {
+    // @ts-ignore
+    return this._database?.blocks.bulkInsert(blocks);
   }
 
   replicateWithURL(collection: {[name: string]: RxCollection<any, {}, {}, {}>}) {
@@ -316,7 +311,7 @@ export class DatabaseManager {
     });
   }
   setupPeer() {
-    return url.read("p") || url.write("p", crypto.randomUUID());
+    this._uuid = url.read("p") || url.write("p", crypto.randomUUID());
   }
   createNewDatabase() {
     return undefined;
@@ -372,6 +367,10 @@ export class DatabaseManager {
   removeAllBlocks() {
     // @ts-ignore
     return this._database.blocks.find().remove();
+  }
+
+  generateDefaultBlock() {
+    return {id: '0', index: 0, type: 'paragraph', data: {text: ''}, createdBy: this._uuid, lastEditedBy: this._uuid};
   }
 
 }
