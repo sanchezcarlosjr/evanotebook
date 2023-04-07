@@ -302,6 +302,7 @@ export class Shell {
             this.peerChangeBlock = true;
             this.editor.blocks.update(block.id, block.data);
           });
+          this.databaseManager.replicateBlocks().then().catch(console.log);
         });
       });
     });
