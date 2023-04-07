@@ -375,6 +375,11 @@ body {
   overflow: auto;
 }
 
+.py-terminal {
+  width: 100%;
+  height: fit-content;
+}
+
 .cdx-settings-button {
   font-size: 0.7em;
   min-height: fit-content !important;

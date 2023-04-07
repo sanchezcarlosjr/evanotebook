@@ -23,6 +23,7 @@ import * as eslint from "eslint-linter-browserify";
 import {Block} from "./Block";
 import {InteractiveBlock} from "./InteractiveBlock";
 import {environment} from "../../../environments/environment";
+import {randomCouchString} from "rxdb/plugins/utils";
 
 const config = {
   // eslint configuration
@@ -198,12 +199,16 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   override dispatchShellRun() {
+    if (this.language !== "javascript") {
+      return;
+    }
     this.clear();
     this.dispatchShellStop();
     window.dispatchEvent(new CustomEvent('shell.Run', {
       bubbles: true, detail: {
         payload: {
-          code: this.editorView?.state?.doc?.toString() ?? this.code,
+          // @ts-ignore
+          code: this.editorView?.state?.doc?.toString() || this.code,
           threadId: this.obj.block?.id
         }
       }
@@ -212,6 +217,9 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   override dispatchShellStop() {
+    if (this.language !== "javascript") {
+      return;
+    }
     window.dispatchEvent(new CustomEvent('shell.Stop', {
       bubbles: true, detail: {
         payload: {
@@ -221,32 +229,81 @@ export class CodeBlock extends InteractiveBlock {
     }));
   }
 
+  override renderSettings() {
+    const wrapper = super.renderSettings();
+    let languagesSelect = document.createElement("select");
+    languagesSelect.classList.add("small");
+    for (const language of ["javascript", "python-repl"]) {
+      const option = document.createElement("option");
+      option.value = language;
+      option.innerText = language;
+      if(language === this.language) {
+        option.selected = true;
+      }
+      languagesSelect.appendChild(option);
+    }
+    languagesSelect.classList.add('w100');
+    languagesSelect.addEventListener('change', (event) => {
+      // @ts-ignore
+      this.language = event.target.value;
+      this.loadLanguage();
+    });
+    wrapper.appendChild(languagesSelect);
+    return wrapper;
+  }
   render() {
     this.cell = document.createElement('div');
     this.cell.classList.add('cell');
-    const editor = document.createElement('section');
-    editor.classList.add('editor');
-    // @ts-ignore
-    this.cell.appendChild(editor);
-    if (!this.obj.readOnly) {
-      this.loadEditor(editor);
-    }
-    const output = document.createElement('section');
-    output.classList.add('output');
-    this.cell.appendChild(output);
-    output.innerHTML = this.outputCell;
+    this.loadLanguage();
     return this.cell;
+  }
+
+  private loadLanguage() {
+    if (!this.cell) {
+      return;
+    }
+    this.cell.innerHTML = "";
+    if(this.language === "javascript") {
+      const editor = document.createElement('section');
+      editor.classList.add('editor');
+      this.cell.appendChild(editor);
+      if (!this.obj.readOnly) {
+        this.loadJavaScriptEditor(editor);
+      }
+      const output = document.createElement('section');
+      output.classList.add('output');
+      this.cell.appendChild(output);
+      output.innerHTML = this.outputCell;
+    }
+    if(this.language === "python-repl") {
+      const editor = document.createElement('py-repl');
+      editor.innerHTML = this.code;
+      // @ts-ignore
+      editor.classList.add('editor');
+      editor.addEventListener('keydown', (event) => {
+        if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
+          event.stopPropagation();
+        }
+      });
+      const output = document.createElement('div');
+      output.id = randomCouchString(10);
+      output.classList.add('output');
+      editor.setAttribute('output', output.id);
+      this.cell.appendChild(editor);
+      this.cell.appendChild(output);
+    }
   }
 
   override save(blockContent: any): any {
     return {
-      code: this.editorView?.state.doc.toString(),
-      language: "javascript",
+      // @ts-ignore
+      code: this.editorView?.state.doc.toString() || this.cell?.children[0]?.getPySrc() || this.code,
+      language: this.language,
       output: this.cell?.children[1].innerHTML ?? ""
     }
   }
 
-  private loadEditor(editor: HTMLElement) {
+  private loadJavaScriptEditor(editor: HTMLElement) {
     this.editorView = new EditorView({
       parent: editor,
       state: EditorState.create({
