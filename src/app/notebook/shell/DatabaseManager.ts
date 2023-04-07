@@ -331,6 +331,7 @@ export class DatabaseManager {
         $set: block
       }
     });
+    window.dispatchEvent(new CustomEvent('saving'));
   }
   async removeBlock(id: string) {
     // @ts-ignore
@@ -342,6 +343,7 @@ export class DatabaseManager {
         }
       }
     });
+    window.dispatchEvent(new CustomEvent('saving'));
     // @ts-ignore
     return await block.remove();
   }
@@ -354,6 +356,7 @@ export class DatabaseManager {
     if (_.isEqual(blockRow.data, block._data.data)) {
       return block;
     }
+    window.dispatchEvent(new CustomEvent('saving'));
     return block.updateCRDT({
       ifMatch: {
         $set: {

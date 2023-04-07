@@ -145,6 +145,12 @@ export class NotebookComponent implements OnInit {
       .then(manager => import("./shell/shell")
         .then(lib => new lib.Shell(editor as any, window, manager).start(this.isMode2)));
     if (!this.isMode2) {
+      window.addEventListener('saving', () => {
+        this.isSaving = true;
+        setTimeout(() => {
+          this.isSaving = false;
+        }, 2000);
+      });
       window.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.ctrlKey && e.key === "F9") {
           this.runAll();

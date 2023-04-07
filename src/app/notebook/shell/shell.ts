@@ -252,7 +252,6 @@ export class Shell {
           }
           return block._data;
         });
-        console.log(documents);
         this.editor.render({
           'version': '2.26.5',
           blocks: documents
