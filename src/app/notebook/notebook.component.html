@@ -1,37 +1,22 @@
-<nav *ngIf="!isMode2">
-  <ul class="menu nested-dropdowns">
-    <li class="element"  role="button">
-      <div class="nested-dropdowns__item">
-        File
-      </div>
-      <ul>
-        <li><button (click)="createNewNotebook()">New notebook</button></li>
-        <li><button (click)="exportNotebook()">Export notebook (.json)</button></li>
-        <li>
-          <input accept="application/json" type="file" (change)="importNotebook($event)">
-        </li>
-      </ul>
-    </li>
-    <li class="element"  role="button">
-      <div class="nested-dropdowns__item">
-        Runtime
-      </div>
-      <ul>
-        <li><button (click)="runAll()">Run all (Ctrl+F9)</button></li>
-        <li><button (click)="stopAll()">Stop all</button></li>
-      </ul>
-    </li>
-    <li class="element">
-      <div class="nested-dropdowns__item" role="button">
-        Help
-      </div>
-      <ul class="bg-white">
-        <li><a target="_blank" href="https://github.com/sanchezcarlosjr/javascript-notebook/issues/1">Examples</a></li>
-        <li><a routerLink="/docs">Docs</a></li>
-        <li><a target="_blank" href="https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b">About</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
+<mat-toolbar *ngIf="!isMode2">
+  <button mat-button [matMenuTriggerFor]="fileMenu">File</button>
+  <mat-menu #fileMenu="matMenu">
+    <button mat-menu-item (click)="createNewNotebook()">New Notebook</button>
+    <button mat-menu-item (click)="exportNotebook()">Export Notebook</button>
+    <input mat-menu-item accept="application/json" type="file" (change)="importNotebook($event)">
+  </mat-menu>
+  <button mat-button [matMenuTriggerFor]="runtimeMenu">Runtime</button>
+  <mat-menu #runtimeMenu="matMenu">
+    <button mat-menu-item (click)="runAll()">Run all (Ctrl+F9)</button>
+    <button mat-menu-item (click)="stopAll()">Stop all</button>
+  </mat-menu>
+  <button mat-button [matMenuTriggerFor]="helpMenu">Help</button>
+  <mat-menu #helpMenu="matMenu">
+    <a mat-menu-item target="_blank" href="https://github.com/sanchezcarlosjr/javascript-notebook/issues/1"  >Examples</a>
+    <button mat-menu-item>Keyboard Shortcuts</button>
+    <button mat-menu-item routerLink="/docs">Documentation</button>
+    <a mat-menu-item  target="_blank"  href="https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b">About</a>
+  </mat-menu>
+</mat-toolbar>
 
 <section id="editor-js"><p *ngIf="loading">Loading...</p></section>

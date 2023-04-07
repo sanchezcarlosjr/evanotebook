@@ -361,6 +361,7 @@ body {
 @font-face {
   font-family: "Fira Code Regular";
   src: url(/assets/fonts/FiraCode-Regular.woff);
+  font-display: swap;
 }
 
 * {
