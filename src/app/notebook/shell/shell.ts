@@ -247,11 +247,12 @@ export class Shell {
         first()
       ).subscribe((collection) => {
         const documents = collection.map((block, index) =>{
-          if (!('index' in block._data)) {
+          if (!('index' in block._data) || block._data.index < 0) {
             this.databaseManager.updateIndex(block, index).then();
           }
           return block._data;
         });
+        console.log(documents);
         this.editor.render({
           'version': '2.26.5',
           blocks: documents
