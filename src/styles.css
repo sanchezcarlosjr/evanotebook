@@ -365,6 +365,7 @@ body {
 
 * {
   font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
+  letter-spacing: 0;
 }
 
 .responsive-iframe {
@@ -551,4 +552,8 @@ math-field {
   direction: ltr;
   -moz-font-feature-settings: 'liga';
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11 {
+  margin: 0 !important;
 }

@@ -31,8 +31,9 @@ function downloadFile(blobParts?: any, options?: any) {
 
 export class Shell {
   private jobs = new Map<string, { worker: Worker, code: string, status: number, data: {}, subscription: Subscription; }>();
-  private blockAddedMonitor = false;
-  private blockRemoverMonitor = false;
+  private peerAddBlock = false;
+  private peerRemoveBlock = false;
+  private peerChangeBlock = false;
 
   constructor(private editor: EditorJS, private environment: any, private databaseManager: DatabaseManager) {
     environment.addEventListener('terminal.clear', (event: CustomEvent) => {
@@ -146,34 +147,38 @@ export class Shell {
     environment.addEventListener('block-added', async (event: CustomEvent) => {
       const savedData: SavedData = await event.detail.target.save();
       // Peer can generate cycles because of the way it handles block-added events.
-      if (this.blockAddedMonitor) {
-        this.blockAddedMonitor = false;
+      if (this.peerAddBlock) {
+        this.peerAddBlock = false;
         return;
       }
+      await this.databaseManager.increaseIndexes(event.detail.index);
       await this.databaseManager.addBlock({
         id: savedData.id,
         type: savedData.tool,
         data: savedData.data,
-        index: event.detail.index,
+        index: event.detail.index
       });
     });
     environment.addEventListener('block-removed', async (event: CustomEvent) => {
-      if (this.blockRemoverMonitor) {
-        this.blockRemoverMonitor = false;
+      if (this.peerRemoveBlock) {
+        this.peerRemoveBlock = false;
         return;
       }
+      await this.databaseManager.decreaseIndexes(event.detail.index);
       await this.databaseManager.removeBlock(event.detail.target.id);
     });
     const blockChanges$ = new Subject<BlockAPI>();
     environment.addEventListener('block-changed', async (event: CustomEvent) => {
+      if (this.peerChangeBlock) {
+        this.peerChangeBlock = false;
+        return;
+      }
       blockChanges$.next(event.detail);
     });
     const readDetailFromBlockChanged = async (detail: any)  => ({index: detail.index, savedData: await detail.target.save()});
     blockChanges$.pipe(
-      skip(1),
-      throttleTime(750),
+      throttleTime(700),
       switchMap(detail => from(readDetailFromBlockChanged(detail))),
-      filter(x => !!x),
     ).subscribe((next: {index: number, savedData: SavedData}) => {
       this.databaseManager.changeBlock({
         id: next.savedData.id,
@@ -237,47 +242,38 @@ export class Shell {
   }
 
   private renderFromDatabase(isMode2: boolean) {
-    this.databaseManager.start().then(() => {
-      this.databaseManager.collection('blocks').pipe(
-        first(),
-        // @ts-ignore
-        map(x => x.map(block => block._data)),
-      ).subscribe((blocks) => {
-        if (blocks.length === 0) {
-          // @ts-ignore
-          this.editor.blocks.getBlockByIndex(0)?.save().then((savedData: SavedData) => {
-            this.databaseManager.addBlock({
-              id: savedData.id,
-              type: savedData.tool,
-              data: savedData.data,
-              index: 0,
-            })
-          });
-        } else {
-          this.editor.render({
-            version: '2.26.5',
-            blocks
-          }).then(_ => {
-            if (isMode2) {
-              window.dispatchEvent(new CustomEvent('shell.RunAll'));
-            }
-          });
-        }
-        if (isMode2) {
-          return;
-        }
-        this.databaseManager.insert$().subscribe((block: any) => {
-          this.blockAddedMonitor = true;
-          this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
+    this.databaseManager.start().then(blocks => {
+      blocks.pipe(
+        first()
+      ).subscribe((collection) => {
+        const documents = collection.map((block, index) =>{
+          if (!('index' in block._data)) {
+            this.databaseManager.updateIndex(block, index).then();
+          }
+          return block._data;
         });
-        this.databaseManager.remove$().subscribe((block: any) => {
-          this.blockRemoverMonitor = true;
-          this.editor.blocks.delete(this.editor.blocks.getBlockIndex(block.id));
-        });
-        this.databaseManager.update$().subscribe((block: any) => {
-          this.blockRemoverMonitor = true;
-          this.blockAddedMonitor = true;
-          this.editor.blocks.update(block.id, block.data);
+        this.editor.render({
+          'version': '2.26.5',
+          blocks: documents
+        }).then(() => {
+          if (isMode2) {
+            window.dispatchEvent(new CustomEvent('shell.RunAll'));
+            return;
+          }
+          this.databaseManager.insert$().subscribe((block: any) => {
+            this.peerAddBlock = true;
+            this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
+          });
+          this.databaseManager.remove$().subscribe((block: any) => {
+            this.peerRemoveBlock = true;
+            this.editor.blocks.delete(this.editor.blocks.getBlockIndex(block.id));
+          });
+          this.databaseManager.update$().subscribe((block: any) => {
+            this.peerRemoveBlock = true;
+            this.peerAddBlock = true;
+            this.peerChangeBlock = true;
+            this.editor.blocks.update(block.id, block.data);
+          });
         });
       });
     });

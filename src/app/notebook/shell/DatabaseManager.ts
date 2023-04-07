@@ -47,7 +47,7 @@ export class DatabaseManager {
       name: 'eva_notebook',
       storage: getRxStorageDexie()
     });
-    await this._database.addCollections({
+    const collections = await this._database.addCollections({
       blocks: {
         schema: {
           title: 'blocks',
@@ -88,10 +88,19 @@ export class DatabaseManager {
     });
     this._uuid = this.setupPeer();
     await this.registerPreviousVersion();
+    if ((await collections.blocks.count().exec()) === 0) {
+      this.upsert({'id': '0', 'type': 'paragraph', data: {text: ''}});
+    }
+    // @ts-ignore
     try {
       // @ts-ignore
       await this.replicatePool(this._database.blocks);
-    } catch (e){}
+    } catch (e){
+      console.log("DatabaseManager Pool", e);
+    }
+    return collections.blocks.find({
+      sort: [{index: 'asc'}]
+    }).$;
   }
 
   private async registerPreviousVersion() {
@@ -149,7 +158,6 @@ export class DatabaseManager {
           let remoteDocuments = [];
           try {
             remoteDocuments = self.readBlocksFromURL();
-            console.log(remoteDocuments);
           } catch (e) {}
           return {
             documents: remoteDocuments as {_deleted: boolean}[],
@@ -216,7 +224,6 @@ export class DatabaseManager {
       filter((documentData: any) => documentData.lastEditedBy != this._uuid)
     );
   }
-
   exportDatabase() {
     return this._database?.exportJSON();
   }
@@ -259,8 +266,54 @@ export class DatabaseManager {
   readBlocksFromURL() {
     return JSON.parse(this.decodeHtmlEntities(this.decompress(url.read("c"))));
   }
+  increaseIndexes(index: number) {
+    // @ts-ignore
+    return this._database?.blocks?.find({
+      selector: {
+        index: {
+          $gte: index
+        }
+      }
+    }).update({
+      $inc: {
+        index: 1
+      },
+      $set: {
+        lastEditedBy: this._uuid
+      }
+    });
+  }
+  decreaseIndexes(index: number) {
+    // @ts-ignore
+    return this._database?.blocks?.find({
+      selector: {
+        index: {
+          $gt: index,
+          $lt: 0
+        }
+      }
+    }).update({
+      $inc: {
+        index: -1
+      },
+      $set: {
+        lastEditedBy: this._uuid
+      }
+    });
+  }
   writeCollectionURL(collection: any, key: string = "c") {
     url.write(key, this.compress(JSON.stringify(collection)));
+  }
+  updateIndex(block: any,index: number) {
+    // @ts-ignore
+    return block.updateCRDT({
+      ifMatch: {
+        $set: {
+          lastEditedBy: this._uuid,
+          index
+        }
+      }
+    });
   }
   setupPeer() {
     return url.read("p") || url.write("p", crypto.randomUUID());
@@ -282,13 +335,13 @@ export class DatabaseManager {
   async removeBlock(id: string) {
     // @ts-ignore
     const block = await this._database.blocks.findOne(id).exec();
-    block.updateCRDT({
+    await block.updateCRDT({
       ifMatch: {
         $set: {
           lastEditedBy: this._uuid
         }
       }
-    })
+    });
     // @ts-ignore
     return await block.remove();
   }
@@ -296,7 +349,7 @@ export class DatabaseManager {
     // @ts-ignore
     const block = await this._database.blocks.findOne(blockRow.id).exec();
     if (!block) {
-      return block;
+      return  this.addBlock(blockRow);
     }
     if (_.isEqual(blockRow.data, block._data.data)) {
       return block;

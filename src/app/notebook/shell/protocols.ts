@@ -14,14 +14,14 @@ export class WebSocket implements Protocol {
     return this.subject.pipe(
       map((message) => ({
         ready: true,
-        ...options,
+        options,
         // @ts-ignore
         message,
         connection: this
       })),
       startWith({
         ready: true,
-        ...options,
+        options,
         connection: this
       })
     );
