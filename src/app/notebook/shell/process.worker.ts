@@ -642,6 +642,7 @@ class ProcessWorker {
     environment.write = (f = identity) => tap((observerOrNext: string) => this.terminal?.write(f(observerOrNext)));
     environment.rewrite = (f = identity) => tap((observerOrNext: string) => this.terminal?.rewrite(f(observerOrNext)));
     environment.render = (x: string) => of(x).pipe(
+      map(x => x.replace(/\n|\r|\r\n/gm, "")),
       environment.write()
     );
     environment.printWide =

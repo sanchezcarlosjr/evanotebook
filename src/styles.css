@@ -562,3 +562,239 @@ py-config {
 .fit-height {
   height: fit-content;
 }
+
+.quine body li {
+  display: block;
+}
+
+.quine table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.quine section {
+  display: block;
+}
+
+
+.quine a,
+.quine code,
+.quine em,
+.quine strong,
+.quine span,
+.quine br,
+.quine b {
+  display: inline;
+}
+
+.quine style,
+.quine blockquote {
+  white-space: pre-wrap;
+}
+
+.quine p::before {
+  content: "<p>";
+}
+.quine p::after {
+  content: "</p>";
+}
+
+.quine body::before {
+  content: "<body>";
+}
+.quine body::after {
+  content: "</body>";
+}
+.quine h1::before {
+  content: "<h1>";
+}
+.quine h1::after {
+  content: "</h1>";
+}
+.quine h2::before {
+  content: "<h2>";
+}
+.quine h2::after {
+  content: "</h2>";
+}
+.quine h3::before {
+  content: "<h3>";
+}
+.quine h3::after {
+  content: "</h3>";
+}
+.quine p::before {
+  content: "<p>";
+}
+.quine p::after {
+  content: "</p>";
+}
+.quine ul::before {
+  content: "<ul>";
+}
+.quine ul::after {
+  content: "</ul>";
+}
+.quine li::before {
+  content: "<li>";
+}
+.quine li::after {
+  content: "</li>";
+}
+.quine pre::before {
+  content: "<pre>";
+}
+.quine pre::after {
+  content: "</pre>";
+}
+.quine code::before {
+  content: "<code>";
+}
+.quine code::after {
+  content: "</code>";
+}
+.quine a::before {
+  content: "<a>";
+}
+.quine a::after {
+  content: "</a>";
+}
+
+.quine p {
+  margin: 0;
+}
+
+.quine aside::before {
+  content: "<aside>";
+}
+.quine aside::after {
+  content: "</aside>";
+}
+.quine span::before {
+  content: "<span>";
+}
+.quine span::after {
+  content: "</span>";
+}
+.quine blockquote::before {
+  content: "<blockquote>";
+}
+.quine blockquote::after {
+  content: "</blockquote>";
+}
+.quine em::before {
+  content: "<em>";
+}
+.quine em::after {
+  content: "</em>";
+}
+.quine strong::before {
+  content: "<strong>";
+}
+.quine strong::after {
+  content: "</strong>";
+}
+
+.quine div::before, div.quine::before {
+  content: "<div>";
+}
+
+.quine div::after, div.quine::after {
+  content: "</div>";
+}
+
+.quine b::before {
+  content: "<b>";
+}
+
+.quine b::after {
+  content: "</b>";
+}
+
+.quine reference::before {
+  content: "<reference>";
+}
+.quine reference::after {
+  content: "</reference>";
+}
+
+.quine table::before {
+  content: "<table>";
+}
+.quine table::after {
+  content: "</table>";
+}
+
+.quine tr::before {
+  content: "<tr>";
+}
+.quine tr::after {
+  content: "</tr>";
+}
+
+.quine label::before {
+  content: "<label>";
+}
+.quine label::after {
+  content: "</label>";
+}
+
+.quine input::before {
+  content: "<input>";
+}
+.quine input::after {
+  content: "</input>";
+}
+
+.quine section::before {
+  content: "<section>";
+}
+.quine section::after {
+  content: "</section>";
+}
+
+.quine form::before {
+  content: "<form>";
+}
+.quine form::after {
+  content: "</form>";
+}
+
+.quine a[href]::before {
+  content: "<a href='" attr(href) "'>";
+}
+
+.quine span[id]::before {
+  content: "<span id='" attr(id) "'>";
+}
+
+.quine p[id]::before {
+  content: "<p id='" attr(id) "'>";
+}
+
+.quine p[title]::before {
+  content: "<p lang='" attr(lang) "' title='" attr(title) "'>";
+}
+
+.quine div[class]::before, div[class].quine::before {
+  content: "<div class='" attr(class) "'>";
+}
+
+.quine style::before {
+  content: "<style>";
+}
+.quine style::after {
+  content: "<\/style>";
+}
+
+.quine *::before,
+.quine,
+.quine *::after {
+  color: rgba(136, 18, 128, 0.5);
+  font-weight: 100;
+  font-size: 1em;
+}
+
+.debug-boxes {
+  outline: 1px solid red;
+}
