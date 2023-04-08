@@ -779,20 +779,24 @@ py-config {
 .quine div[class]::before, div[class].quine::before {
   content: "<div class='" attr(class) "'>";
 }
-
 .quine style::before {
   content: "<style>";
 }
 .quine style::after {
   content: "<\/style>";
 }
-
 .quine *::before,
 .quine,
 .quine *::after {
   color: rgba(136, 18, 128, 0.5);
   font-weight: 100;
   font-size: 1em;
+}
+
+.debug-selection {
+  background: rgba(249, 89, 89, 0.2);
+  outline-style: dotted;
+  outline-color: #e3e3e3;
 }
 
 .debug-boxes {
