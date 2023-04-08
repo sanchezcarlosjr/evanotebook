@@ -1,4 +1,4 @@
-import {BehaviorSubject, filter, map, Observable} from "rxjs";
+import {BehaviorSubject, filter, map, Observable, Subscriber} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
@@ -42,62 +42,65 @@ export class DatabaseManager {
   }
 
   async start() {
-    this._database = await createRxDatabase({
-      name: 'eva_notebook',
-      storage: getRxStorageDexie()
-    });
-    const collections = await this._database.addCollections({
-      blocks: {
-        schema: {
-          title: 'blocks',
-          version: 0,
-          primaryKey: 'id',
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              maxLength: 100
-            },
-            lastEditedBy: {
-              type: 'string',
-            },
-            index: {
-              type: 'number'
-            },
-            createdBy: {
-              type: 'string',
-            },
-            type: {
-              type: 'string'
-            },
-            data: {
-              type: 'object'
-            },
-            tunes: {
+   try {
+     this._database = await createRxDatabase({
+       name: 'eva_notebook',
+       storage: getRxStorageDexie()
+     });
+     const collections = await this._database.addCollections({
+       blocks: {
+         schema: {
+           title: 'blocks',
+           version: 0,
+           primaryKey: 'id',
+           type: 'object',
+           properties: {
+             id: {
+               type: 'string',
+               maxLength: 100
+             },
+             lastEditedBy: {
+               type: 'string',
+             },
+             index: {
+               type: 'number'
+             },
+             createdBy: {
+               type: 'string',
+             },
+             type: {
+               type: 'string'
+             },
+             data: {
                type: 'object'
-            },
-            crdts: getCRDTSchemaPart()
-          },
-          required: ['id', 'type', 'data', 'lastEditedBy', 'createdBy'],
-          crdt: {
-            field: 'crdts'
-          }
-        }
-      }
-    });
-    window.addEventListener('keydown', (event: KeyboardEvent )=>{
-      if (event.ctrlKey && event.key === 's') {
-        event.preventDefault();
-        // @ts-ignore
-        this._database?.blocks.find().exec().then(blocks => this.writeCollectionURL({
-          version: '2.26.5',
-          blocks
-        }))
-      }
-    });
-    return collections.blocks.find({
-      sort: [{index: 'asc'}]
-    }).$;
+             },
+             tunes: {
+               type: 'object'
+             },
+             crdts: getCRDTSchemaPart()
+           },
+           required: ['id', 'type', 'data', 'lastEditedBy', 'createdBy'],
+           crdt: {
+             field: 'crdts'
+           }
+         }
+       }
+     });
+     window.addEventListener('keydown', (event: KeyboardEvent )=>{
+       if (event.ctrlKey && event.key === 's') {
+         event.preventDefault();
+         this.saveInUrl();
+       }
+     });
+     return collections.blocks.find({
+       sort: [{index: 'asc'}]
+     }).$;
+   } catch (e) {
+     return new Observable((subscriber: Subscriber<OutputBlockData[]>) => {
+       subscriber.next([this.generateDefaultBlock()]);
+       subscriber.complete();
+     });
+   }
   }
 
   async registerPreviousVersion() {
@@ -304,8 +307,11 @@ export class DatabaseManager {
     url.write(key, this.compress(JSON.stringify(collection)));
   }
   updateIndex(block: any,index: number) {
+    if (!this._database && !block.updateCRDT) {
+      return;
+    }
     // @ts-ignore
-    return block.updateCRDT({
+    return block?.updateCRDT({
       ifMatch: {
         $set: {
           lastEditedBy: this._uuid,
@@ -322,6 +328,10 @@ export class DatabaseManager {
   }
   async addBlock(block: BlockDocument) {
     // @ts-ignore
+    if (!this._database?.blocks){
+      return ;
+    }
+    // @ts-ignore
     block.createdBy = this._uuid;
     block.lastEditedBy = this._uuid;
     // @ts-ignore
@@ -333,6 +343,10 @@ export class DatabaseManager {
     window.dispatchEvent(new CustomEvent('saving'));
   }
   async removeBlock(id: string) {
+    // @ts-ignore
+    if (!this._database?.blocks){
+      return ;
+    }
     // @ts-ignore
     const block = await this._database.blocks.findOne(id).exec();
     await block.updateCRDT({
@@ -347,6 +361,10 @@ export class DatabaseManager {
     return await block.remove();
   }
   async changeBlock(blockRow: BlockDocument) {
+    // @ts-ignore
+    if (!this._database?.blocks){
+      return ;
+    }
     // @ts-ignore
     const block = await this._database?.blocks?.findOne(blockRow.id).exec();
     if (!block) {
@@ -377,4 +395,15 @@ export class DatabaseManager {
     return {id: '0', index: 0, type: 'paragraph', data: {text: ''}, createdBy: this._uuid, lastEditedBy: this._uuid};
   }
 
+  saveInUrl() {
+    // @ts-ignore
+    if (!this._database?.blocks)
+      return false;
+    // @ts-ignore
+    this._database?.blocks.find().exec().then(blocks => this.writeCollectionURL({
+      version: '2.26.5',
+      blocks
+    }));
+    return true;
+  }
 }

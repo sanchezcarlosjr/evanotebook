@@ -177,6 +177,10 @@ export class NotebookComponent implements OnInit {
     window.dispatchEvent(new CustomEvent('shell.ExportNotebook'));
   }
 
+  saveInUrl() {
+    window.dispatchEvent(new CustomEvent('shell.SaveInUrl'));
+  }
+
   importNotebook(event: Event) {
     // @ts-ignore
     window.dispatchEvent(new CustomEvent('shell.ImportNotebook', {detail: {file: event.target.files.item(0)}}));

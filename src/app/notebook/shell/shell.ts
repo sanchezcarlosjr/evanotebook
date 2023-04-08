@@ -59,6 +59,9 @@ export class Shell {
         event: 'decompress', payload: this.databaseManager.decompress(event.detail.payload.input)
       });
     });
+    environment.addEventListener('shell.SaveInUrl', (event: CustomEvent) => {
+      this.databaseManager.saveInUrl();
+    });
     environment.addEventListener('shell.CreateNewNotebook', (event: CustomEvent) => {
       this.editor.clear();
       window.dispatchEvent(new CustomEvent('shell.StopAll'));
@@ -243,6 +246,7 @@ export class Shell {
   private renderFromDatabase(isMode2: boolean) {
     this.databaseManager.start().then(blockCollection => {
       blockCollection.pipe(
+        // @ts-ignore
         first()
       ).subscribe((documents) => {
         let blocks: BlockDocument[] = [];
@@ -272,8 +276,11 @@ export class Shell {
                   }
                 }
               ).then(async _ => {
-                await this.databaseManager.removeAllBlocks();
-                await this.databaseManager.bulkInsertBlocks(blocks);
+                try {
+                  await this.databaseManager.removeAllBlocks();
+                  await this.databaseManager.bulkInsertBlocks(blocks);
+                } catch (e) {
+                }
               });
             } else {
               if (isMode2) {
@@ -282,6 +289,9 @@ export class Shell {
             }
           });
         }).then(async _ => {
+          if (!this.databaseManager.database) {
+            return;
+          }
           this.databaseManager.insert$().subscribe((block: any) => {
             this.peerAddBlock = true;
             this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
