@@ -19,6 +19,7 @@ import {linter, lintGutter, lintKeymap} from "@codemirror/lint";
 import {espresso} from "thememirror";
 import {esLint, javascript} from "@codemirror/lang-javascript";
 import {BlockAPI} from "@editorjs/editorjs";
+import {BehaviorSubject, filter, first} from "rxjs";
 
 
 function generateId(prefix: string) {
@@ -30,6 +31,8 @@ export class MermaidTool {
   private caption: string;
   private readOnly: boolean | undefined;
   private block: BlockAPI | undefined;
+  private svgSubject = new BehaviorSubject<Element|undefined>(undefined);
+
   static config(config: MermaidConfig) {
     mermaid.initialize(config);
   }
@@ -53,55 +56,71 @@ export class MermaidTool {
   }
 
   parse(code: string, preview: Element) {
-    preview.classList.remove('mermaid-preview-error');
     preview.innerHTML = '';
-    mermaid.render(generateId('svg-'), code)
+    return mermaid.render(generateId('svg-'), code)
       .then((renderResult) => {
         preview.insertAdjacentHTML('afterbegin', renderResult.svg);
+        return preview;
       })
       .catch((e) => {
         preview.innerHTML = e.message;
         preview.classList.add('mermaid-preview-error');
+        return undefined;
       });
   }
 
   render() {
     const wrapper = document.createElement('div');
     wrapper.classList.add('mermaid-wrapper');
+    this.stopPropagation(wrapper);
+    this.createEditor(wrapper);
+    this.createPreview(wrapper);
+    this.createCaption(wrapper);
+    return wrapper;
+  }
 
-    wrapper.addEventListener('keydown', (event) => {
-      if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
-        event.stopPropagation();
-      }
-    });
-    wrapper.addEventListener('paste', (event) => {
-      event.stopPropagation();
-    });
-
-    if (!this.readOnly) {
-      wrapper.appendChild(document.createElement('div'));
-      this.createEditor(wrapper);
-    }
-
-    const preview = document.createElement('div');
-    preview.classList.add('cdx-block', 'center');
-
-    wrapper.appendChild(preview);
-
-    if (this.code) {
-      setTimeout(() => {
-        this.parse(this.code, preview);
-      }, 0);
-    }
-
+  private createCaption(wrapper: HTMLDivElement) {
     const caption = document.createElement('div');
-
     if (this.readOnly && this.caption) {
+      caption.innerText = this.caption;
+      this.svgSubject.pipe(
+        filter(svg => svg !== undefined),
+        first()
+        // @ts-ignore
+      ).subscribe((element: Element) => {
+          const aElement = document.createElement('a');
+          aElement.target = '_blank';
+          caption.innerText = '';
+          aElement.innerText = this.caption;
+          aElement.addEventListener('click', (event) => {
+            if (aElement.href) {
+              return;
+            }
+            const svg = element.children[0].cloneNode(true) as Element;
+            svg.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', 'http://www.w3.org/1999/xlink');
+            svg.setAttribute('style', '');
+            const styleElement = document.createElement('style');
+            styleElement.textContent = `
+@font-face {
+  font-family: "Fira Code Regular";
+  src: url(https://notebook.sanchezcarlosjr.com/assets/fonts/FiraCode-Regular.woff);
+  font-display: swap;
+}
+* :not(i) {
+  font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
+  letter-spacing: 0;
+}
+          `;
+            svg.appendChild(styleElement);
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svg as SVGElement);
+            aElement.setAttribute('href', URL.createObjectURL(new Blob([svgString], { type: 'image/svg+xml' })));
+          });
+          caption.appendChild(aElement);
+      });
       caption.classList.add('center');
-      caption.innerHTML = this.caption;
       wrapper.appendChild(caption);
     }
-
     if (!this.readOnly) {
       caption.classList.add('cdx-input');
       // @ts-ignore
@@ -114,8 +133,26 @@ export class MermaidTool {
         this.block?.dispatchChange();
       });
     }
+  }
 
-    return wrapper;
+  private createPreview(wrapper: HTMLDivElement) {
+    const preview = document.createElement('div');
+    preview.classList.add('cdx-block', 'center');
+    wrapper.appendChild(preview);
+    if (this.code) {
+      setTimeout(() => this.parse(this.code, preview).then(svg => this.svgSubject.next(svg)), 0);
+    }
+  }
+
+  private stopPropagation(wrapper: HTMLDivElement) {
+    wrapper.addEventListener('keydown', (event) => {
+      if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
+        event.stopPropagation();
+      }
+    });
+    wrapper.addEventListener('paste', (event) => {
+      event.stopPropagation();
+    });
   }
 
   validate(savedData: any) {
@@ -123,6 +160,10 @@ export class MermaidTool {
   }
 
   createEditor(wrapper: HTMLElement) {
+    if (this.readOnly) {
+      return;
+    }
+    wrapper.appendChild(document.createElement('div'));
     new EditorView({
       parent: wrapper.children[0],
       state: EditorState.create({
