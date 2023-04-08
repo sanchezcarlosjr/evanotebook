@@ -46,8 +46,8 @@ const config = {
  * @return {Node}       The template HTML
  */
 function stringToHTML(str: string) {
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(str, 'text/html');
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(str, 'text/html');
   return doc.body.firstChild;
 }
 
@@ -200,7 +200,7 @@ export class CodeBlock extends InteractiveBlock {
 
   override dispatchShellRun() {
     if (this.language !== "javascript") {
-      return;
+      return false;
     }
     this.clear();
     this.dispatchShellStop();
@@ -214,11 +214,12 @@ export class CodeBlock extends InteractiveBlock {
       }
     }));
     this.run();
+    return true;
   }
 
   override dispatchShellStop() {
     if (this.language !== "javascript") {
-      return;
+      return false;
     }
     window.dispatchEvent(new CustomEvent('shell.Stop', {
       bubbles: true, detail: {
@@ -227,13 +228,14 @@ export class CodeBlock extends InteractiveBlock {
         }
       }
     }));
+    return true;
   }
 
   override renderSettings() {
     const wrapper = super.renderSettings();
     let languagesSelect = document.createElement("select");
     languagesSelect.classList.add("small");
-    for (const language of ["javascript", "python-repl"]) {
+    for (const language of ["javascript", "python"]) {
       const option = document.createElement("option");
       option.value = language;
       option.innerText = language;
@@ -253,6 +255,14 @@ export class CodeBlock extends InteractiveBlock {
   }
   render() {
     this.cell = document.createElement('div');
+    this.cell.addEventListener('keydown', (event) => {
+      if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
+        event.stopPropagation();
+      }
+    });
+    this.cell.addEventListener('paste', (event) => {
+      event.stopPropagation();
+    });
     this.cell.classList.add('cell');
     this.loadLanguage();
     return this.cell;
@@ -275,11 +285,15 @@ export class CodeBlock extends InteractiveBlock {
       this.cell.appendChild(output);
       output.innerHTML = this.outputCell;
     }
-    if(this.language === "python-repl") {
-      const editor = document.createElement('py-repl');
-      editor.innerHTML = this.code;
-      // @ts-ignore
+    if(this.language === "python") {
+      const editor = document.createElement('section');
       editor.classList.add('editor');
+      this.cell.appendChild(editor);
+      if (!this.obj.readOnly) {
+        const python = document.createElement('py-repl');
+        python.innerHTML = this.code;
+        editor.appendChild(python);
+      }
       editor.addEventListener('keydown', (event) => {
         if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
           event.stopPropagation();
@@ -341,7 +355,11 @@ export class CodeBlock extends InteractiveBlock {
             ...historyKeymap,
             ...foldKeymap,
             ...completionKeymap,
-            ...lintKeymap
+            ...lintKeymap,
+            { key: 'Ctrl-Enter', run: this.dispatchShellRun.bind(this), preventDefault: true },
+            { key: 'Ctrl-Alt-m', run: this.dispatchShellRun.bind(this), preventDefault: true },
+            { key: 'Ctrl-Alt-c', run: this.dispatchShellStop.bind(this), preventDefault: true },
+            { key: 'Shift-Enter', run: this.dispatchShellRun.bind(this), preventDefault: true },
           ]),
           espresso,
           EditorView.theme({
@@ -360,24 +378,5 @@ export class CodeBlock extends InteractiveBlock {
         ]
       })
     });
-    this.editorView.dom.addEventListener('keydown', (event) => {
-      if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
-        event.stopPropagation();
-      }
-    });
-    this.editorView.dom.addEventListener('paste', (event) => {
-      event.stopPropagation();
-    });
-    // @ts-ignore
-    this.cell.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
-      if (keyboardEvent.key === "m" && keyboardEvent.ctrlKey && keyboardEvent.altKey) {
-        keyboardEvent.preventDefault();
-        this.dispatchShellRun();
-      }
-      if (keyboardEvent.key === "c" && keyboardEvent.ctrlKey && keyboardEvent.altKey) {
-        keyboardEvent.preventDefault();
-        this.dispatchShellStop();
-      }
-    }, false);
   }
 }

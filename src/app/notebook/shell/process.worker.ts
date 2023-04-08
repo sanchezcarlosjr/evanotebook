@@ -637,7 +637,7 @@ globalThis.addEventListener('exec', async (event: CustomEvent) => {
     });
   } catch (e) {
     // @ts-ignore
-    sendMessage({ 'event': 'shell.error', payload: { threadId: self.name, text: `${e.name}: ${e.message}` } });
+    sendMessage({ 'event': 'shell.error', payload: { threadId: self.name, text: `<pre class="py-error">${e.name}: ${e.message}</pre>` } });
   }
 });
 

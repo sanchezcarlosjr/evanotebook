@@ -4,7 +4,7 @@ import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 import {RxDatabase} from "rxdb/dist/types/types";
 import { RxDBUpdatePlugin } from 'rxdb/plugins/update';
 import {DatabaseManager} from "./DatabaseManager";
-import {first, firstValueFrom} from "rxjs";
+import {first, firstValueFrom, map} from "rxjs";
 addRxPlugin(RxDBUpdatePlugin);
 (window as any).global = window;
 
@@ -57,7 +57,7 @@ describe('RxDB Playground', () => {
     await manager.removeBlock(expectedObject.id);
     expect(await firstValueFrom(manager.collection('blocks'))).toEqual([]);
   });
-  fit('it should change a block successfully', async () => {
+  it('it should change a block successfully', async () => {
     let expectedObject = {
       id: "1",
       type: "paragraph",
@@ -71,5 +71,30 @@ describe('RxDB Playground', () => {
     const result = await firstValueFrom(manager.collection('blocks'));
     expect({ id: result[0].id, type: result[0].type, data: result[0].data }).toEqual(expectedObject);
     await manager.removeBlock(expectedObject.id);
-  })
+  });
+  it('it should update indexes greater than current one', async () => {
+    const blocks = [{id: "1",index:0,type:"paragraph",data: {}},{id: "2",index:1,type: "paragraph", data: {}},{index:2, id: "3", type: "paragraph", data: {}}];
+    for (const block of blocks) {
+      await manager.addBlock(block);
+    }
+    await manager.increaseIndexes(1);
+    await manager.addBlock({id: "13333",index:1,type: "paragraph", data: {}});
+    let indexes = await firstValueFrom(manager.collection('blocks').pipe(map(b => b.map(x=>x.index))));
+    expect(indexes).toEqual([0,1,2,3]);
+    await manager.removeAllBlocks();
+    indexes = await firstValueFrom(manager.collection('blocks').pipe(map(b => b.map(x=>x.index))));
+    expect(indexes).toEqual([]);
+  });
+  fit('it should remove all blocks and then remove changes', async () => {
+    const blocks = [{id: "1",index:0,type:"paragraph",data: {}},{id: "2",index:1,type: "paragraph", data: {}},{index:2, id: "3", type: "paragraph", data: {}}];
+    for (const block of blocks) {
+      await manager.addBlock(block);
+    }
+    await manager.removeAllBlocks();
+    let indexes = await firstValueFrom(manager.collection('blocks').pipe(map(b => b.map(x=>x.index))));
+    expect(indexes).toEqual([]);
+    await manager.addBlock({id: "13333",index:0,type: "paragraph", data: {}});
+    indexes = await firstValueFrom(manager.collection('blocks').pipe(map(b => b.map(x=>x.index))));
+    expect(indexes).toEqual([0]);
+  });
 });

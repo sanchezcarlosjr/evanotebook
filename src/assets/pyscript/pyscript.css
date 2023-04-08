@@ -121,8 +121,6 @@ html {
 
 .py-error {
   background-color: #ffe9e8;
-  border: solid;
-  border-color: #f0625f;
   color: #9d041c;
 }
 
@@ -298,17 +296,6 @@ input {
 
 .py-li-element p {
   display: inline;
-}
-
-button,
-input,
-optgroup,
-select,
-textarea {
-  font-family: inherit;
-  font-size: 100%;
-  line-height: 1.15;
-  margin: 0;
 }
 
 .line-through {

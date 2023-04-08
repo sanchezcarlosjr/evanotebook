@@ -24,7 +24,7 @@ export const base64ToData = (base64: string) => new Uint8Array(
 );
 
 
-export type BlockRow = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string};
+export type BlockDocument = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string};
 
 export class DatabaseManager {
   private _uuid: string | undefined;
@@ -126,7 +126,7 @@ export class DatabaseManager {
     );
   }
 
-  bulkInsertBlocks(blocks: BlockRow[]) {
+  bulkInsertBlocks(blocks: BlockDocument[]) {
     // @ts-ignore
     return this._database?.blocks.bulkInsert(blocks);
   }
@@ -197,7 +197,7 @@ export class DatabaseManager {
     return this.textDecoder.decode(this.brotli?.decompress(base64ToData(base64)));
   }
 
-  collection(name: string): Observable<BlockRow[]> {
+  collection(name: string): Observable<BlockDocument[]> {
     // @ts-ignore
     return this._database[name]?.find({
       sort: [{index: 'asc'}]
@@ -283,8 +283,7 @@ export class DatabaseManager {
     return this._database?.blocks?.find({
       selector: {
         index: {
-          $gt: index,
-          $lt: 0
+          $gte: index
         }
       }
     }).update({
@@ -316,7 +315,7 @@ export class DatabaseManager {
   createNewDatabase() {
     return undefined;
   }
-  async addBlock(block: BlockRow) {
+  async addBlock(block: BlockDocument) {
     // @ts-ignore
     block.createdBy = this._uuid;
     block.lastEditedBy = this._uuid;
@@ -342,13 +341,13 @@ export class DatabaseManager {
     // @ts-ignore
     return await block.remove();
   }
-  async changeBlock(blockRow: BlockRow) {
+  async changeBlock(blockRow: BlockDocument) {
     // @ts-ignore
     const block = await this._database.blocks.findOne(blockRow.id).exec();
     if (!block) {
       return  this.addBlock(blockRow);
     }
-    if (_.isEqual(blockRow.data, block._data.data)) {
+    if (_.isEqual(blockRow.data, block?._data?.data)) {
       return block;
     }
     window.dispatchEvent(new CustomEvent('saving'));

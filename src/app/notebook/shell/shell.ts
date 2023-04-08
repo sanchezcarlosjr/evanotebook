@@ -11,7 +11,7 @@ import {
   switchMap, tap,
   throttleTime
 } from 'rxjs';
-import {BlockRow, DatabaseManager} from "./DatabaseManager";
+import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
 import {OutputBlockData} from "@editorjs/editorjs";
 import {boolean} from "mathjs";
@@ -154,21 +154,21 @@ export class Shell {
         this.peerAddBlock = false;
         return;
       }
-      await this.databaseManager.increaseIndexes(event.detail.index);
       await this.databaseManager.addBlock({
         id: savedData.id,
         type: savedData.tool,
         data: savedData.data,
         index: event.detail.index
       });
+      await this.databaseManager.increaseIndexes(event.detail.index);
     });
     environment.addEventListener('block-removed', async (event: CustomEvent) => {
       if (this.peerRemoveBlock) {
         this.peerRemoveBlock = false;
         return;
       }
-      await this.databaseManager.decreaseIndexes(event.detail.index);
       await this.databaseManager.removeBlock(event.detail.target.id);
+      await this.databaseManager.decreaseIndexes(event.detail.index);
     });
     const blockChanges$ = new Subject<BlockAPI>();
     environment.addEventListener('block-changed', async (event: CustomEvent) => {
@@ -249,12 +249,10 @@ export class Shell {
       blockCollection.pipe(
         first()
       ).subscribe((documents) => {
-        let blocks: BlockRow[] = [];
+        let blocks: BlockDocument[] = [];
         if (documents.length > 0) {
           documents.forEach((block, index) =>{
-            if (!('index' in block._data) || block._data.index < 0) {
-              this.databaseManager.updateIndex(block, index).then();
-            }
+            this.databaseManager.updateIndex(block, index).then();
             blocks.push(block._data);
           });
         }
@@ -266,7 +264,7 @@ export class Shell {
           'version': '2.26.5',
           blocks
         }).then(_ => {
-          return this.databaseManager.registerPreviousVersion().then(blocks => {
+          return this.databaseManager.registerPreviousVersion().then((blocks: OutputBlockData[]) => {
             if(blocks.length > 0) {
               this.editor.render({
                 'version': '2.26.5',
@@ -279,6 +277,7 @@ export class Shell {
                 }
               ).then(async _ => {
                 await this.databaseManager.removeAllBlocks();
+                blocks.forEach((block: BlockDocument, index: number) => block.index = index);
                 await this.databaseManager.bulkInsertBlocks(blocks);
               });
             } else {
