@@ -14,12 +14,29 @@ import {
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
 import {OutputBlockData} from "@editorjs/editorjs";
-import {boolean} from "mathjs";
-import * as url from "./url";
 
 
 enum JobStatus {
   created = 0, running = 1
+}
+
+function loadPyscript() {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/assets/pyscript/pyscript.css';
+  document.head.appendChild(link);
+  const script = document.createElement('script');
+  script.src = '/assets/pyscript/pyscript.js';
+  script.defer = true;
+  document.body.appendChild(script);
+  const element = document.createElement('py-config');
+  element.innerHTML = `
+    packages = ["matplotlib", "pandas"]
+    terminal = false
+    [splashscreen]
+    enabled = false
+  `;
+  document.body.appendChild(element);
 }
 
 function downloadFile(blobParts?: any, options?: any) {
@@ -287,6 +304,7 @@ export class Shell {
             }
           });
         }).then(async _ => {
+          loadPyscript();
           this.databaseManager.insert$().subscribe((block: any) => {
             this.peerAddBlock = true;
             this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);

@@ -28014,6 +28014,21 @@ var pyscript = (function (exports) {
         const extensions = [
           indentUnit.of('    '),
           basicSetup,
+          EditorView.theme({
+            "&": {
+              "font-size": "0.8em",
+              border: "1px solid #dcdfe6",
+              "border-radius": "5px"
+            },
+            "&.cm-focused": {
+              outline: "none"
+            }
+          }),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              this.dispatchEvent(new CustomEvent('doc-changed', {detail: this.getPySrc()}));
+            }
+          }),
           languageConf.of(python()),
           keymap.of([
             ...defaultKeymap,
@@ -28102,6 +28117,7 @@ var pyscript = (function (exports) {
         // display the value of the last evaluated expression (REPL-style)
         if (pyResult !== undefined) {
           pyDisplay(interpreter, pyResult, { target: outEl.id });
+          this.dispatchEvent(new CustomEvent('output-changed'));
         }
         this.autogenerateMaybe();
       }

@@ -57,7 +57,7 @@ export class CodeBlock extends InteractiveBlock {
   private input: HTMLInputElement | null = null;
   private language: string;
   private readonly outputCell: string;
-  private readonly code: string;
+  private code: string;
 
   constructor(private obj: Block) {
     super(obj);
@@ -268,6 +268,7 @@ export class CodeBlock extends InteractiveBlock {
     return this.cell;
   }
 
+  // TODO: Strategy Pattern
   private loadLanguage() {
     if (!this.cell) {
       return;
@@ -286,6 +287,7 @@ export class CodeBlock extends InteractiveBlock {
       output.innerHTML = this.outputCell;
     }
     if(this.language === "python") {
+      this.editorView?.destroy();
       const editor = document.createElement('section');
       editor.classList.add('editor');
       this.cell.appendChild(editor);
@@ -293,6 +295,15 @@ export class CodeBlock extends InteractiveBlock {
         const python = document.createElement('py-repl');
         python.innerHTML = this.code;
         editor.appendChild(python);
+        // @ts-ignore
+        python.addEventListener('doc-changed', (event: CustomEvent) => {
+          this.code = event.detail as string;
+          this.block.block?.dispatchChange();
+        });
+        // @ts-ignore
+        python.addEventListener('output-changed', (event: CustomEvent) => {
+          this.block.block?.dispatchChange();
+        });
       }
       editor.addEventListener('keydown', (event) => {
         if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
@@ -306,23 +317,15 @@ export class CodeBlock extends InteractiveBlock {
       output.innerHTML = this.outputCell;
       output.id = randomCouchString(10);
       output.classList.add('output');
-      editor.setAttribute('output', output.id);
+      editor.children[0]?.setAttribute('output', output.id);
       this.cell.appendChild(editor);
       this.cell.appendChild(output);
     }
   }
 
   override save(blockContent: any): any {
-    let code = this.code;
-    try {
-      // @ts-ignore
-      code = this.editorView?.state.doc.toString() || this.cell?.children[0]?.getPySrc();
-      // @ts-ignore
-    } catch(e) {
-    }
     return {
-      // @ts-ignore
-      code,
+      code: this.code,
       language: this.language,
       output: this.cell?.children[1].innerHTML ?? ""
     }
@@ -341,6 +344,11 @@ export class CodeBlock extends InteractiveBlock {
           history(),
           foldGutter(),
           dropCursor(),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              this.code = update.state.doc.toString();
+            }
+          }),
           EditorState.allowMultipleSelections.of(true),
           indentOnInput(),
           bracketMatching(),

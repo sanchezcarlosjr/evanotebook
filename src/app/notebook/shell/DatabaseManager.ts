@@ -343,7 +343,7 @@ export class DatabaseManager {
   }
   async changeBlock(blockRow: BlockDocument) {
     // @ts-ignore
-    const block = await this._database.blocks.findOne(blockRow.id).exec();
+    const block = await this._database?.blocks?.findOne(blockRow.id).exec();
     if (!block) {
       return  this.addBlock(blockRow);
     }

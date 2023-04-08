@@ -1,6 +1,8 @@
+import {BlockAPI} from "@editorjs/editorjs";
+
 export interface Block {
   data?: any;
-  block?: { id: string };
+  block?: BlockAPI;
   config?: any;
   readOnly?: boolean;
 }

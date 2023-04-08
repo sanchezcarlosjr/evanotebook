@@ -163,10 +163,6 @@ html {
 }
 
 .py-repl-editor {
-  --tw-border-opacity: 1;
-  border-color: rgba(209, 213, 219, var(--tw-border-opacity));
-  border-width: 1px;
-  position: relative;
   --tw-ring-inset: var(--tw-empty, /*!*/ /*!*/);
   --tw-ring-offset-width: 0px;
   --tw-ring-offset-color: #fff;
@@ -175,11 +171,7 @@ html {
   --tw-ring-shadow: 0 0 #0000;
   --tw-shadow: 0 0 #0000;
   position: relative;
-
   box-sizing: border-box;
-  border-width: 1px;
-  border-style: solid;
-  border-color: rgb(209, 213, 219);
 }
 
 .editor-box:hover button {

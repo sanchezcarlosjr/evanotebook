@@ -63,6 +63,9 @@ export class MathBlock extends InteractiveBlock {
     this.inputMathFieldElement.addEventListener('paste', (event) => {
       event.stopPropagation();
     });
+    this.inputMathFieldElement.addEventListener('input',(ev) => {
+      this.block.block?.dispatchChange();
+    });
     this.inputMathFieldElement.addEventListener('keydown', (keyboardEvent: KeyboardEvent) => {
       if (keyboardEvent.key === "m" && keyboardEvent.ctrlKey && keyboardEvent.altKey) {
         keyboardEvent.preventDefault();
