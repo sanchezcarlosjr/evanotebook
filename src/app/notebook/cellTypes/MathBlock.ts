@@ -1,7 +1,7 @@
 import { MathfieldElement } from 'mathlive';
 import {InteractiveBlock} from "./InteractiveBlock";
 import {ComputeEngine} from "@cortex-js/compute-engine";
-import {Block} from "./Block";
+import {EditorJsTool} from "./EditorJsTool";
 MathfieldElement.fontsDirectory = "/assets/fonts/";
 MathfieldElement.soundsDirectory = "/assets/sounds/";
 
@@ -31,7 +31,7 @@ export class MathBlock extends InteractiveBlock {
       event: "clear",
     }
   ];
-  constructor(block: Block) {
+  constructor(block: EditorJsTool) {
     super(block);
     this.computeEngine = new ComputeEngine();
     this.inputMathFieldElement = new MathfieldElement();

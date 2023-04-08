@@ -20,7 +20,7 @@ import {autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap} fr
 import {searchKeymap} from "@codemirror/search";
 // @ts-ignore
 import * as eslint from "eslint-linter-browserify";
-import {Block} from "./Block";
+import {EditorJsTool} from "./EditorJsTool";
 import {InteractiveBlock} from "./InteractiveBlock";
 import {environment} from "../../../environments/environment";
 import {randomCouchString} from "rxdb/plugins/utils";
@@ -39,6 +39,30 @@ const config = {
     semi: ["error", "never"]
   },
 };
+
+function loadPyscript() {
+  if (document.getElementById('pyscript-css')) {
+    return;
+  }
+  const link = document.createElement('link');
+  link.id = "pyscript-css";
+  link.rel = 'stylesheet';
+  link.href = '/assets/pyscript/pyscript.css';
+  document.head.appendChild(link);
+  const script = document.createElement('script');
+  script.src = '/assets/pyscript/pyscript.js';
+  script.defer = true;
+  document.body.appendChild(script);
+  const element = document.createElement('py-config');
+  element.innerHTML = `
+    packages = ["matplotlib", "pandas"]
+    terminal = false
+    [splashscreen]
+    enabled = false
+  `;
+  document.body.appendChild(element);
+}
+
 /**
  * From https://gomakethings.com/converting-a-string-into-markup-with-vanilla-js/
  * Convert a template string into HTML DOM nodes
@@ -59,7 +83,7 @@ export class CodeBlock extends InteractiveBlock {
   private readonly outputCell: string;
   private code: string;
 
-  constructor(private obj: Block) {
+  constructor(private obj: EditorJsTool) {
     super(obj);
     this.language = (obj.data.language === undefined) ? obj.config.language : obj.data.language;
     this.code = obj.data.code ?? "";
@@ -287,6 +311,7 @@ export class CodeBlock extends InteractiveBlock {
       output.innerHTML = this.outputCell;
     }
     if(this.language === "python") {
+      loadPyscript();
       this.editorView?.destroy();
       const editor = document.createElement('section');
       editor.classList.add('editor');
@@ -321,6 +346,10 @@ export class CodeBlock extends InteractiveBlock {
       this.cell.appendChild(editor);
       this.cell.appendChild(output);
     }
+  }
+
+  validate(savedData: any) {
+    return savedData.code.trim() !== '';
   }
 
   override save(blockContent: any): any {

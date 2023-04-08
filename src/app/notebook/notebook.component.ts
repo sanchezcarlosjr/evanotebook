@@ -1,6 +1,5 @@
 import {Component, Injector, OnInit} from '@angular/core';
 import * as url from "./shell/url";
-import * as brotli from "../../assets/brotli_wasm/brotli_wasm";
 import { createCustomElement } from '@angular/elements';
 import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
@@ -123,8 +122,7 @@ export class NotebookComponent implements OnInit {
             }
           }
         },
-        // @ts-ignore
-        mermaid: await import("editorjs-mermaid").then(x => x.default),
+        mermaid: await import("./cellTypes/MermaidBlock").then(x => x.MermaidTool),
         alert: {
           // @ts-ignore
           class: await import("editorjs-alert").then(x => x.default),

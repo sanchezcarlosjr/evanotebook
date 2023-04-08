@@ -1,5 +1,5 @@
 import { BlockTool } from "@editorjs/editorjs";
-import {Block} from "./Block";
+import {EditorJsTool} from "./EditorJsTool";
 
 export abstract class InteractiveBlock implements BlockTool {
   protected shellOptions: any[] = [
@@ -19,7 +19,7 @@ export abstract class InteractiveBlock implements BlockTool {
       event: "clear",
     }
   ];
-  protected constructor(protected block: Block) {}
+  protected constructor(protected block: EditorJsTool) {}
   renderSettings() {
     const wrapper = document.createElement('div');
     wrapper.classList.add('ce-popover__items');

@@ -127,6 +127,11 @@ export class DatabaseManager {
   }
 
   bulkInsertBlocks(blocks: BlockDocument[]) {
+    blocks.forEach((block: BlockDocument, index: number) => {
+      block.index = index;
+      block.createdBy = this._uuid;
+      block.lastEditedBy = this._uuid;
+    });
     // @ts-ignore
     return this._database?.blocks.bulkInsert(blocks);
   }

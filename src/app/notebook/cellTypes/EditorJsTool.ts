@@ -1,6 +1,6 @@
 import {BlockAPI} from "@editorjs/editorjs";
 
-export interface Block {
+export interface EditorJsTool {
   data?: any;
   block?: BlockAPI;
   config?: any;
