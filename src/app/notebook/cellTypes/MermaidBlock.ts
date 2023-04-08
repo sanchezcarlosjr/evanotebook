@@ -64,7 +64,7 @@ export class MermaidTool {
       })
       .catch((e) => {
         preview.innerHTML = e.message;
-        preview.classList.add('mermaid-preview-error');
+        preview.classList.add('py-error');
         return undefined;
       });
   }
