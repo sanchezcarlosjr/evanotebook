@@ -227,7 +227,6 @@ export class Shell {
 
   fork(code: string, threadId: string) {
     const worker = new Worker(new URL('./process.worker', import.meta.url), {type: 'module', name: threadId});
-    const channel = this.databaseManager.loadChannel();
     return {
       worker, observable: new Observable((subscriber) => {
         worker.onmessage = (event) => {
@@ -248,10 +247,8 @@ export class Shell {
           subscriber.complete();
         };
         worker.postMessage({
-          event: 'exec', payload: {
-            code, database: channel.port1
-          }
-        }, [channel.port1]);
+          event: 'exec', payload: code
+        });
       })
     }
   }

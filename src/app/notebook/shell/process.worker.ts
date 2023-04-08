@@ -32,7 +32,7 @@ import {
   take,
   takeWhile,
   tap,
-  throttleTime
+  throttleTime, firstValueFrom, shareReplay
 } from "rxjs";
 import { fromFetch } from "rxjs/fetch";
 import { P, Pattern, isMatching, match } from 'ts-pattern';
@@ -41,6 +41,9 @@ import Indexed = Immutable.Seq.Indexed;
 import * as _ from 'lodash';
 
 import { ComputeEngine } from "@cortex-js/compute-engine";
+import {createRxDatabase} from "rxdb";
+import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
+import {getCRDTSchemaPart} from "rxdb/plugins/crdt";
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -181,6 +184,72 @@ interface PromptInputParams {
   placeholder: string;
   type: string;
 }
+
+async function db() {
+  const database = await createRxDatabase({
+    name: 'eva_notebook',
+    storage: getRxStorageDexie()
+  });
+  await database.addCollections({
+    blocks: {
+      schema: {
+        title: 'blocks',
+        version: 0,
+        primaryKey: 'id',
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            maxLength: 100
+          },
+          lastEditedBy: {
+            type: 'string',
+          },
+          index: {
+            type: 'number'
+          },
+          createdBy: {
+            type: 'string',
+          },
+          type: {
+            type: 'string'
+          },
+          data: {
+            type: 'object'
+          },
+          tunes: {
+            type: 'object'
+          },
+          crdts: getCRDTSchemaPart()
+        },
+        required: ['id', 'type', 'data', 'lastEditedBy', 'createdBy'],
+        crdt: {
+          field: 'crdts'
+        }
+      }
+    },
+    v: {
+      schema: {
+        title: 'v',
+        version: 0,
+        primaryKey: 'id',
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            maxLength: 100
+          },
+          m: {
+            type: 'object'
+          }
+        }
+      }
+    }
+  });
+  return database;
+}
+// @ts-ignore
+globalThis.db = from(db()).pipe(shareReplay(1));
 
 interface StateChart {
   next: any;
@@ -620,12 +689,12 @@ const processWorker = new ProcessWorker(globalThis, new LocalEcho(), new Termina
 
 // @ts-ignore
 globalThis.addEventListener('exec', async (event: CustomEvent) => {
-  if (!event.detail.payload || !event.detail.payload.code) {
+  if (!event.detail.payload) {
     sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } });
     return;
   }
   try {
-    const response = await processWorker.exec(event.detail.payload.code);
+    const response = await processWorker.exec(event.detail.payload);
     if (!(response instanceof Observable)) {
       processWorker.println(response);
       sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } });
