@@ -569,3 +569,15 @@ h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11 {
   margin: 0;
   padding: 0.2em;
 }
+
+/* py-config - not a component */
+py-config {
+  display: none;
+}
+
+.center {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

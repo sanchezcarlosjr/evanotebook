@@ -28021,7 +28021,7 @@ var pyscript = (function (exports) {
               "border-radius": "5px"
             },
             "&.cm-focused": {
-              outline: "none"
+              outline: "none!important"
             }
           }),
           EditorView.updateListener.of((update) => {
@@ -28033,7 +28033,9 @@ var pyscript = (function (exports) {
           keymap.of([
             ...defaultKeymap,
             { key: 'Ctrl-Enter', run: this.execute.bind(this), preventDefault: true },
-            { key: 'Shift-Enter', run: this.execute.bind(this), preventDefault: true },
+            { key: 'Ctrl-Alt-m', run: this.execute.bind(this), preventDefault: true },
+            { key: 'Ctrl-Alt-c', run: this.execute.bind(this), preventDefault: true },
+            { key: 'Shift-Enter', run: this.execute.bind(this), preventDefault: true }
           ]),
         ];
         if (getAttribute(this, 'theme') === 'dark') {
