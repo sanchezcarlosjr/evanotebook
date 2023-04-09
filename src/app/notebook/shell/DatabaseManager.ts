@@ -84,7 +84,29 @@ export class DatabaseManager {
              field: 'crdts'
            }
          }
+       },
+       v: {
+       schema: {
+         title: 'view',
+           version: 0,
+           primaryKey: 'id',
+           type: 'object',
+           properties: {
+           id: {
+             type: 'string',
+               maxLength: 100
+           },
+           m: {
+             type: 'object'
+           },
+           crdts: getCRDTSchemaPart()
+         },
+         required: ['id'],
+           crdt: {
+           field: 'crdts'
+         }
        }
+     }
      });
      window.addEventListener('keydown', (event: KeyboardEvent )=>{
        if (event.ctrlKey && event.key === 's') {
@@ -103,10 +125,13 @@ export class DatabaseManager {
    }
   }
 
-  async registerPreviousVersion() {
+  async registerUrlProviders() {
     this.brotli = await brotli;
     if (url.has("c")) {
       return (await this.readBlocksFromURL())?.blocks;
+    }
+    if (url.has("u")) {
+      return fetch(url.read("u")).then(response => response.json());
     }
     return [];
   }
@@ -307,7 +332,7 @@ export class DatabaseManager {
     url.write(key, this.compress(JSON.stringify(collection)));
   }
   updateIndex(block: any,index: number) {
-    if (!this._database && !block.updateCRDT) {
+    if (!this._database) {
       return;
     }
     // @ts-ignore

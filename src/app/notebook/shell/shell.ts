@@ -264,7 +264,7 @@ export class Shell {
           'version': '2.26.5',
           blocks
         }).then(_ => {
-          return this.databaseManager.registerPreviousVersion().then((blocks: OutputBlockData[]) => {
+          return this.databaseManager.registerUrlProviders().then((blocks: OutputBlockData[]) => {
             if(blocks.length > 0) {
               this.editor.render({
                 'version': '2.26.5',

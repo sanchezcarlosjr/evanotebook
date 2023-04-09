@@ -185,7 +185,7 @@ interface PromptInputParams {
   type: string;
 }
 
-async function db() {
+async function create_db() {
   const database = await createRxDatabase({
     name: 'eva_notebook',
     storage: getRxStorageDexie()
@@ -230,7 +230,7 @@ async function db() {
     },
     v: {
       schema: {
-        title: 'v',
+        title: 'view',
         version: 0,
         primaryKey: 'id',
         type: 'object',
@@ -241,7 +241,12 @@ async function db() {
           },
           m: {
             type: 'object'
-          }
+          },
+          crdts: getCRDTSchemaPart()
+        },
+        required: ['id'],
+        crdt: {
+          field: 'crdts'
         }
       }
     }
@@ -249,7 +254,7 @@ async function db() {
   return database;
 }
 // @ts-ignore
-globalThis.db = from(db()).pipe(shareReplay(1));
+globalThis.db = from(create_db()).pipe(shareReplay(1));
 
 interface StateChart {
   next: any;
