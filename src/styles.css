@@ -799,6 +799,6 @@ py-config {
   outline-color: #e3e3e3;
 }
 
-.debug-boxes {
+.debug-boxes, .debug-boxes>* {
   outline: 1px solid red;
 }
