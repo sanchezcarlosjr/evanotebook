@@ -14,6 +14,7 @@ import {RxDBJsonDumpPlugin} from 'rxdb/plugins/json-dump';
 import {P2PConnectionHandlerCreator, replicateP2P} from "rxdb/plugins/replication-p2p";
 import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
+import {enforceOptions} from "broadcast-channel";
 addRxPlugin(RxDBLeaderElectionPlugin);
 
 addRxPlugin(RxDBUpdatePlugin);
@@ -25,6 +26,13 @@ export const base64ToData = (base64: string) => new Uint8Array(
   [...atob(base64)].map(c => c.charCodeAt(0))
 );
 
+/*
+  This is a workaround for the fact that idb and pubkey's Broadcast channel does not work in web workers.
+  However, nowadays, the native BroadcastChannel is supported in modern browsers.
+ */
+enforceOptions({
+  type: 'native'
+});
 
 export type BlockDocument = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string};
 
@@ -111,7 +119,6 @@ export class DatabaseManager {
        }
      }
      });
-     await this._database?.waitForLeadership();
      return collections.blocks.find({
        sort: [{index: 'asc'}]
      }).$;
@@ -135,12 +142,12 @@ export class DatabaseManager {
   }
 
   async replicateCollections() {
+    url.write("p", this._uuid);
     const handler = getConnectionHandlerPeerJS(this._uuid);
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
     // @ts-ignore
     await this.replicatePool(this._database?.view, handler);
-    url.write("p", this._uuid);
   }
 
   async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
