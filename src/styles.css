@@ -504,6 +504,10 @@ h6 {
   max-width: 70%;
 }
 
+.fa,.fa-classic,.fa-sharp,.fas,.fa-solid,.far,.fa-regular,.fab,.fa-brands {
+  font-style: normal!important;
+}
+
 math-field {
   width: 100%;
   padding: 0 0;
