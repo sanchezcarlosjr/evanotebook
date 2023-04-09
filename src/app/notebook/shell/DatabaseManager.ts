@@ -74,7 +74,10 @@ export class DatabaseManager {
                type: 'string',
              },
              index: {
-               type: 'number'
+               type: 'number',
+               minimum: 0,
+               maximum: 1000,
+               multipleOf: 1
              },
              createdBy: {
                type: 'string',
@@ -90,7 +93,8 @@ export class DatabaseManager {
              },
              crdts: getCRDTSchemaPart()
            },
-           required: ['id', 'type', 'data', 'lastEditedBy', 'createdBy'],
+           required: ['id', 'type', 'data', 'index', 'lastEditedBy', 'createdBy'],
+           indexes: ['index'],
            crdt: {
              field: 'crdts'
            }
@@ -249,14 +253,14 @@ export class DatabaseManager {
   }
   insert$() {
     // @ts-ignore
-    return this._database?.blocks.insert$.pipe(
+    return this._database?.blocks?.insert$?.pipe(
       map((x: any) => x.documentData),
       filter((documentData: any) => documentData.lastEditedBy != this._uuid)
     );
   }
   remove$() {
     // @ts-ignore
-    return this._database?.blocks.remove$.pipe(
+    return this._database?.blocks?.remove$?.pipe(
       map((x: any) => x.documentData),
       filter((documentData: any) => documentData.lastEditedBy != this._uuid)
     );
@@ -271,7 +275,7 @@ export class DatabaseManager {
 
   update$() {
     // @ts-ignore
-    return this._database?.blocks.update$.pipe(
+    return this._database?.blocks?.update$?.pipe(
       map((x: any) => x.documentData),
       filter((documentData: any) => documentData.lastEditedBy != this._uuid)
     );
@@ -342,7 +346,10 @@ export class DatabaseManager {
   }
   updateIndex(block: any,index: number) {
     if (!this._database) {
-      return;
+      return Promise.resolve();
+    }
+    if (block.id === "0") {
+      return Promise.resolve();
     }
     // @ts-ignore
     return block?.updateCRDT({
@@ -379,20 +386,25 @@ export class DatabaseManager {
   async removeBlock(id: string) {
     // @ts-ignore
     if (!this._database?.blocks){
-      return ;
+      return;
     }
     // @ts-ignore
     const block = await this._database.blocks.findOne(id).exec();
-    await block.updateCRDT({
+    if (!block) {
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('saving'));
+    return block.updateCRDT({
+      selector: {
+        id: { $exists: true }
+      },
       ifMatch: {
         $set: {
-          lastEditedBy: this._uuid
+          id,
+          _deleted: true
         }
       }
     });
-    window.dispatchEvent(new CustomEvent('saving'));
-    // @ts-ignore
-    return await block.remove();
   }
   async changeBlock(blockRow: BlockDocument) {
     // @ts-ignore
@@ -434,9 +446,15 @@ export class DatabaseManager {
     if (!this._database?.blocks)
       return false;
     // @ts-ignore
-    this._database?.blocks.find().exec().then(blocks => this.writeCollectionURL({
+    this._database?.blocks.find({sort: [{index: 'asc'}]}).exec().then(blocks => this.writeCollectionURL({
       version: '2.26.5',
-      blocks
+      blocks: blocks.map((document: any) => ({
+        id: document._data.id,
+        type: document._data.type,
+        data: document._data.data,
+        tunes: document._data.tunes,
+        index: document._data.index
+      }))
     }));
     return true;
   }

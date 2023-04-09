@@ -220,7 +220,10 @@ async function create_db() {
             type: 'string',
           },
           index: {
-            type: 'number'
+            type: 'number',
+            minimum: 0,
+            maximum: 1000,
+            multipleOf: 1
           },
           createdBy: {
             type: 'string',
@@ -236,7 +239,8 @@ async function create_db() {
           },
           crdts: getCRDTSchemaPart()
         },
-        required: ['id', 'type', 'data', 'lastEditedBy', 'createdBy'],
+        required: ['id', 'type', 'data', 'index', 'lastEditedBy', 'createdBy'],
+        indexes: ['index'],
         crdt: {
           field: 'crdts'
         }
