@@ -41,9 +41,12 @@ import Indexed = Immutable.Seq.Indexed;
 import * as _ from 'lodash';
 
 import { ComputeEngine } from "@cortex-js/compute-engine";
-import {createRxDatabase} from "rxdb";
+import {addRxPlugin, createRxDatabase} from "rxdb";
 import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
 import {getCRDTSchemaPart} from "rxdb/plugins/crdt";
+import {enforceOptions} from 'broadcast-channel';
+import { RxDBLeaderElectionPlugin } from 'rxdb/plugins/leader-election';
+addRxPlugin(RxDBLeaderElectionPlugin);
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -185,9 +188,18 @@ interface PromptInputParams {
   type: string;
 }
 
+/*
+  This is a workaround for the fact that idb and pubkey's Broadcast channel does not work in web workers.
+  However, nowadays, the native BroadcastChannel is supported in modern browsers.
+ */
+enforceOptions({
+  type: 'native'
+});
+
 async function create_db() {
   const database = await createRxDatabase({
     name: 'eva_notebook',
+    multiInstance: true,
     storage: getRxStorageDexie()
   });
   await database.addCollections({
@@ -228,7 +240,7 @@ async function create_db() {
         }
       }
     },
-    v: {
+    view: {
       schema: {
         title: 'view',
         version: 0,
@@ -253,6 +265,7 @@ async function create_db() {
   });
   return database;
 }
+
 // @ts-ignore
 globalThis.db = from(create_db()).pipe(shareReplay(1));
 

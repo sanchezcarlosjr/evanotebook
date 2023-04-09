@@ -13,6 +13,8 @@ import * as _ from 'lodash';
 import {RxDBJsonDumpPlugin} from 'rxdb/plugins/json-dump';
 import {P2PConnectionHandlerCreator, replicateP2P} from "rxdb/plugins/replication-p2p";
 import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
+import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
+addRxPlugin(RxDBLeaderElectionPlugin);
 
 addRxPlugin(RxDBUpdatePlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -45,6 +47,7 @@ export class DatabaseManager {
    try {
      this._database = await createRxDatabase({
        name: 'eva_notebook',
+       multiInstance: true,
        storage: getRxStorageDexie()
      });
      const collections = await this._database.addCollections({
@@ -85,7 +88,7 @@ export class DatabaseManager {
            }
          }
        },
-       v: {
+       view: {
        schema: {
          title: 'view',
            version: 0,
@@ -114,6 +117,7 @@ export class DatabaseManager {
          this.saveInUrl();
        }
      });
+     await this._database?.waitForLeadership();
      return collections.blocks.find({
        sort: [{index: 'asc'}]
      }).$;
@@ -141,7 +145,7 @@ export class DatabaseManager {
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
     // @ts-ignore
-    await this.replicatePool(this._database?.v, handler);
+    await this.replicatePool(this._database?.view, handler);
   }
 
   async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
