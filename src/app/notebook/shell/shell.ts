@@ -289,9 +289,6 @@ export class Shell {
             }
           });
         }).then(async _ => {
-          if (!this.databaseManager.database) {
-            return;
-          }
           this.databaseManager.insert$().subscribe((block: any) => {
             this.peerAddBlock = true;
             this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
