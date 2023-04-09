@@ -1,4 +1,4 @@
-import {BehaviorSubject, filter, map, Observable, Subscriber} from "rxjs";
+import {filter, map, Observable, Subscriber} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';

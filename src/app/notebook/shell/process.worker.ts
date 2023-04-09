@@ -43,10 +43,12 @@ import * as _ from 'lodash';
 import { ComputeEngine } from "@cortex-js/compute-engine";
 import {addRxPlugin, createRxDatabase} from "rxdb";
 import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
-import {getCRDTSchemaPart} from "rxdb/plugins/crdt";
+import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
 import { RxDBLeaderElectionPlugin } from 'rxdb/plugins/leader-election';
 addRxPlugin(RxDBLeaderElectionPlugin);
+addRxPlugin(RxDBcrdtPlugin);
+
 
 function sendMessage(message: any) {
   self.postMessage(message);
