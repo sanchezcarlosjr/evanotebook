@@ -5,6 +5,18 @@ import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
 
+function readAsDataURL(file: File) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.addEventListener(
+      "load",
+      () => resolve(reader.result),
+      false
+    );
+    reader.readAsDataURL(file);
+  });
+}
+
 @Component({
   selector: 'app-notebook',
   templateUrl: './notebook.component.html',
@@ -72,15 +84,16 @@ export class NotebookComponent implements OnInit {
           class: await import("@editorjs/attaches").then(x => x.default),
           config: {
             uploader: {
-              uploadByFile(file: File){
-                if (file.type.startsWith("text/")) {
-                  file = new File([file], file.name, { type: "text/plain" });
-                }
-                return new Promise(resolve => resolve({success: 1, file: {
-                    url: URL.createObjectURL(file),
+              async uploadByFile(file: File) {
+                const url = await readAsDataURL(file);
+                return {
+                  success: 1,
+                  file: {
+                    url,
                     name: file.name,
                     size: file.size
-                }}))
+                  }
+                }
               },
             }
           }

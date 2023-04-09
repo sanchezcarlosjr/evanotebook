@@ -1,4 +1,6 @@
-export function write(query: string, expression: string) {
+export function write(query: string, expression: string | undefined) {
+  if (!expression)
+    return "";
   const url = new URL(window.location.toString());
   url.searchParams.set(query, expression);
   window.history.pushState({}, "", url);

@@ -289,21 +289,30 @@ export class Shell {
             }
           });
         }).then(async _ => {
-          this.databaseManager.insert$().subscribe((block: any) => {
+          if (isMode2) {
+            return;
+          }
+          window.addEventListener('keydown', (event: KeyboardEvent )=>{
+            if (event.ctrlKey && event.key === 's') {
+              event.preventDefault();
+              this.databaseManager.saveInUrl();
+            }
+          });
+          this.databaseManager.insert$()?.subscribe((block: any) => {
             this.peerAddBlock = true;
             this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
           });
-          this.databaseManager.remove$().subscribe((block: any) => {
+          this.databaseManager.remove$()?.subscribe((block: any) => {
             this.peerRemoveBlock = true;
             this.editor.blocks.delete(this.editor.blocks.getBlockIndex(block.id));
           });
-          this.databaseManager.update$().subscribe((block: any) => {
+          this.databaseManager.update$()?.subscribe((block: any) => {
             this.peerRemoveBlock = true;
             this.peerAddBlock = true;
             this.peerChangeBlock = true;
             this.editor.blocks.update(block.id, block.data);
           });
-          this.databaseManager.replicateBlocks().then().catch(console.log);
+          this.databaseManager.replicateCollections().then().catch(console.log);
         });
       });
     });

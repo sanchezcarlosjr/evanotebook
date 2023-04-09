@@ -111,12 +111,6 @@ export class DatabaseManager {
        }
      }
      });
-     window.addEventListener('keydown', (event: KeyboardEvent )=>{
-       if (event.ctrlKey && event.key === 's') {
-         event.preventDefault();
-         this.saveInUrl();
-       }
-     });
      await this._database?.waitForLeadership();
      return collections.blocks.find({
        sort: [{index: 'asc'}]
@@ -140,12 +134,13 @@ export class DatabaseManager {
     return [];
   }
 
-  async replicateBlocks() {
+  async replicateCollections() {
     const handler = getConnectionHandlerPeerJS(this._uuid);
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
     // @ts-ignore
     await this.replicatePool(this._database?.view, handler);
+    url.write("p", this._uuid);
   }
 
   async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
@@ -353,7 +348,7 @@ export class DatabaseManager {
     });
   }
   setupPeer() {
-    this._uuid = url.read("p") || url.write("p", crypto.randomUUID());
+    this._uuid = url.read("p") || crypto.randomUUID();
   }
   createNewDatabase() {
     return undefined;
