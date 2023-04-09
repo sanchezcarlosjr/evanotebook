@@ -11,7 +11,7 @@ import {getCRDTSchemaPart, RxDBcrdtPlugin} from 'rxdb/plugins/crdt';
 import {OutputBlockData} from "@editorjs/editorjs/types/data-formats/output-data";
 import * as _ from 'lodash';
 import {RxDBJsonDumpPlugin} from 'rxdb/plugins/json-dump';
-import {replicateP2P} from "rxdb/plugins/replication-p2p";
+import {P2PConnectionHandlerCreator, replicateP2P} from "rxdb/plugins/replication-p2p";
 import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
 
 addRxPlugin(RxDBUpdatePlugin);
@@ -137,17 +137,20 @@ export class DatabaseManager {
   }
 
   async replicateBlocks() {
+    const handler = getConnectionHandlerPeerJS(this._uuid);
     // @ts-ignore
-    await this.replicatePool(this._database?.blocks);
+    await this.replicatePool(this._database?.blocks, handler);
+    // @ts-ignore
+    await this.replicatePool(this._database?.v, handler);
   }
 
-  async replicatePool(collection: any) {
+  async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
     return await replicateP2P(
       {
         collection: collection,
         secret: "",
         topic: this._uuid as string,
-        connectionHandlerCreator: getConnectionHandlerPeerJS(this._uuid),
+        connectionHandlerCreator,
         pull: {},
         push: {}
       }
