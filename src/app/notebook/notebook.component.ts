@@ -6,11 +6,14 @@ import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
 
 function readAsDataURL(file: File) {
+  if (!file) {
+    return Promise.resolve(null);
+  }
   return new Promise(resolve => {
     const reader = new FileReader();
     reader.addEventListener(
       "load",
-      () => resolve(reader.result),
+      () => resolve(reader?.result),
       false
     );
     reader.readAsDataURL(file);
