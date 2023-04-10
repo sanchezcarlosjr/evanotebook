@@ -340,7 +340,9 @@ export class CodeBlock extends InteractiveBlock {
       });
       const output = document.createElement('div');
       output.innerHTML = this.outputCell;
-      output.id = randomCouchString(10);
+      if (!output.id) {
+        output.id = randomCouchString(10);
+      }
       output.classList.add('output', 'py-output');
       editor.children[0]?.setAttribute('output', output.id);
       this.cell.appendChild(editor);
