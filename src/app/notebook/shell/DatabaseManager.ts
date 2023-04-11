@@ -146,6 +146,8 @@ export class DatabaseManager {
   }
 
   async replicateCollections() {
+    if (!this._database)
+      return;
     url.write("p", this._uuid);
     const handler = getConnectionHandlerPeerJS(this._uuid);
     // @ts-ignore
@@ -155,6 +157,8 @@ export class DatabaseManager {
   }
 
   async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
+    if (!collection)
+      return;
     return await replicateP2P(
       {
         collection: collection,

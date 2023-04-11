@@ -1,4 +1,4 @@
-import Chart, { ChartComponent, ChartData, ChartDataset, ChartTypeRegistry, DefaultDataPoint } from "chart.js/auto";
+import Chart, {ChartComponent, ChartData, ChartDataset, ChartTypeRegistry, DefaultDataPoint} from "chart.js/auto";
 import annotationPlugin from 'chartjs-plugin-annotation';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import * as Immutable from "immutable";
@@ -6,9 +6,6 @@ import * as jp from 'jsonpath';
 import * as math from 'mathjs';
 import * as rx from "rxjs";
 import {
-  NEVER,
-  Observable,
-  UnaryFunction,
   catchError,
   delay,
   delayWhen,
@@ -21,31 +18,36 @@ import {
   map,
   mergeScan,
   mergeWith,
+  NEVER,
+  Observable,
   of,
   pipe,
   range,
   reduce,
   scan,
+  shareReplay,
   startWith,
   switchMap,
   switchScan,
   take,
   takeWhile,
   tap,
-  throttleTime, firstValueFrom, shareReplay
+  throttleTime,
+  UnaryFunction
 } from "rxjs";
-import { fromFetch } from "rxjs/fetch";
-import { P, Pattern, isMatching, match } from 'ts-pattern';
+import {fromFetch} from "rxjs/fetch";
+import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as protocols from './protocols';
-import Indexed = Immutable.Seq.Indexed;
 import * as _ from 'lodash';
 
-import { ComputeEngine } from "@cortex-js/compute-engine";
+import {ComputeEngine} from "@cortex-js/compute-engine";
 import {addRxPlugin, createRxDatabase} from "rxdb";
 import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
 import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
-import { RxDBLeaderElectionPlugin } from 'rxdb/plugins/leader-election';
+import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
+import Indexed = Immutable.Seq.Indexed;
+
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
 
@@ -64,10 +66,10 @@ class RequestError extends Error {
   }
 }
 
-function requestResource(event: string, request: any): Promise<any> {
+function requestResource(responseEvent: string, request: any): Promise<any> {
   return new Promise((resolve, reject) => {
     // @ts-ignore
-    globalThis.addEventListener(event, (event: CustomEvent) => {
+    globalThis.addEventListener(responseEvent, (event: CustomEvent) => {
       resolve(event.detail.payload);
       // @ts-ignore
       globalThis.removeEventListener(event, null);
@@ -87,11 +89,10 @@ function observeResource(event: string, request: any): Observable<any> {
   });
 }
 
-function requestPlot(options: object): Promise<string | null> {
+function requestCanvas(): Promise<{canvas: OffscreenCanvas, width: number, height: number}> {
   return requestResource('transferControlToOffscreen', {
-    event: 'plot', payload: {
-      threadId: self.name,
-      ...options
+    event: 'shell.RequestCanvas', payload: {
+      threadId: self.name
     }
   });
 }
@@ -283,6 +284,8 @@ interface StateChart {
   chart: Chart<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar", DefaultDataPoint<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar">, unknown>;
 }
 
+const dynamicImportOpenCV = new Function(`return import("/assets/opencv.js")`);
+
 interface ConfigurationChart {
   type: keyof ChartTypeRegistry;
   data: any;
@@ -292,11 +295,7 @@ interface ConfigurationChart {
 }
 
 async function buildChart(config: ConfigurationChart) {
-  const payload = await requestPlot({
-    event: 'plot', payload: {
-      threadId: self.name
-    }
-  }) as any;
+  const payload = await requestCanvas() as any;
   Chart.register(config.plugins ?? []);
   const chart = new Chart(payload.canvas, {
     type: config.type,
@@ -524,9 +523,39 @@ class ProcessWorker {
       scaleID: 'y',
       value: (ctx: any) => math.mean(ctx.chart.data.datasets[datasetIndex].data) - math.std(ctx.chart.data.datasets[datasetIndex].data)
     });
+    environment.shareReplay = shareReplay;
     environment.throwError = (error: Error) => {
       throw error;
     }
+    environment.importOpenCV = () => new Observable(observer => {
+      environment.Module = {
+        onRuntimeInitialized() {
+        }
+      };
+      // Angular Compiler doesn't support dynamic import in the worker.
+      // Some browsers support dynamic import in the worker, but not all.
+      dynamicImportOpenCV().then((opencv: any) => {
+        if (environment.cv) {
+          observer.next(environment.cv);
+          return;
+        }
+        environment.cv = opencv.default;
+        observer.next(opencv.default);
+      });
+    });
+    environment.arrayBufferToBlob = (options = { type: 'image/jpeg' }) => map((arrayBuffer: ArrayBuffer) => new Blob([arrayBuffer], options));
+    environment.blobToImage = switchMap((blob: Blob) => createImageBitmap(blob));
+    environment.imshow = switchMap((image: ImageBitmap) => {
+      return from(requestCanvas().then(({canvas}) => {
+        const ctx = canvas.getContext('2d');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        // @ts-ignore
+        ctx.drawImage(image, 0, 0);
+        // @ts-ignore
+        return ctx.getImageData(0, 0, image.width, image.height);
+      }));
+    });
     environment.annotationPlugin = annotationPlugin;
     environment.ChartDataLabels = ChartDataLabels;
     environment.basicStatisticsAnnotations = (datasetIndex = 0, borderColor = 'black') => ({
@@ -591,12 +620,13 @@ class ProcessWorker {
           P.when(r => r.ok && /JSON/gi.test(r.headers.get("Content-Type") ?? "")),
           (r) => from(r.json())
         ).with(
-          P.when(r => r.ok && /octet-stream/gi.test(r.headers.get("Content-Type") ?? "")),
+          P.when(r => r.ok && /octet-stream|image/gi.test(r.headers.get("Content-Type") ?? "")),
           (r) => from(r.blob())
         ).with(
           P.when(r => r.ok && /form-data/gi.test(r.headers.get("Content-Type") ?? "")),
           (r) => from(r.formData())
-        ).with(P.when(r => r.ok), (r) => from(r.text())).otherwise(() => of({
+        ).
+        with(P.when(r => r.ok), (r) => from(r.text())).otherwise(() => of({
           error: true,
           message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
         }))

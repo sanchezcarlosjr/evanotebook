@@ -109,7 +109,7 @@ export class Shell {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('println', event.detail.payload.text);
     });
     //@ts-ignore
-    environment.addEventListener('plot', (event: CustomEvent) => {
+    environment.addEventListener('shell.RequestCanvas', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('transferControlToOffscreen');
     });
     environment.addEventListener('shell.transferControlToOffscreen', (event: CustomEvent) => {
