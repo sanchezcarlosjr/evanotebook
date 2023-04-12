@@ -89,7 +89,10 @@ function observeResource(event: string, request: any): Observable<any> {
   });
 }
 
-function requestCanvas(): Promise<{canvas: OffscreenCanvas, width: number, height: number}> {
+// @ts-ignore
+globalThis.HTMLCanvasElement = OffscreenCanvas;
+
+function requestCanvas(): Promise<{ canvas: OffscreenCanvas, width: number, height: number }> {
   return requestResource('transferControlToOffscreen', {
     event: 'shell.RequestCanvas', payload: {
       threadId: self.name
@@ -100,7 +103,7 @@ function requestCanvas(): Promise<{canvas: OffscreenCanvas, width: number, heigh
 const speechSynthesis = {
   speak: (text: string) => {
     // @ts-ignore
-    sendMessage({ event: 'speak', payload: text });
+    sendMessage({event: 'speak', payload: text});
   }
 }
 
@@ -276,6 +279,10 @@ async function create_db() {
 // @ts-ignore
 globalThis.db = from(create_db()).pipe(shareReplay(1));
 
+async function getCanvas2d() {
+  return (await requestCanvas()).canvas.getContext('2d');
+}
+
 interface StateChart {
   next: any;
   dataset: ChartDataset<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar", DefaultDataPoint<"bar" | "line" | "scatter" | "bubble" | "pie" | "doughnut" | "polarArea" | "radar">>;
@@ -382,7 +389,7 @@ class ProcessWorker {
     environment.doAside = (...operations: UnaryFunction<any, any>[]) =>
       // @ts-ignore
       tap((value: any) => of(value).pipe(...operations).subscribe())
-      ;
+    ;
     // Consult https://www.twilio.com/docs/sms/api#send-messages-with-the-sms-api
     environment.sendSMS = (options: { from?: string, to?: string, account_sid: string, auth_token: string }) => switchMap((body: any) =>
       fromFetch(`https://api.twilio.com/2010-04-01/Accounts/${options.account_sid}/Messages.json`, {
@@ -396,7 +403,7 @@ class ProcessWorker {
           'Body': body?.Body ?? body,
           'To': body?.To ?? options.to
         })
-      }).pipe(catchError(err => of({ error: true, message: err.message })), map(_ => body))
+      }).pipe(catchError(err => of({error: true, message: err.message})), map(_ => body))
     );
     environment.ce = new ComputeEngine();
     environment.sendEmail = (options: { type?: string, provider?: string, personalizations?: any, token: string, proxy?: string, to: string | string[], from: string, subject: string }) =>
@@ -413,7 +420,7 @@ class ProcessWorker {
               {
                 "personalizations": options.personalizations ?? [
                   {
-                    "to": Array.isArray(options?.to) ? options.to.map(email => ({ email })) : [
+                    "to": Array.isArray(options?.to) ? options.to.map(email => ({email})) : [
                       {
                         email: options?.to ?? ""
                       }
@@ -527,35 +534,68 @@ class ProcessWorker {
     environment.throwError = (error: Error) => {
       throw error;
     }
-    environment.importOpenCV = () => new Observable(observer => {
-      environment.Module = {
-        onRuntimeInitialized() {
-        }
-      };
-      // Angular Compiler doesn't support dynamic import in the worker.
-      // Some browsers support dynamic import in the worker, but not all.
-      dynamicImportOpenCV().then((opencv: any) => {
+    environment.importOpenCV =
+      new Observable(observer => {
         if (environment.cv) {
           observer.next(environment.cv);
+          observer.complete();
           return;
         }
-        environment.cv = opencv.default;
-        observer.next(opencv.default);
-      });
+        environment.Module = {
+          onRuntimeInitialized() {
+            observer.next(environment.cv);
+            observer.complete();
+          }
+        };
+        // Angular Compiler doesn't support dynamic import in the worker.
+        // Some browsers support dynamic import in the worker, but not all.
+        dynamicImportOpenCV().then((opencv: any) => {
+          environment.cv = opencv.default;
+        });
+      }).pipe(shareReplay(1));
+    environment.base64ToBlob = (contentType = 'image/jpeg') =>
+      map((obj: any) => {
+          const byteCharacters = atob(obj.message);
+          const byteArray = new Uint8Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteArray[i] = byteCharacters.charCodeAt(i);
+          }
+          obj.message =  new Blob([byteArray], {type: contentType});
+          return obj;
+        }
+      );
+    environment.blobToImage = switchMap((obj: {message:Blob}) => {
+      return from(createImageBitmap(obj.message)).pipe(
+        map((imageBitmap: ImageBitmap) => {
+          // @ts-ignore
+          obj.message = imageBitmap;
+          return obj;
+        })
+      );
     });
-    environment.arrayBufferToBlob = (options = { type: 'image/jpeg' }) => map((arrayBuffer: ArrayBuffer) => new Blob([arrayBuffer], options));
-    environment.blobToImage = switchMap((blob: Blob) => createImageBitmap(blob));
-    environment.imshow = switchMap((image: ImageBitmap) => {
-      return from(requestCanvas().then(({canvas}) => {
-        const ctx = canvas.getContext('2d');
-        canvas.width = image.width;
-        canvas.height = image.height;
+    environment.imshow = () => pipe(
+      switchScan(async (promise: {message: Promise<OffscreenRenderingContext | null>}, obj: {message: ImageBitmap}) => {
+        const context = await promise.message;
+        if (!context) {
+          return Promise.reject('No context available');
+        }
         // @ts-ignore
-        ctx.drawImage(image, 0, 0);
+        context.canvas.width = obj.message.width;
         // @ts-ignore
-        return ctx.getImageData(0, 0, image.width, image.height);
-      }));
-    });
+        context.canvas.height = obj.message.height;
+        // @ts-ignore
+        context.drawImage(obj.message, 0, 0);
+        // @ts-ignore
+        obj.message = context;
+        return obj;
+      }, {message: getCanvas2d()})
+    );
+    environment.focusOnImage = () => pipe(
+      filter(({message}) => message as unknown as boolean),
+      environment.base64ToBlob(),
+      environment.blobToImage,
+      environment.imshow(),
+    )
     environment.annotationPlugin = annotationPlugin;
     environment.ChartDataLabels = ChartDataLabels;
     environment.basicStatisticsAnnotations = (datasetIndex = 0, borderColor = 'black') => ({
@@ -565,7 +605,7 @@ class ProcessWorker {
       meanMinusStandardDeviationAnnotation: environment.meanMinusStandardDeviationAnnotation(datasetIndex, borderColor),
       meanPlusStandardDeviationAnnotation: environment.meanPlusStandardDeviationAnnotation(datasetIndex, borderColor),
     });
-    environment.openSnackbar = tap(({message, action}: {message: string, action: string}) =>
+    environment.openSnackbar = tap(({message, action}: { message: string, action: string }) =>
       postMessage({'event': 'openSnackBar', 'payload': {message, action}}));
     environment.println = (observerOrNext: any) => this.localEcho.println(environment.serialize(observerOrNext, 1)?.replace(/\\u002F/g, "/"));
     environment.display = tap(environment.println);
@@ -625,18 +665,17 @@ class ProcessWorker {
         ).with(
           P.when(r => r.ok && /form-data/gi.test(r.headers.get("Content-Type") ?? "")),
           (r) => from(r.formData())
-        ).
-        with(P.when(r => r.ok), (r) => from(r.text())).otherwise(() => of({
+        ).with(P.when(r => r.ok), (r) => from(r.text())).otherwise(() => of({
           error: true,
           message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
         }))
       ),
-      catchError(err => of({ error: true, message: err.message }))
+      catchError(err => of({error: true, message: err.message}))
     );
     environment.readFiles = pipe(
       map((fileList: FileList) => Immutable.Range(0, fileList.length).map(
-        (index) => from(readFile(index, fileList)) as Observable<any>
-      )
+          (index) => from(readFile(index, fileList)) as Observable<any>
+        )
       ),
       switchMap((v: Indexed<Observable<any>>): any => v.get(0)?.pipe(mergeWith(v.slice(1, v.size).toArray())))
     );
@@ -657,7 +696,7 @@ class ProcessWorker {
       port.onmessage = (event: MessageEvent) => {
         ready = true;
         if (event.data.type === "ready") {
-          port.postMessage({ type: "setOptions", options });
+          port.postMessage({type: "setOptions", options});
         }
         if (event.data.type === "data") {
           observer.next(event.data.data);
@@ -667,13 +706,13 @@ class ProcessWorker {
         startWith(0),
         takeWhile(_ => !ready)
       ).subscribe(_ =>
-        port.postMessage({ type: "ready" })
+        port.postMessage({type: "ready"})
       );
     })));
     environment.plot = (config: ConfigurationChart) => pipe(
       switchScan(async (acc, next) => {
         const chart = await acc;
-        config.scan?.({ dataset: chart.data.datasets[0], next, datasets: chart.data.datasets, data: chart.data, chart });
+        config.scan?.({dataset: chart.data.datasets[0], next, datasets: chart.data.datasets, data: chart.data, chart});
         chart.update();
         return acc;
       }, buildChart(config)),
@@ -703,10 +742,10 @@ class ProcessWorker {
       tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display);
     environment.publishMQTT =
-      (topic: string, payloadName: string = "text", options = { publication: {}, message: {} }) =>
+      (topic: string, payloadName: string = "text", options = {publication: {}, message: {}}) =>
         map((payload: string) => ({
           topic,
-          message: environment.serialize({ [`${payloadName}`]: payload, ...options.message }),
+          message: environment.serialize({[`${payloadName}`]: payload, ...options.message}),
           ...options.publication
         }));
     environment.sayHermes = environment.publishMQTT("hermes/tts/say");
@@ -721,13 +760,13 @@ class ProcessWorker {
     environment.connect = (protocol: string, options: any) => protocols[protocol] ?
       // @ts-ignore
       (new protocols[protocol]()).connect(options) :
-      of({ error: true, message: `Error: ${protocol} is not available.` })
+      of({error: true, message: `Error: ${protocol} is not available.`})
   }
 
   println(next: any) {
     match(next)
       .with(
-          P.string, (next: string) => this.terminal.rewrite(next)
+        P.string, (next: string) => this.terminal.rewrite(next)
       ).otherwise(next => this.environment.println(next))
   }
 
@@ -745,23 +784,27 @@ const processWorker = new ProcessWorker(globalThis, new LocalEcho(), new Termina
 // @ts-ignore
 globalThis.addEventListener('exec', async (event: CustomEvent) => {
   if (!event.detail.payload) {
-    sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } });
+    sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
     return;
   }
   try {
     const response = await processWorker.exec(event.detail.payload);
     if (!(response instanceof Observable)) {
       processWorker.println(response);
-      sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } });
+      sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
       return;
     }
     response.subscribe({
       // @ts-ignore
-      complete: () => sendMessage({ 'event': 'shell.Stop', payload: { threadId: self.name } })
+      complete: () => sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}})
     });
   } catch (e) {
     // @ts-ignore
-    sendMessage({ 'event': 'shell.error', payload: { threadId: self.name, text: `<pre class="py-error">${e.name}: ${e.message}</pre>` } });
+    sendMessage({
+      'event': 'shell.error',
+      // @ts-ignore
+      payload: {threadId: self.name, text: `<pre class="py-error">${e?.name}: ${e?.message}</pre>`}
+    });
   }
 });
 
