@@ -4,6 +4,8 @@ import { createCustomElement } from '@angular/elements';
 import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
+import {Title} from "@angular/platform-browser";
+import {BehaviorSubject} from "rxjs";
 
 function readAsDataURL(file: File) {
   if (!file) {
@@ -29,11 +31,14 @@ export class NotebookComponent implements OnInit {
   isSaving = false;
   isMode2: boolean = true;
   loading: boolean = true;
-  constructor(injector: Injector,private _snackBar: MatSnackBar) {
+  name: string = "";
+  constructor(injector: Injector,private _snackBar: MatSnackBar, private titleService: Title) {
     const formElement = createCustomElement(FormComponent, {injector});
     customElements.define('nk-form', formElement);
   }
   async ngOnInit() {
+    this.name = url.read("n", "EvaNotebook");
+    this.titleService.setTitle(this.name);
     const EditorJS = await import("@editorjs/editorjs");
     this.isMode2 = url.read("m") === "2";
     const editor = new EditorJS.default({
@@ -200,5 +205,10 @@ export class NotebookComponent implements OnInit {
   importNotebook(event: Event) {
     // @ts-ignore
     window.dispatchEvent(new CustomEvent('shell.ImportNotebook', {detail: {file: event.target.files.item(0)}}));
+  }
+
+  updateName(name: string) {
+    url.write("n", name);
+    this.titleService.setTitle(name);
   }
 }

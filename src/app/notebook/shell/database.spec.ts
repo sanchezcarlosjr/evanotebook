@@ -11,7 +11,7 @@ addRxPlugin(RxDBUpdatePlugin);
 describe('RxDB Playground', () => {
   let manager: DatabaseManager;
   beforeEach(async () => {
-    manager = new DatabaseManager();
+    manager = new DatabaseManager(this.titleSubject);
     await manager.start();
   });
   afterEach(async () => {

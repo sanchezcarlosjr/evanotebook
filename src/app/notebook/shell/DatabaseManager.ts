@@ -1,4 +1,4 @@
-import {filter, map, Observable, Subscriber} from "rxjs";
+import {BehaviorSubject, filter, map, Observable, Subscriber, throttleTime} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
@@ -34,10 +34,11 @@ enforceOptions({
   type: 'native'
 });
 
-export type BlockDocument = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string};
+export type BlockDocument = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string, topic?: string};
 
 export class DatabaseManager {
   private _uuid: string | undefined;
+  private topic: string | undefined;
   get database(): RxDatabaseBase<Promise<any>, any> | undefined {
     return this._database;
   }
@@ -69,6 +70,11 @@ export class DatabaseManager {
              id: {
                type: 'string',
                maxLength: 100
+             },
+             topic: {
+               type: 'string',
+               maxLength: 100,
+               default: "EvaNotebook"
              },
              lastEditedBy: {
                type: 'string',
@@ -124,6 +130,11 @@ export class DatabaseManager {
      }
      });
      return collections.blocks.find({
+       selector: {
+         topic: {
+           $eq: this.topic
+         }
+       },
        sort: [{index: 'asc'}]
      }).$;
    } catch (e) {
@@ -149,6 +160,7 @@ export class DatabaseManager {
     if (!this._database)
       return;
     url.write("p", this._uuid);
+    url.write("t", this.topic);
     const handler = getConnectionHandlerPeerJS(this._uuid);
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
@@ -176,46 +188,10 @@ export class DatabaseManager {
       block.index = index;
       block.createdBy = this._uuid;
       block.lastEditedBy = this._uuid;
+      block.topic = this.topic;
     });
     // @ts-ignore
     return this._database?.blocks.bulkInsert(blocks);
-  }
-
-  replicateWithURL(collection: {[name: string]: RxCollection<any, {}, {}, {}>}) {
-    const self = this;
-    return replicateRxCollection({
-      collection,
-      replicationIdentifier: 'query-parameter://notebook.sanchezcarlosjr.com',
-      live: false,
-      retryTime: 5 * 1000,
-      waitForLeadership: false,
-      autoStart: true,
-      push: {
-        async handler(docs) {
-          self.writeCollectionURL(docs);
-          return new Promise((resolve, reject) => resolve([]));
-        },
-        batchSize: 1,
-        modifier: d => d
-      },
-      pull: {
-        async handler(lastCheckpoint, batchSize) {
-          let remoteDocuments = [];
-          try {
-            remoteDocuments = self.readBlocksFromURL();
-          } catch (e) {}
-          return {
-            documents: remoteDocuments as {_deleted: boolean}[],
-            checkpoint: remoteDocuments.length === 0 ? lastCheckpoint : {
-              id: remoteDocuments[0].uuid,
-              time: remoteDocuments[0].time
-            }
-          };
-        },
-        batchSize: 2,
-        modifier: d => d
-      },
-    })
   }
 
   compress(input: string, options?: any) {
@@ -226,6 +202,10 @@ export class DatabaseManager {
   decodeHtmlEntities(html: string) {
     this.txt.innerHTML = html;
     return this.txt.value;
+  }
+
+  writeCollectionURL(collection: any, key: string = "c") {
+    url.write(key, this.compress(JSON.stringify(collection)));
   }
 
   upsert(data: any) {
@@ -247,42 +227,12 @@ export class DatabaseManager {
     return this.textDecoder.decode(this.brotli?.decompress(base64ToData(base64)));
   }
 
-  collection(name: string): Observable<BlockDocument[]> {
-    // @ts-ignore
-    return this._database[name]?.find({
-      sort: [{index: 'asc'}]
-    }).$.pipe(
-      filter(x => !!x)
-    );
-  }
-  insert$() {
-    // @ts-ignore
-    return this._database?.blocks?.insert$?.pipe(
-      map((x: any) => x.documentData),
-      filter((documentData: any) => documentData.lastEditedBy != this._uuid)
-    );
-  }
-  remove$() {
-    // @ts-ignore
-    return this._database?.blocks?.remove$?.pipe(
-      map((x: any) => x.documentData),
-      filter((documentData: any) => documentData.lastEditedBy != this._uuid)
-    );
-  }
   exportDatabase() {
     return this._database?.exportJSON();
   }
 
   importDatabase(json: RxDumpDatabaseAny<RxCollection>) {
     return this._database?.importJSON(json);
-  }
-
-  update$() {
-    // @ts-ignore
-    return this._database?.blocks?.update$?.pipe(
-      map((x: any) => x.documentData),
-      filter((documentData: any) => documentData.lastEditedBy != this._uuid)
-    );
   }
 
   index(name: string) {
@@ -292,8 +242,28 @@ export class DatabaseManager {
       );
   }
 
-  loadChannel() {
-    return new MessageChannel();
+  insert$() {
+    // @ts-ignore
+    return this._database?.blocks?.insert$?.pipe(
+      map((x: any) => x.documentData),
+      filter((documentData: any) => documentData.lastEditedBy != this._uuid && documentData.topic === this.topic)
+    );
+  }
+
+  remove$() {
+    // @ts-ignore
+    return this._database?.blocks?.remove$?.pipe(
+      map((x: any) => x.documentData),
+      filter((documentData: any) => documentData.lastEditedBy != this._uuid && documentData.topic === this.topic)
+    );
+  }
+
+  update$() {
+    // @ts-ignore
+    return this._database?.blocks?.update$?.pipe(
+      map((x: any) => x.documentData),
+      filter((documentData: any) => documentData.lastEditedBy != this._uuid && documentData.topic === this.topic)
+    );
   }
 
   async insert(name: string, outputData: OutputData) {
@@ -305,18 +275,24 @@ export class DatabaseManager {
     }))._data;
     // @ts-ignore
   }
+
   async destroy() {
     await this._database?.destroy();
   }
+
   readBlocksFromURL() {
     return JSON.parse(this.decodeHtmlEntities(this.decompress(url.read("c"))));
   }
+
   increaseIndexes(index: number) {
     // @ts-ignore
     return this._database?.blocks?.find({
       selector: {
         index: {
           $gte: index
+        },
+        topic: {
+          $eq: this.topic
         }
       }
     }).update({
@@ -328,12 +304,16 @@ export class DatabaseManager {
       }
     });
   }
+
   decreaseIndexes(index: number) {
     // @ts-ignore
     return this._database?.blocks?.find({
       selector: {
         index: {
           $gte: index
+        },
+        title: {
+          $eq: this.topic
         }
       }
     }).update({
@@ -345,9 +325,7 @@ export class DatabaseManager {
       }
     });
   }
-  writeCollectionURL(collection: any, key: string = "c") {
-    url.write(key, this.compress(JSON.stringify(collection)));
-  }
+
   updateIndex(block: any,index: number) {
     if (!this._database) {
       return Promise.resolve();
@@ -365,20 +343,24 @@ export class DatabaseManager {
       }
     });
   }
+
   setupPeer() {
     this._uuid = url.read("p") || crypto.randomUUID();
+    this.topic = url.read("t") || crypto.randomUUID();
   }
+
   createNewDatabase() {
     return undefined;
   }
+
   async addBlock(block: BlockDocument) {
     // @ts-ignore
     if (!this._database?.blocks){
       return ;
     }
-    // @ts-ignore
     block.createdBy = this._uuid;
     block.lastEditedBy = this._uuid;
+    block.topic = this.topic;
     // @ts-ignore
     await this._database?.blocks?.insertCRDT({
       ifMatch: {
@@ -442,7 +424,7 @@ export class DatabaseManager {
   }
 
   generateDefaultBlock() {
-    return {id: '0', index: 0, type: 'paragraph', data: {text: ''}, createdBy: this._uuid, lastEditedBy: this._uuid};
+    return {id: '0', topic: this.topic, index: 0, type: 'paragraph', data: {text: ''}, createdBy: this._uuid, lastEditedBy: this._uuid};
   }
 
   saveInUrl() {

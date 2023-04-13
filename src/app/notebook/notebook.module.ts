@@ -12,25 +12,27 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
 import {JsonFormsAngularMaterialModule} from '@jsonforms/angular-material';
 import {MatMenuModule} from "@angular/material/menu";
 import {MatToolbarModule} from "@angular/material/toolbar";
+import {FormsModule} from "@angular/forms";
 
 @NgModule({
   declarations: [
     NotebookComponent,
     FormComponent
   ],
-  imports: [
-    CommonModule,
-    NotebookRoutingModule,
-    JsonFormsModule,
-    JsonFormsAngularMaterialModule,
-    MatAutocompleteModule,
-    MatButtonModule,
-    MatToolbarModule,
-    MatMenuModule,
-    MatButtonModule,
-    MatRadioModule,
-    MatSnackBarModule
-  ]
+    imports: [
+        CommonModule,
+        NotebookRoutingModule,
+        JsonFormsModule,
+        JsonFormsAngularMaterialModule,
+        MatAutocompleteModule,
+        MatButtonModule,
+        MatToolbarModule,
+        MatMenuModule,
+        MatButtonModule,
+        MatRadioModule,
+        MatSnackBarModule,
+        FormsModule
+    ]
 })
 export class NotebookModule {
 }

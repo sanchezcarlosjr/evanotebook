@@ -14,6 +14,7 @@ import {
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
 import {OutputBlockData} from "@editorjs/editorjs";
+import * as url from "./url";
 
 
 enum JobStatus {
@@ -182,7 +183,6 @@ export class Shell {
     });
     const readDetailFromBlockChanged = async (detail: any)  => ({index: detail.index, savedData: await detail.target.save()});
     blockChanges$.pipe(
-      throttleTime(700),
       switchMap(detail => from(readDetailFromBlockChanged(detail))),
     ).subscribe((next: {index: number, savedData: SavedData}) => {
       this.databaseManager.changeBlock({
@@ -206,6 +206,9 @@ export class Shell {
     environment.addEventListener('localStorage.getItem', (event: CustomEvent) => event.detail.port.postMessage({
       event: 'localStorage.getItem', payload: localStorage.getItem(event.detail.payload.key)
     }));
+    environment.addEventListener('shell.UpdateName', (event: CustomEvent) => {
+      url.write("name", event.detail.name);
+    });
     environment.addEventListener('localStorage.setItem', (event: CustomEvent) => localStorage.setItem(event.detail.payload.key, event.detail.payload.value));
     environment.addEventListener('localStorage.removeItem', (event: CustomEvent) => localStorage.removeItem(event.detail.payload.key));
   }
@@ -277,7 +280,6 @@ export class Shell {
                 }
               ).then(async _ => {
                 try {
-                  await this.databaseManager.removeAllBlocks();
                   await this.databaseManager.bulkInsertBlocks(blocks);
                 } catch (e) {
                 }
