@@ -42,6 +42,8 @@
     "@jsonforms/angular": "3.0.0",
     "@jsonforms/angular-material": "3.0.0",
     "@jsonforms/core": "3.0.0",
+    "@mediapipe/tasks-text": "0.1.0-alpha-10",
+    "@mediapipe/tasks-vision": "0.1.0-alpha-10",
     "@nguniversal/express-engine": "15.2.0",
     "@sotaproject/strikethrough": "1.0.1",
     "@types/lodash": "4.14.192",

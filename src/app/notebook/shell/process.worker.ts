@@ -6,7 +6,7 @@ import * as jp from 'jsonpath';
 import * as math from 'mathjs';
 import * as rx from "rxjs";
 import {
-  catchError,
+  catchError, concatMap,
   delay,
   delayWhen,
   filter,
@@ -15,7 +15,7 @@ import {
   generate,
   interval,
   lastValueFrom,
-  map,
+  map, mergeMap,
   mergeScan,
   mergeWith,
   NEVER,
@@ -26,7 +26,7 @@ import {
   reduce,
   scan,
   shareReplay,
-  startWith,
+  startWith, Subscriber,
   switchMap,
   switchScan,
   take,
@@ -47,6 +47,14 @@ import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import Indexed = Immutable.Seq.Indexed;
+import {
+  FilesetResolver,
+  GestureRecognizer,
+  HandLandmarker,
+  ImageClassifier, ObjectDetector
+} from "@mediapipe/tasks-vision";
+import * as TaskVision from "@mediapipe/tasks-vision";
+import {TextClassifier, TextEmbedder} from "@mediapipe/tasks-text";
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -342,6 +350,8 @@ class ProcessWorker {
     environment.reduce = reduce;
     environment.math = math;
     environment.generate = generate;
+    environment.mergeMap = mergeMap;
+    environment.concatMap = concatMap;
     environment.scan = scan;
     environment.filter = filter;
     environment.range = range;
@@ -378,6 +388,79 @@ class ProcessWorker {
         return text;
       }
     };
+    environment.importGestureRecognizer = new Observable((subscriber: Subscriber<any>) => {
+      FilesetResolver.forVisionTasks(
+        "/assets/mediapipe/tasks-vision/wasm"
+      ).then(vision => {
+        GestureRecognizer.createFromModelPath(vision,
+          "/assets/mediapipe/tasks-vision/gesture_recognizer.task"
+        ).then(x => {
+          subscriber.next(x);
+          subscriber.complete();
+        })
+      });
+    }).pipe(shareReplay(1));
+    environment.importHandLandmarker = new Observable((subscriber: Subscriber<any>) => {
+      FilesetResolver.forVisionTasks(
+        "/assets/mediapipe/tasks-vision/wasm"
+      ).then(vision => {
+        HandLandmarker.createFromModelPath(vision,
+          "/assets/mediapipe/tasks-vision/hand_landmarker.task"
+        ).then(x => {
+          subscriber.next(x);
+          subscriber.complete();
+        })
+      });
+    }).pipe(shareReplay(1));
+    environment.importImageClassifier = new Observable((subscriber: Subscriber<any>) => {
+      FilesetResolver.forVisionTasks(
+        "/assets/mediapipe/tasks-vision/wasm"
+      ).then(vision => {
+        ImageClassifier.createFromModelPath(vision,
+          "/assets/mediapipe/tasks-vision/efficientnet_lite0_uint8.tflite"
+        ).then(x => {
+          subscriber.next(x);
+          subscriber.complete();
+        })
+      });
+    }).pipe(shareReplay(1));
+    environment.importObjectDetector = new Observable((subscriber: Subscriber<any>) => {
+      FilesetResolver.forVisionTasks(
+        "/assets/mediapipe/tasks-vision/wasm"
+      ).then(vision => {
+        ObjectDetector.createFromModelPath(vision,
+          "/assets/mediapipe/tasks-vision/efficientdet_lite0_uint8.tflite"
+        ).then(x => {
+          subscriber.next(x);
+          subscriber.complete();
+        })
+      });
+    }).pipe(shareReplay(1));
+    environment.TaskVision = TaskVision;
+    environment.importTextClassifier = new Observable((subscriber: Subscriber<any>) => {
+      FilesetResolver.forTextTasks(
+        "/assets/mediapipe/tasks-text/wasm"
+      ).then(vision => {
+        TextClassifier.createFromModelPath(vision,
+          "/assets/mediapipe/tasks-text/bert_text_classifier.tflite"
+        ).then(x => {
+          subscriber.next(x);
+          subscriber.complete();
+        });
+      });
+    }).pipe(shareReplay(1));
+    environment.importTextEmbedder = new Observable((subscriber: Subscriber<any>) => {
+      FilesetResolver.forTextTasks(
+        "/assets/mediapipe/tasks-text/wasm"
+      ).then(vision => {
+        TextEmbedder.createFromModelPath(vision,
+          "/assets/mediapipe/tasks-text/mobilebert_embedding_with_metadata.tflite"
+        ).then(x => {
+          subscriber.next(x);
+          subscriber.complete();
+        });
+      });
+    }).pipe(shareReplay(1));
     environment.lastValueFrom = lastValueFrom;
     environment.from = from;
     environment.of = of;

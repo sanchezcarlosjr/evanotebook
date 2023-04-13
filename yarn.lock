@@ -2862,6 +2862,16 @@
     "@material/theme" "15.0.0-canary.684e33d25.0"
     tslib "^2.1.0"
 
+"@mediapipe/tasks-text@^0.1.0-alpha-10":
+  version "0.1.0-alpha-10"
+  resolved "https://registry.yarnpkg.com/@mediapipe/tasks-text/-/tasks-text-0.1.0-alpha-10.tgz#c877163d5878fb7b85549431a96a7c310cdea5f6"
+  integrity sha512-IOzJmOvHXsNT49ZLD518z88hlcfF/BJF19jcn6Vlt8TUWPSHkBoWx3EsT0OB+kCeFPePr4UTnN+wLrKUSM3oXA==
+
+"@mediapipe/tasks-vision@^0.1.0-alpha-10":
+  version "0.1.0-alpha-10"
+  resolved "https://registry.yarnpkg.com/@mediapipe/tasks-vision/-/tasks-vision-0.1.0-alpha-10.tgz#723cac3c164b9a1c6cd7ed13d786550389591d84"
+  integrity sha512-dvhUDUqzKHqi0puPIlqvHkfADed0cC8SYBLPvTvg8RjyKmG+64//jXmf4pXHJeJmKU7HNHnVdERVLYqMfadGwQ==
+
 "@ngtools/webpack@15.2.5":
   version "15.2.5"
   resolved "https://registry.yarnpkg.com/@ngtools/webpack/-/webpack-15.2.5.tgz#679c509fde254e92442ce97bc512638f4189453a"

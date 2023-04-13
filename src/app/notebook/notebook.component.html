@@ -1,7 +1,7 @@
 <mat-toolbar *ngIf="!isMode2">
-  <input [(ngModel)]="name" (ngModelChange)="updateName($event)"  id="doc-name" class="doc-name" maxlength="259" autocomplete="off" aria-label="Notebook name" data-form-type="name"  data-lpignore="true">
   <button mat-button [matMenuTriggerFor]="fileMenu">File</button>
   <mat-menu #fileMenu="matMenu">
+    <input mat-menu-item [(ngModel)]="name" (ngModelChange)="updateName($event)" id="doc-name" class="doc-name" maxlength="259" autocomplete="off" aria-label="Notebook name" data-form-type="name"  data-lpignore="true">
     <button mat-menu-item (click)="createNewNotebook()">New Notebook</button>
     <button mat-menu-item (click)="exportNotebook()">Export Notebook</button>
     <input mat-menu-item accept="application/json" type="file" (change)="importNotebook($event)">
