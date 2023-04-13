@@ -223,6 +223,11 @@ async function create_db() {
           lastEditedBy: {
             type: 'string',
           },
+          topic: {
+            type: 'string',
+            maxLength: 100,
+            default: "EvaNotebook"
+          },
           index: {
             type: 'number',
             minimum: 0,

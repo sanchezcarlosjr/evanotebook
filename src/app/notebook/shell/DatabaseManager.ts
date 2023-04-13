@@ -312,7 +312,7 @@ export class DatabaseManager {
         index: {
           $gte: index
         },
-        title: {
+        topic: {
           $eq: this.topic
         }
       }
@@ -420,7 +420,13 @@ export class DatabaseManager {
 
   removeAllBlocks() {
     // @ts-ignore
-    return this._database.blocks.find().remove();
+    return this._database.blocks.find({
+      selector: {
+        topic: {
+          $eq: this.topic
+        }
+      }
+    }).remove();
   }
 
   generateDefaultBlock() {
@@ -432,7 +438,14 @@ export class DatabaseManager {
     if (!this._database?.blocks)
       return false;
     // @ts-ignore
-    this._database?.blocks.find({sort: [{index: 'asc'}]}).exec().then(blocks => this.writeCollectionURL({
+    this._database?.blocks.find({
+      selector: {
+        topic: {
+          $eq: this.topic
+        }
+      },
+      sort: [{index: 'asc'}]
+    }).exec().then((blocks: any[]) => this.writeCollectionURL({
       version: '2.26.5',
       blocks: blocks.map((document: any) => ({
         id: document._data.id,
