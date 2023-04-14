@@ -30,6 +30,7 @@
     "@angular/service-worker": "15.2.5",
     "@codemirror/lang-javascript": "6.1.4",
     "@cortex-js/compute-engine": "0.12.2",
+    "@duckdb/duckdb-wasm": "^1.24.0",
     "@editorjs/attaches": "github:sanchezcarlosjr/attaches.git",
     "@editorjs/delimiter": "1.3.0",
     "@editorjs/editorjs": "2.26.5",

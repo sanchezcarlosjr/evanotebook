@@ -178,6 +178,7 @@ export class CodeBlock extends InteractiveBlock {
     }));
   }
 
+  // TODO: We must have to remove duplicate code. This is a temporary solution.
   form() {
     const frameElement = document.createElement("nk-form");
     frameElement.classList.add('w100');

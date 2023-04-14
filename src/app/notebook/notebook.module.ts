@@ -13,26 +13,34 @@ import {JsonFormsAngularMaterialModule} from '@jsonforms/angular-material';
 import {MatMenuModule} from "@angular/material/menu";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {FormsModule} from "@angular/forms";
+import { TableComponent } from './table/table.component';
+import {MatTableModule} from "@angular/material/table";
+import {MatSortModule} from "@angular/material/sort";
+import {MatPaginatorModule} from "@angular/material/paginator";
 
 @NgModule({
   declarations: [
     NotebookComponent,
-    FormComponent
+    FormComponent,
+    TableComponent
   ],
-    imports: [
-        CommonModule,
-        NotebookRoutingModule,
-        JsonFormsModule,
-        JsonFormsAngularMaterialModule,
-        MatAutocompleteModule,
-        MatButtonModule,
-        MatToolbarModule,
-        MatMenuModule,
-        MatButtonModule,
-        MatRadioModule,
-        MatSnackBarModule,
-        FormsModule
-    ]
+  imports: [
+    CommonModule,
+    NotebookRoutingModule,
+    JsonFormsModule,
+    JsonFormsAngularMaterialModule,
+    MatAutocompleteModule,
+    MatButtonModule,
+    MatToolbarModule,
+    MatMenuModule,
+    MatButtonModule,
+    MatRadioModule,
+    MatSnackBarModule,
+    FormsModule,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule
+  ]
 })
 export class NotebookModule {
 }

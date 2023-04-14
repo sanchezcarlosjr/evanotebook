@@ -6,6 +6,7 @@ import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
 import {Title} from "@angular/platform-browser";
 import {BehaviorSubject} from "rxjs";
+import {TableComponent} from "./table/table.component";
 
 function readAsDataURL(file: File) {
   if (!file) {
@@ -33,8 +34,8 @@ export class NotebookComponent implements OnInit {
   loading: boolean = true;
   name: string = "";
   constructor(injector: Injector,private _snackBar: MatSnackBar, private titleService: Title) {
-    const formElement = createCustomElement(FormComponent, {injector});
-    customElements.define('nk-form', formElement);
+    customElements.define('nk-form', createCustomElement(FormComponent, {injector}));
+    customElements.define('nk-table', createCustomElement(TableComponent, {injector}));
   }
   async ngOnInit() {
     this.name = url.read("n", "EvaNotebook");

@@ -46,6 +46,8 @@ import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
 import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
+import * as duckdb from '@duckdb/duckdb-wasm';
+
 import Indexed = Immutable.Seq.Indexed;
 import {
   FilesetResolver,
@@ -291,6 +293,20 @@ async function create_db() {
 
 // @ts-ignore
 globalThis.db = from(create_db()).pipe(shareReplay(1));
+
+async function dynamicImportDuckDB() {
+  const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+  const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+  const worker_url = URL.createObjectURL(
+    new Blob([`importScripts("${bundle.mainWorker!}");`], {type: 'text/javascript'})
+  );
+  const worker = new Worker(worker_url);
+  const logger = new duckdb.ConsoleLogger();
+  const duckDB = new duckdb.AsyncDuckDB(logger, worker);
+  await duckDB.instantiate(bundle.mainModule, bundle.pthreadWorker);
+  URL.revokeObjectURL(worker_url);
+  return {duckDB, c: await duckDB.connect()};
+}
 
 async function getCanvas2d() {
   return (await requestCanvas()).canvas.getContext('2d');
@@ -808,6 +824,13 @@ class ProcessWorker {
     );
     environment.chart = (config: ConfigurationChart) => of(undefined).pipe(environment.plot(config));
     environment.delayEach = (milliseconds: number) => delayWhen((_, i) => interval(i * milliseconds));
+    environment.importDuckDB = new Observable( (observer) => {
+      dynamicImportDuckDB().then((duckdb) => {
+        observer.next(duckdb);
+        observer.complete();
+        // TODO: Add support for duckdb.close().
+      });
+    }).pipe(shareReplay(1));
     environment.importJSON = (options: any) => environment.importFiles({
       ...options,
       accept: "application/json"
