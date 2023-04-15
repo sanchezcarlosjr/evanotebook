@@ -380,6 +380,7 @@ class DocumentObserver extends ReplaySubject<any> {
          if (typeof p === 'string' && p[p.length-1] === '$') {
            return target.environment.db.pipe(
                 concatMap((d: RxDatabase) => d["view"].findOne(target.collectionId).exec()),
+                filter(x => !!x),
                 concatMap((d: RxDocument) => d.get$('_data.'+p.slice(0, -1)))
              );
          }
