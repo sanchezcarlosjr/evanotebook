@@ -17,6 +17,7 @@ import { TableComponent } from './table/table.component';
 import {MatTableModule} from "@angular/material/table";
 import {MatSortModule} from "@angular/material/sort";
 import {MatPaginatorModule} from "@angular/material/paginator";
+import {MatRippleModule} from "@angular/material/core";
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import {MatPaginatorModule} from "@angular/material/paginator";
     FormsModule,
     MatTableModule,
     MatSortModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatRippleModule
   ]
 })
 export class NotebookModule {

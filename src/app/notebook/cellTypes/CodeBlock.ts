@@ -196,6 +196,23 @@ export class CodeBlock extends InteractiveBlock {
     this.cell?.children[1].appendChild(frameElement);
   }
 
+  createTable() {
+    const frameElement = document.createElement("nk-table");
+    frameElement.classList.add('w100');
+    const channel = new MessageChannel();
+    window.dispatchEvent(new CustomEvent('shell.TableMessageChannel', {
+      bubbles: true, detail: {
+        payload: {
+          port: channel.port2,
+          threadId: this.obj.block?.id
+        }
+      }
+    }));
+    // @ts-ignore
+    frameElement.port  = channel.port1;
+    this.cell?.children[1].appendChild(frameElement);
+  }
+
   prompt(payload: { placeholder?: string, type?: string }) {
     if (this.input) {
       return;

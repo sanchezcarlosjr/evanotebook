@@ -57,6 +57,9 @@ import {
 } from "@mediapipe/tasks-vision";
 import * as TaskVision from "@mediapipe/tasks-vision";
 import {TextClassifier, TextEmbedder} from "@mediapipe/tasks-text";
+import {Portal} from "@angular/cdk/portal";
+import * as arrow from "apache-arrow";
+import {AsyncDuckDB, AsyncDuckDBConnection} from "@duckdb/duckdb-wasm";
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -305,7 +308,7 @@ async function dynamicImportDuckDB() {
   const duckDB = new duckdb.AsyncDuckDB(logger, worker);
   await duckDB.instantiate(bundle.mainModule, bundle.pthreadWorker);
   URL.revokeObjectURL(worker_url);
-  return {duckDB, c: await duckDB.connect()};
+  return {db: duckDB, c: await duckDB.connect()};
 }
 
 async function getCanvas2d() {
@@ -330,6 +333,13 @@ interface ConfigurationChart {
   scan?: (stateChart: StateChart) => void;
 }
 
+class Table {
+  constructor(private port: MessagePort) {
+  }
+  render(dataSource: object[]) {
+    this.port.postMessage({type: 'render', dataSource, displayedColumns: _.keys(dataSource[0])});
+  }
+}
 async function buildChart(config: ConfigurationChart) {
   const payload = await requestCanvas() as any;
   Chart.register(config.plugins ?? []);
@@ -342,6 +352,15 @@ async function buildChart(config: ConfigurationChart) {
   payload.canvas.height = payload.height;
   chart.resize();
   return chart;
+}
+
+async function buildTable() {
+  const payload = await requestResource('table', {
+    event: 'table', payload: {
+      threadId: self.name
+    }
+  });
+  return new Table(payload);
 }
 
 class ProcessWorker {
@@ -789,6 +808,13 @@ class ProcessWorker {
         ...options
       }
     });
+    environment.jsonToTable = () => pipe(
+      switchScan(async (acc, data: any[]) => {
+        const table = await acc;
+        table.render(data);
+        return acc;
+      }, buildTable()),
+    );
     // Consult https://jsonforms.io/ to learn more about options.
     environment.form = (options: { uischema: object, schema: object, data: any }) => observeResource('form', {
       event: 'form',
@@ -824,6 +850,34 @@ class ProcessWorker {
     );
     environment.chart = (config: ConfigurationChart) => of(undefined).pipe(environment.plot(config));
     environment.delayEach = (milliseconds: number) => delayWhen((_, i) => interval(i * milliseconds));
+    environment.arrowTableToJSON = map((table: arrow.Table<any>) => table.toArray().map((row) => row.toJSON()));
+    environment.insertCSVToDuckDB = (observable: Observable<string>, path: string = 'rows.csv') =>
+      concatMap((obj: {db: AsyncDuckDB, c: AsyncDuckDBConnection}) =>
+      observable.pipe(
+        switchMap(async (csv: string) => {
+          await obj.db.registerFileText(path, csv);
+          return obj;
+        })
+      )
+    );
+    environment.insertJSONToDuckDB = (observable: Observable<object>, path: string = 'rows.json', name: string = 'rows') => concatMap((obj: {db: AsyncDuckDB, c: AsyncDuckDBConnection}) =>
+      observable.pipe(
+        switchMap(async (json) => {
+          await obj.db.registerFileText(path, JSON.stringify(json));
+          await obj.c.insertJSONFromPath(path, { name });
+          return obj;
+        })
+      )
+    );
+    environment.duckDBStatement = (query: string)  => concatMap(async (obj: {c: AsyncDuckDBConnection}) => {
+      await obj.c.send(query);
+      return obj;
+    });
+    environment.duckDBQuery = (query: string)  => concatMap((obj: {c: AsyncDuckDBConnection}) => obj.c.query(query));
+    environment.duckDBPrepare = (query: string, params: any[])  => concatMap(async (obj: {c: AsyncDuckDBConnection}) => {
+      const statement = await obj.c.prepare(query);
+      return statement.query(params);
+    });
     environment.importDuckDB = new Observable( (observer) => {
       dynamicImportDuckDB().then((duckdb) => {
         observer.next(duckdb);

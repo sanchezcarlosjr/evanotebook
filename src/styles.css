@@ -806,3 +806,7 @@ py-config {
 .debug-boxes, .debug-boxes>* {
   outline: 1px solid red;
 }
+
+.mdc-data-table__header-cell {
+  font-weight: 600;
+}

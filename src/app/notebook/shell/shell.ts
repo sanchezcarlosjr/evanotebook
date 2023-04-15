@@ -111,6 +111,10 @@ export class Shell {
     environment.addEventListener('shell.RequestCanvas', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('transferControlToOffscreen');
     });
+    //@ts-ignore
+    environment.addEventListener('table', (event: CustomEvent) => {
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTable');
+    });
     environment.addEventListener('shell.transferControlToOffscreen', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'transferControlToOffscreen', payload: {
@@ -193,6 +197,11 @@ export class Shell {
     environment.addEventListener('shell.FormMessageChannel', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'form', payload: event.detail.payload.port
+      }, [event.detail.payload.port]);
+    });
+    environment.addEventListener('shell.TableMessageChannel', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'table', payload: event.detail.payload.port
       }, [event.detail.payload.port]);
     });
     environment.addEventListener('shell.InputFile', (event: CustomEvent) => this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({

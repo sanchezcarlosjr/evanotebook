@@ -2,7 +2,6 @@ import {Component, Input, ViewChild} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {MatPaginator} from "@angular/material/paginator";
 import {MatSort} from "@angular/material/sort";
-import {Generate} from "@jsonforms/core";
 
 @Component({
   selector: 'app-table',
@@ -12,7 +11,9 @@ import {Generate} from "@jsonforms/core";
 export class TableComponent {
   @Input() port: MessagePort | undefined;
   displayedColumns: string[] = [];
-  dataSource :any[] = [];
+  dataSource: MatTableDataSource<object> = new MatTableDataSource<object>([]);
+  @ViewChild(MatSort) sort: MatSort | null = null;
+  @ViewChild(MatPaginator) paginator: MatPaginator | null = null;
 
   constructor() {
   }
@@ -23,11 +24,33 @@ export class TableComponent {
     }
     // @ts-ignore
     this.port.onmessage = (event: MessageEvent) => {
-      if (event.data.type === 'data') {
-        this.dataSource.push(event.data.data);
+      if (event.data.type === 'render') {
+        this.displayedColumns = event.data.displayedColumns;
+        this.dataSource.data = event.data.dataSource;
+        this.dataSource._updateChangeSubscription();
       }
     };
-    this.port?.postMessage({'type': 'ready'});
+    this.dataSource.filterPredicate = (data, filter) => {
+      const json = JSON.stringify(data);
+      try {
+        return !!json.match(filter);
+      } catch (e) {
+        return json.includes(filter);
+      }
+    }
   }
 
+
+
+  ngAfterViewInit() {
+    this.dataSource.sort = this.sort;
+    this.dataSource.paginator = this.paginator;
+  }
+
+  applyFilter(event: Event) {
+    this.dataSource.filter = (event.target as HTMLInputElement).value;
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
+  }
 }
