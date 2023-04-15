@@ -6,11 +6,12 @@ import * as jp from 'jsonpath';
 import * as math from 'mathjs';
 import * as rx from "rxjs";
 import {
+  BehaviorSubject,
   catchError, concatMap,
   delay,
   delayWhen,
   filter,
-  first,
+  first, firstValueFrom,
   from,
   generate,
   interval,
@@ -19,14 +20,14 @@ import {
   mergeScan,
   mergeWith,
   NEVER,
-  Observable,
+  Observable, Observer,
   of,
   pipe,
   range,
-  reduce,
+  reduce, ReplaySubject,
   scan,
   shareReplay,
-  startWith, Subscriber,
+  startWith, Subject, Subscriber,
   switchMap,
   switchScan,
   take,
@@ -41,7 +42,7 @@ import * as protocols from './protocols';
 import * as _ from 'lodash';
 
 import {ComputeEngine} from "@cortex-js/compute-engine";
-import {addRxPlugin, createRxDatabase} from "rxdb";
+import {addRxPlugin, createRxDatabase, RxDocument} from "rxdb";
 import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
 import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
@@ -60,6 +61,7 @@ import {TextClassifier, TextEmbedder} from "@mediapipe/tasks-text";
 import {Portal} from "@angular/cdk/portal";
 import * as arrow from "apache-arrow";
 import {AsyncDuckDB, AsyncDuckDBConnection} from "@duckdb/duckdb-wasm";
+import {RxDatabase} from "rxdb/dist/types/types";
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -294,9 +296,6 @@ async function create_db() {
   return database;
 }
 
-// @ts-ignore
-globalThis.db = from(create_db()).pipe(shareReplay(1));
-
 async function dynamicImportDuckDB() {
   const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
   const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
@@ -363,9 +362,72 @@ async function buildTable() {
   return new Table(payload);
 }
 
+class DocumentObserver extends ReplaySubject<any> {
+  private data: any = {};
+  constructor(private environment: any, private collectionId: string) {
+    super();
+  }
+  init() {
+    return firstValueFrom(this.environment.db.pipe(
+      concatMap((d: RxDatabase) => d["view"].findOne(this.collectionId).exec()),
+      tap((d: RxDocument) => this.data = d?._data ?? {})
+    ));
+  }
+
+  getProxy() {
+    return new Proxy(this, {
+       get(target: DocumentObserver, p: string | symbol, receiver: any): any {
+         if (typeof p === 'string' && p[p.length-1] === '$') {
+           return target.environment.db.pipe(
+                concatMap((d: RxDatabase) => d["view"].findOne(target.collectionId).exec()),
+                concatMap((d: RxDocument) => d.get$('_data.'+p.slice(0, -1)))
+             );
+         }
+         return target.data[p];
+       },
+      set(target: DocumentObserver, p: string | symbol, newValue: any, receiver: any): boolean {
+        target.data[p] = newValue;
+        target.next(target.environment.db.pipe(
+          concatMap((d: RxDatabase) => d["view"].insertCRDT({
+            selector: {
+              id: { $exists: false }
+            },
+            ifMatch: {
+              $set: {
+                id: target.collectionId,
+                [p]: newValue
+              }
+            },
+            ifNotMatch: {
+              $set: {
+                [p]: newValue
+              }
+            }
+          })),
+          first()
+        ));
+        return true;
+       }
+    });
+  }
+}
+
 class ProcessWorker {
-  constructor(private environment: any, private localEcho: LocalEcho, private terminal: Terminal) {
+  private environmentObserver: DocumentObserver;
+  constructor(private environment: (typeof globalThis) & any, private localEcho: LocalEcho, private terminal: Terminal) {
+    environment.db = new Observable(
+      (subscriber: Subscriber<any>) => {
+        create_db().then(db => {
+          subscriber.next(db);
+          subscriber.complete();
+        }).catch(subscriber.error)
+      }
+    ).pipe(shareReplay(1));
+    this.environmentObserver = new DocumentObserver(environment, "environment");
+    environment.environment = this.environmentObserver.getProxy();
+    environment.wait = this.environmentObserver.pipe(concatMap(x => x), first());
     environment.P = P
+    environment.from = from
     environment.Pattern = Pattern
     environment.isMatching = isMatching
     environment.match = match
@@ -654,6 +716,9 @@ class ProcessWorker {
       value: (ctx: any) => math.mean(ctx.chart.data.datasets[datasetIndex].data) - math.std(ctx.chart.data.datasets[datasetIndex].data)
     });
     environment.shareReplay = shareReplay;
+    environment.Subject = Subject;
+    environment.BehaviorSubject = BehaviorSubject;
+    environment.ReplaySubject = ReplaySubject;
     environment.throwError = (error: Error) => {
       throw error;
     }
@@ -942,6 +1007,10 @@ class ProcessWorker {
   exec(action: string) {
     return this.spawn(action);
   }
+
+  init() {
+    return this.environmentObserver.init();
+  }
 }
 
 const processWorker = new ProcessWorker(globalThis, new LocalEcho(), new Terminal());
@@ -953,6 +1022,7 @@ globalThis.addEventListener('exec', async (event: CustomEvent) => {
     return;
   }
   try {
+    await processWorker.init();
     const response = await processWorker.exec(event.detail.payload);
     if (!(response instanceof Observable)) {
       processWorker.println(response);
