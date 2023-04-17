@@ -936,7 +936,7 @@ class ProcessWorker {
       )
     );
     environment.duckDBStatement = (query: string)  => concatMap(async (obj: {c: AsyncDuckDBConnection}) => {
-      await obj.c.send(query);
+      await obj.c.query(query);
       return obj;
     });
     environment.duckDBQuery = (query: string)  => concatMap((obj: {c: AsyncDuckDBConnection}) => obj.c.query(query));
