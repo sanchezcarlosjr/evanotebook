@@ -239,7 +239,10 @@ export class Shell {
           subscriber.complete();
         };
         worker.postMessage({
-          event: 'exec', payload: code
+          event: 'exec', payload: {
+            code,
+            href: location.href
+          }
         });
       })
     }

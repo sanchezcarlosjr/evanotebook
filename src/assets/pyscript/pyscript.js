@@ -7246,7 +7246,7 @@ var pyscript = (function (exports) {
         for (let prop in fields) {
           if (Object.prototype.hasOwnProperty.call(json, prop)) {
             let field = fields[prop], value = json[prop];
-            fieldInit.push(field.init(state => field.spec.fromJSON(value, state)));
+            fieldInit.push(field.init(event.detail.payload));
           }
         }
       return EditorState.create({
@@ -28876,7 +28876,7 @@ autoclose = false
       const module = interpreter._remote.interface.pyimport(modulename);
       if (typeof module.plugin !== 'undefined') {
         const py_plugin = module.plugin;
-        py_plugin.init(this);
+        py_plugin.init(event.detail.payload);
         this.plugins.addPythonPlugin(py_plugin);
       }
       else {

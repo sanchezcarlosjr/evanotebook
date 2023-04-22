@@ -7,27 +7,33 @@ import * as math from 'mathjs';
 import * as rx from "rxjs";
 import {
   BehaviorSubject,
-  catchError, concatMap,
+  catchError,
+  concatMap,
   delay,
   delayWhen,
   filter,
-  first, firstValueFrom,
+  first,
+  firstValueFrom,
   from,
   generate,
   interval,
   lastValueFrom,
-  map, mergeMap,
+  map,
+  mergeMap,
   mergeScan,
   mergeWith,
   NEVER,
-  Observable, Observer,
+  Observable,
   of,
   pipe,
   range,
-  reduce, ReplaySubject,
+  reduce,
+  ReplaySubject,
   scan,
   shareReplay,
-  startWith, Subject, Subscriber,
+  startWith,
+  Subject,
+  Subscriber,
   switchMap,
   switchScan,
   take,
@@ -48,20 +54,23 @@ import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import * as duckdb from '@duckdb/duckdb-wasm';
-
-import Indexed = Immutable.Seq.Indexed;
+import {AsyncDuckDB, AsyncDuckDBConnection} from '@duckdb/duckdb-wasm';
+import * as TaskVision from "@mediapipe/tasks-vision";
 import {
   FilesetResolver,
   GestureRecognizer,
   HandLandmarker,
-  ImageClassifier, ObjectDetector
+  ImageClassifier,
+  ObjectDetector
 } from "@mediapipe/tasks-vision";
-import * as TaskVision from "@mediapipe/tasks-vision";
 import {TextClassifier, TextEmbedder} from "@mediapipe/tasks-text";
-import {Portal} from "@angular/cdk/portal";
 import * as arrow from "apache-arrow";
-import {AsyncDuckDB, AsyncDuckDBConnection} from "@duckdb/duckdb-wasm";
 import {RxDatabase} from "rxdb/dist/types/types";
+import {OutputData} from "@editorjs/editorjs";
+import Indexed = Immutable.Seq.Indexed;
+import {BlockAPI} from "@editorjs/editorjs/types/api/block";
+import {BlockToolData, ToolConfig} from "@editorjs/editorjs/types/tools";
+import {randomCouchString} from "rxdb/plugins/utils";
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -335,10 +344,12 @@ interface ConfigurationChart {
 class Table {
   constructor(private port: MessagePort) {
   }
+
   render(dataSource: object[]) {
     this.port.postMessage({type: 'render', dataSource, displayedColumns: _.keys(dataSource[0])});
   }
 }
+
 async function buildChart(config: ConfigurationChart) {
   const payload = await requestCanvas() as any;
   Chart.register(config.plugins ?? []);
@@ -364,38 +375,40 @@ async function buildTable() {
 
 class DocumentObserver extends ReplaySubject<any> {
   private data: any = {};
-  constructor(private environment: any, private collectionId: string) {
+
+  constructor(private environment: any, private documentId: string) {
     super();
   }
+
   init() {
     return firstValueFrom(this.environment.db.pipe(
-      concatMap((d: RxDatabase) => d["view"].findOne(this.collectionId).exec()),
+      concatMap((d: RxDatabase) => d["view"].findOne(this.documentId).exec()),
       tap((d: RxDocument) => this.data = d?._data ?? {})
     ));
   }
 
   getProxy() {
     return new Proxy(this, {
-       get(target: DocumentObserver, p: string | symbol, receiver: any): any {
-         if (typeof p === 'string' && p[p.length-1] === '$') {
-           return target.environment.db.pipe(
-                concatMap((d: RxDatabase) => d["view"].findOne(target.collectionId).exec()),
-                filter(x => !!x),
-                concatMap((d: RxDocument) => d.get$('_data.'+p.slice(0, -1)))
-             );
-         }
-         return target.data[p];
-       },
+      get(target: DocumentObserver, p: string | symbol, receiver: any): any {
+        if (typeof p === 'string' && p[p.length - 1] === '$') {
+          return target.environment.db.pipe(
+            concatMap((d: RxDatabase) => d["view"].findOne(target.documentId).exec()),
+            filter(x => !!x),
+            concatMap((d: RxDocument) => d.get$('_data.' + p.slice(0, -1)))
+          );
+        }
+        return target.data[p];
+      },
       set(target: DocumentObserver, p: string | symbol, newValue: any, receiver: any): boolean {
         target.data[p] = newValue;
         target.next(target.environment.db.pipe(
           concatMap((d: RxDatabase) => d["view"].insertCRDT({
             selector: {
-              id: { $exists: false }
+              id: {$exists: false}
             },
             ifMatch: {
               $set: {
-                id: target.collectionId,
+                id: target.documentId,
                 [p]: newValue
               }
             },
@@ -408,14 +421,123 @@ class DocumentObserver extends ReplaySubject<any> {
           first()
         ));
         return true;
-       }
+      }
     });
   }
 }
 
+class Blocks {
+  constructor(private environment: { db: Observable<RxDatabase>, currentUrl: URL }) {
+  }
+
+  getById(id: string): Observable<BlockAPI | null> {
+    return this.environment.db.pipe(
+      switchMap((db: RxDatabase) => db["blocks"].findOne(id).$)
+    );
+  }
+
+  getByIndex(index: number): Observable<BlockAPI | null> {
+    return this.environment.db.pipe(
+      switchMap((db: RxDatabase) => db["blocks"].findOne({
+        selector: {
+          index: {
+            $eq: index
+          },
+          topic: {
+            $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
+          }
+        }
+      }).$)
+    );
+  }
+
+  insert(
+    type?: string,
+    data?: BlockToolData,
+    config?: ToolConfig,
+    index?: number,
+    needToFocus?: boolean,
+    replace?: boolean,
+    id?: string,
+  ) {
+    return this.environment.db.pipe(
+      switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
+        ifMatch: {
+          $set: {
+            type,
+            data,
+            config,
+            index,
+            createdBy: (this.environment.currentUrl.searchParams.get("p") ?? "")+"worker",
+            updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "")+"worker",
+            id: id ?? randomCouchString(7),
+            topic: this.environment.currentUrl.searchParams.get("t") ?? ""
+          }
+        }
+      }))
+    );
+  };
+
+  get get$() {
+    return this.environment.db.pipe(
+      switchMap((db: RxDatabase) =>
+        db["blocks"].find(
+          {
+            selector: {
+              topic: {
+                $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
+              }
+            }
+          })
+          .$)
+    );
+  }
+}
+
+class EditorJS {
+  public static version: "2.26.5";
+  public readonly blocks = new Blocks(this.environment);
+
+  constructor(private environment: { db: Observable<RxDatabase>, currentUrl: URL }) {
+  }
+
+  get isReady(): Promise<boolean> {
+    return new Promise((resolve) => resolve(true));
+  }
+
+  save(): Promise<OutputData> {
+    return firstValueFrom(this.environment.db.pipe(
+      switchMap((db: RxDatabase) =>
+        db["blocks"].find(
+          {
+            selector: {
+              topic: {
+                $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
+              }
+            }
+          })
+          .exec()),
+      map(blocks => ({
+          version: EditorJS.version,
+          blocks
+        })
+      )));
+  }
+}
+
+interface GitHubCommit {
+  owner: string;
+  repo: string;
+  filePath: string;
+  commitMessage: string;
+  GITHUB_TOKEN: string;
+}
+
 class ProcessWorker {
   private environmentObserver: DocumentObserver;
+
   constructor(private environment: (typeof globalThis) & any, private localEcho: LocalEcho, private terminal: Terminal) {
+    environment.window = {};
     environment.db = new Observable(
       (subscriber: Subscriber<any>) => {
         create_db().then(db => {
@@ -428,6 +550,7 @@ class ProcessWorker {
     environment.environment = this.environmentObserver.getProxy();
     environment.wait = this.environmentObserver.pipe(concatMap(x => x), first());
     environment.P = P
+    environment.editor = new EditorJS(this.environment);
     environment.from = from
     environment.Pattern = Pattern
     environment.isMatching = isMatching
@@ -560,6 +683,7 @@ class ProcessWorker {
       });
     }).pipe(shareReplay(1));
     environment.lastValueFrom = lastValueFrom;
+    environment.firstValueFrom = firstValueFrom;
     environment.from = from;
     environment.of = of;
     environment.interval = interval;
@@ -749,11 +873,11 @@ class ProcessWorker {
           for (let i = 0; i < byteCharacters.length; i++) {
             byteArray[i] = byteCharacters.charCodeAt(i);
           }
-          obj.message =  new Blob([byteArray], {type: contentType});
+          obj.message = new Blob([byteArray], {type: contentType});
           return obj;
         }
       );
-    environment.blobToImage = switchMap((obj: {message:Blob}) => {
+    environment.blobToImage = switchMap((obj: { message: Blob }) => {
       return from(createImageBitmap(obj.message)).pipe(
         map((imageBitmap: ImageBitmap) => {
           // @ts-ignore
@@ -763,7 +887,7 @@ class ProcessWorker {
       );
     });
     environment.imshow = () => pipe(
-      switchScan(async (promise: {message: Promise<OffscreenRenderingContext | null>}, obj: {message: ImageBitmap}) => {
+      switchScan(async (promise: { message: Promise<OffscreenRenderingContext | null> }, obj: { message: ImageBitmap }) => {
         const context = await promise.message;
         if (!context) {
           return Promise.reject('No context available');
@@ -784,7 +908,7 @@ class ProcessWorker {
       environment.base64ToBlob(),
       environment.blobToImage,
       environment.imshow(),
-    )
+    );
     environment.annotationPlugin = annotationPlugin;
     environment.ChartDataLabels = ChartDataLabels;
     environment.basicStatisticsAnnotations = (datasetIndex = 0, borderColor = 'black') => ({
@@ -856,11 +980,50 @@ class ProcessWorker {
           (r) => from(r.formData())
         ).with(P.when(r => r.ok), (r) => from(r.text())).otherwise(() => of({
           error: true,
-          message: `The HTTP status is ${response.status}. For more information consult https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.`
+          message: `The HTTP status is ${response.status}. ${response.text}`
         }))
       ),
       catchError(err => of({error: true, message: err.message}))
     );
+    environment.commitOnGitHub = (options: GitHubCommit) => concatMap((content: any) => {
+      return from(fetch(
+        `https://api.github.com/repos/${options.owner}/${options.repo}/contents/${options.filePath}`,
+        {
+          headers: {
+            Authorization: `token ${options.GITHUB_TOKEN}`,
+            Accept: "application/vnd.github+json",
+          }
+        }
+      ))
+        .pipe(
+          switchMap(async (response) => {
+            if (response.ok) {
+              const data = await response.json();
+              return {sha: data.sha};
+            } else if (response.status === 404) {
+              return {sha: null};
+            }
+            throw new Error("Error while fetching the file");
+          }),
+          switchMap(({sha}) =>
+            fromFetch(
+              `https://api.github.com/repos/${options.owner}/${options.repo}/contents/${options.filePath}`,
+              {
+                headers: {
+                  Authorization: `token ${options.GITHUB_TOKEN}`,
+                  Accept: "application/vnd.github+json",
+                },
+                method: "PUT",
+                body: JSON.stringify({
+                  message: options.commitMessage,
+                  content,
+                  sha
+                }),
+              }
+            )
+          )
+        )
+    });
     environment.readFiles = pipe(
       map((fileList: FileList) => Immutable.Range(0, fileList.length).map(
           (index) => from(readFile(index, fileList)) as Observable<any>
@@ -918,33 +1081,33 @@ class ProcessWorker {
     environment.delayEach = (milliseconds: number) => delayWhen((_, i) => interval(i * milliseconds));
     environment.arrowTableToJSON = map((table: arrow.Table<any>) => table.toArray().map((row) => row.toJSON()));
     environment.insertCSVToDuckDB = (observable: Observable<string>, path: string = 'rows.csv') =>
-      concatMap((obj: {db: AsyncDuckDB, c: AsyncDuckDBConnection}) =>
-      observable.pipe(
-        switchMap(async (csv: string) => {
-          await obj.db.registerFileText(path, csv);
-          return obj;
-        })
-      )
-    );
-    environment.insertJSONToDuckDB = (observable: Observable<object>, path: string = 'rows.json', name: string = 'rows') => concatMap((obj: {db: AsyncDuckDB, c: AsyncDuckDBConnection}) =>
+      concatMap((obj: { db: AsyncDuckDB, c: AsyncDuckDBConnection }) =>
+        observable.pipe(
+          switchMap(async (csv: string) => {
+            await obj.db.registerFileText(path, csv);
+            return obj;
+          })
+        )
+      );
+    environment.insertJSONToDuckDB = (observable: Observable<object>, path: string = 'rows.json', name: string = 'rows') => concatMap((obj: { db: AsyncDuckDB, c: AsyncDuckDBConnection }) =>
       observable.pipe(
         switchMap(async (json) => {
           await obj.db.registerFileText(path, JSON.stringify(json));
-          await obj.c.insertJSONFromPath(path, { name });
+          await obj.c.insertJSONFromPath(path, {name});
           return obj;
         })
       )
     );
-    environment.duckDBStatement = (query: string)  => concatMap(async (obj: {c: AsyncDuckDBConnection}) => {
+    environment.duckDBStatement = (query: string) => concatMap(async (obj: { c: AsyncDuckDBConnection }) => {
       await obj.c.send(query);
       return obj;
     });
-    environment.duckDBQuery = (query: string)  => concatMap((obj: {c: AsyncDuckDBConnection}) => obj.c.query(query));
-    environment.duckDBPrepare = (query: string, params: any[])  => concatMap(async (obj: {c: AsyncDuckDBConnection}) => {
+    environment.duckDBQuery = (query: string) => concatMap((obj: { c: AsyncDuckDBConnection }) => obj.c.query(query));
+    environment.duckDBPrepare = (query: string, params: any[]) => concatMap(async (obj: { c: AsyncDuckDBConnection }) => {
       const statement = await obj.c.prepare(query);
       return statement.query(params);
     });
-    environment.importDuckDB = new Observable( (observer) => {
+    environment.importDuckDB = new Observable((observer) => {
       dynamicImportDuckDB().then((duckdb) => {
         observer.next(duckdb);
         observer.complete();
@@ -1009,7 +1172,11 @@ class ProcessWorker {
     return this.spawn(action);
   }
 
-  init() {
+  init(payload: { href: string }) {
+    this.environment.window.location = {
+      href: payload.href
+    };
+    this.environment.currentUrl = new URL(payload.href);
     return this.environmentObserver.init();
   }
 }
@@ -1018,13 +1185,13 @@ const processWorker = new ProcessWorker(globalThis, new LocalEcho(), new Termina
 
 // @ts-ignore
 globalThis.addEventListener('exec', async (event: CustomEvent) => {
-  if (!event.detail.payload) {
+  if (!event.detail.payload?.code) {
     sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
     return;
   }
   try {
-    await processWorker.init();
-    const response = await processWorker.exec(event.detail.payload);
+    await processWorker.init(event.detail.payload);
+    const response = await processWorker.exec(event.detail.payload.code);
     if (!(response instanceof Observable)) {
       processWorker.println(response);
       sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});

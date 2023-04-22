@@ -109,11 +109,6 @@ py-box:not(:defined) {
   margin: 0;
 }
 
-.py-error {
-  background-color: #ffe9e8;
-  color: #9d041c;
-}
-
 .py-warning {
   background-color: rgb(255, 244, 229);
   border: solid;
