@@ -199,6 +199,16 @@ class LocalEcho {
   }
 }
 
+// @ts-ignore
+Map.prototype.toJSON = function toJSON() {
+  return [...Map.prototype.entries.call(this)];
+}
+
+// @ts-ignore
+Set.prototype.toJSON = function toJSON() {
+  return [...Set.prototype.values.call(this)];
+}
+
 const identity = (x: any) => x;
 
 async function readFile(index: number, fileList: FileList) {
