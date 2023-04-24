@@ -334,7 +334,7 @@ class MatTree {
         };
       }
       return {
-        name: this.transform({key,type,value,valueIsObject:false,parentType:parent,defaultName:`${type} ${value}`.trim()})
+        name: this.transform({key,type,value,valueIsObject:false,parentType:parent,defaultName:`${key} ${value}`.trim()})
       };
     });
   }
