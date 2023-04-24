@@ -311,32 +311,34 @@ class Table {
   }
 }
 
-type MatTreeTransformer = (options: {key: string,valueIsObject:boolean,value: any, type: string, parentType: string, defaultName: string}) => string;
+type MatTreeTransformer = (options: {key: string,level: number,valueIsObject:boolean,value: any, type: string, parentType: string, defaultName: string}) => string;
 
 class MatTree {
+  private level = 0;
   constructor(private port: MessagePort, private transform: MatTreeTransformer) {
   }
   render(dataSource: object) {
     this.port.postMessage({type: 'render', dataSource: this.transformJSONToTree(dataSource)});
   }
   transformJSONToTree(json: object, parent?: any): any {
-    return Object.entries(json).map(([key, value]) => {
-      debugger;
+    this.level++;
+    const entries = Object.entries(json).map(([key, value]) => {
       key = parent !== "Array" ? key : "";
       let type = value?.constructor?.name;
       value = !!value.toJSON ? value.toJSON() : value;
-      debugger;
       if (typeof value === 'object' && !!value) {
         type = `${type}${type === "Array" ? `(${value.length})` : ""}`;
         return {
-          name:  this.transform({key,type,value,valueIsObject:true,parentType:parent,defaultName:`${type} ${key}`.trim()}),
+          name:  this.transform({key,type,value,valueIsObject:true,level: this.level, parentType:parent,defaultName:`${type} ${key}`.trim()}),
           children: this.transformJSONToTree(value, value?.constructor?.name)
         };
       }
       return {
-        name: this.transform({key,type,value,valueIsObject:false,parentType:parent,defaultName:`${key} ${value}`.trim()})
+        name: this.transform({key,type,value,valueIsObject:false,level: this.level, parentType:parent,defaultName:`${key} ${value}`.trim()})
       };
     });
+    this.level--;
+    return entries;
   }
 }
 
