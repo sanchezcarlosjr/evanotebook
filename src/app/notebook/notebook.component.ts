@@ -5,8 +5,11 @@ import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
 import {Title} from "@angular/platform-browser";
-import {BehaviorSubject} from "rxjs";
 import {TableComponent} from "./table/table.component";
+import {MatToolbar} from "@angular/material/toolbar";
+import {MatButton} from "@angular/material/button";
+import {MatMenu} from "@angular/material/menu";
+import {MatCard} from "@angular/material/card";
 
 function readAsDataURL(file: File) {
   if (!file) {
@@ -36,6 +39,10 @@ export class NotebookComponent implements OnInit {
   constructor(injector: Injector,private _snackBar: MatSnackBar, private titleService: Title) {
     customElements.define('nk-form', createCustomElement(FormComponent, {injector}));
     customElements.define('nk-table', createCustomElement(TableComponent, {injector}));
+    customElements.define('nk-toolbar', createCustomElement(MatToolbar, {injector}));
+    customElements.define('nk-button', createCustomElement(MatButton, {injector}));
+    customElements.define('nk-menu', createCustomElement(MatMenu, {injector}));
+    customElements.define('nk-card', createCustomElement(MatCard, {injector}));
   }
   async ngOnInit() {
     this.name = url.read("n", "EvaNotebook");

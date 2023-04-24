@@ -18,6 +18,7 @@ import {MatTableModule} from "@angular/material/table";
 import {MatSortModule} from "@angular/material/sort";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatRippleModule} from "@angular/material/core";
+import {MatCardModule} from "@angular/material/card";
 
 @NgModule({
   declarations: [
@@ -35,12 +36,12 @@ import {MatRippleModule} from "@angular/material/core";
     MatToolbarModule,
     MatMenuModule,
     MatButtonModule,
-    MatRadioModule,
     MatSnackBarModule,
     FormsModule,
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
+    MatCardModule,
     MatRippleModule
   ]
 })
