@@ -2,6 +2,13 @@ import {parse} from "@babel/parser";
 import * as types from "@babel/types";
 import generate from "@babel/generator";
 
+// @ts-ignore
+globalThis.parseJS = parse;
+// @ts-ignore
+globalThis.generateJS = generate;
+// @ts-ignore
+globalThis.typesJS = types;
+
 // https://github.com/gzuidhof/starboard-notebook/blob/master/packages/starboard-notebook/src/cellTypes/javascript/eval.ts
 export function precompileJS(code: string) {
   try {
