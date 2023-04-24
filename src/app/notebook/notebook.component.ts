@@ -37,18 +37,9 @@ export class NotebookComponent implements OnInit {
   isMode2: boolean = true;
   loading: boolean = true;
   name: string = "";
-  constructor(injector: Injector,private _snackBar: MatSnackBar, private titleService: Title) {
-    customElements.define('nk-form', createCustomElement(FormComponent, {injector}));
-    customElements.define('nk-table', createCustomElement(TableComponent, {injector}));
-    customElements.define('nk-tree', createCustomElement(TreeComponent, {injector}));
-    customElements.define('nk-toolbar', createCustomElement(MatToolbar, {injector}));
-    customElements.define('nk-button', createCustomElement(MatButton, {injector}));
-    customElements.define('nk-menu', createCustomElement(MatMenu, {injector}));
-    customElements.define('nk-card', createCustomElement(MatCard, {injector}));
+  constructor(private injector: Injector,private _snackBar: MatSnackBar, private titleService: Title) {
   }
   async ngOnInit() {
-    this.name = url.read("n", "EvaNotebook");
-    this.titleService.setTitle(this.name);
     const EditorJS = await import("@editorjs/editorjs");
     this.isMode2 = url.read("m") === "2";
     const editor = new EditorJS.default({
@@ -170,9 +161,21 @@ export class NotebookComponent implements OnInit {
       }
     });
     this.loading = false;
+    this.name = url.read("n", "EvaNotebook");
+    this.titleService.setTitle(this.name);
     editor.isReady.then(() => import('./shell/DatabaseManager').then(lib => new lib.DatabaseManager()))
       .then(manager => import("./shell/shell")
-        .then(lib => new lib.Shell(editor as any, window, manager).start(this.isMode2)));
+        .then(lib => new lib.Shell(editor as any, window, manager).start(this.isMode2))).then(
+        () => {
+          customElements.define('nk-form', createCustomElement(FormComponent, {injector: this.injector}));
+          customElements.define('nk-table', createCustomElement(TableComponent, {injector: this.injector}));
+          customElements.define('nk-tree', createCustomElement(TreeComponent, {injector: this.injector}));
+          customElements.define('nk-toolbar', createCustomElement(MatToolbar, {injector: this.injector}));
+          customElements.define('nk-button', createCustomElement(MatButton, {injector: this.injector}));
+          customElements.define('nk-menu', createCustomElement(MatMenu, {injector: this.injector}));
+          customElements.define('nk-card', createCustomElement(MatCard, {injector: this.injector}));
+        }
+    );
     if (!this.isMode2) {
       window.addEventListener('saving', () => {
         this.isSaving = true;
