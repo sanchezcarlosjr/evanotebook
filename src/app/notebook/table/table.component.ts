@@ -1,4 +1,4 @@
-import {Component, Input, ViewChild} from '@angular/core';
+import {Component, Input, ViewChild, OnInit, AfterViewInit} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {MatPaginator} from "@angular/material/paginator";
 import {MatSort} from "@angular/material/sort";
@@ -8,7 +8,7 @@ import {MatSort} from "@angular/material/sort";
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.css']
 })
-export class TableComponent {
+export class TableComponent implements OnInit, AfterViewInit {
   @Input() port: MessagePort | undefined;
   displayedColumns: string[] = [];
   dataSource: MatTableDataSource<object> = new MatTableDataSource<object>([]);

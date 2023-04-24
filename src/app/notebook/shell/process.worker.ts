@@ -311,6 +311,35 @@ class Table {
   }
 }
 
+type MatTreeTransformer = (options: {key: string,valueIsObject:boolean,value: any, type: string, parentType: string, defaultName: string}) => string;
+
+class MatTree {
+  constructor(private port: MessagePort, private transform: MatTreeTransformer) {
+  }
+  render(dataSource: object) {
+    this.port.postMessage({type: 'render', dataSource: this.transformJSONToTree(dataSource)});
+  }
+  transformJSONToTree(json: object, parent?: any): any {
+    return Object.entries(json).map(([key, value]) => {
+      debugger;
+      key = parent !== "Array" ? key : "";
+      let type = value?.constructor?.name;
+      value = !!value.toJSON ? value.toJSON() : value;
+      debugger;
+      if (typeof value === 'object' && !!value) {
+        type = `${type}${type === "Array" ? `(${value.length})` : ""}`;
+        return {
+          name:  this.transform({key,type,value,valueIsObject:true,parentType:parent,defaultName:`${type} ${key}`.trim()}),
+          children: this.transformJSONToTree(value, value?.constructor?.name)
+        };
+      }
+      return {
+        name: this.transform({key,type,value,valueIsObject:false,parentType:parent,defaultName:`${type} ${value}`.trim()})
+      };
+    });
+  }
+}
+
 async function buildChart(config: ConfigurationChart) {
   const payload = await requestCanvas() as any;
   Chart.register(config.plugins ?? []);
@@ -330,6 +359,15 @@ async function buildTable() {
     }
   });
   return new Table(payload);
+}
+
+async function buildTree(transformer: MatTreeTransformer) {
+  const payload = await requestResource('tree', {
+    event: 'tree', payload: {
+      threadId: self.name
+    }
+  });
+  return new MatTree(payload, transformer);
 }
 
 class DocumentObserver extends ReplaySubject<any> {
@@ -451,6 +489,7 @@ interface GitHubCommit {
   commitMessage: string;
   GITHUB_TOKEN: string;
 }
+
 
 class ProcessWorker {
   private environmentObserver: DocumentObserver;
@@ -815,7 +854,12 @@ class ProcessWorker {
       const table = await acc;
       table.render(data);
       return acc;
-    }, buildTable()),);
+    }, buildTable()));
+    environment.jsonToTree = (transformer: MatTreeTransformer = ({defaultName}) => defaultName) => pipe(switchScan(async (acc, data: any[]) => {
+      const table = await acc;
+      table.render(data);
+      return acc;
+    }, buildTree(transformer)));
     // Consult https://jsonforms.io/ to learn more about options.
     environment.form = (options: { uischema: object, schema: object, data: any }) => observeResource('form', {
       event: 'form', payload: {

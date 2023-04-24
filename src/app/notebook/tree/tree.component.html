@@ -1,0 +1,4 @@
+<mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+  <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding><button mat-icon-button disabled></button><div [innerHTML]="node.name"></div></mat-tree-node>
+  <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding><button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name"><i class="mat-icon-rtl-mirror" [class]="treeControl.isExpanded(node) ? 'fa-sharp fa-solid fa-chevron-down' : 'fa-sharp fa-solid fa-chevron-right'" aria-hidden="true"></i></button><div [innerHTML]="node.name"></div></mat-tree-node>
+</mat-tree>

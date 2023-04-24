@@ -19,12 +19,15 @@ import {MatSortModule} from "@angular/material/sort";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatRippleModule} from "@angular/material/core";
 import {MatCardModule} from "@angular/material/card";
+import { TreeComponent } from './tree/tree.component';
+import {MatTreeModule} from "@angular/material/tree";
 
 @NgModule({
   declarations: [
     NotebookComponent,
     FormComponent,
-    TableComponent
+    TableComponent,
+    TreeComponent
   ],
   imports: [
     CommonModule,
@@ -41,6 +44,7 @@ import {MatCardModule} from "@angular/material/card";
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
+    MatTreeModule,
     MatCardModule,
     MatRippleModule
   ]

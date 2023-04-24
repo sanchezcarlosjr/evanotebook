@@ -115,6 +115,10 @@ export class Shell {
     environment.addEventListener('table', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTable');
     });
+    //@ts-ignore
+    environment.addEventListener('tree', (event: CustomEvent) => {
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTree');
+    });
     environment.addEventListener('shell.transferControlToOffscreen', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'transferControlToOffscreen', payload: {
@@ -202,6 +206,11 @@ export class Shell {
     environment.addEventListener('shell.TableMessageChannel', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'table', payload: event.detail.payload.port
+      }, [event.detail.payload.port]);
+    });
+    environment.addEventListener('shell.TreeMessageChannel', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'tree', payload: event.detail.payload.port
       }, [event.detail.payload.port]);
     });
     environment.addEventListener('shell.InputFile', (event: CustomEvent) => this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
