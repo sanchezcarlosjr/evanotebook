@@ -12,15 +12,15 @@ import {MatMenu} from "@angular/material/menu";
 import {MatCard} from "@angular/material/card";
 import {TreeComponent} from "./tree/tree.component";
 
-function readAsDataURL(file: File) {
+function readAsDataURL(file: File): Promise<string> {
   if (!file) {
-    return Promise.resolve(null);
+    return Promise.resolve("");
   }
   return new Promise(resolve => {
     const reader = new FileReader();
     reader.addEventListener(
       "load",
-      () => resolve(reader?.result),
+      () => resolve(reader?.result as string ?? ""),
       false
     );
     reader.readAsDataURL(file);
@@ -94,11 +94,29 @@ export class NotebookComponent implements OnInit {
           config: {
             uploader: {
               async uploadByFile(file: File) {
-                const url = await readAsDataURL(file);
+                let resourceUrl = "";
+                try {
+                  if (url.has("lg")) {
+                    const formData = new FormData();
+                    formData.append('file', file, file.name);
+                    const LOCAL_GATEWAY = url.read("lg");
+                    const response = await fetch(LOCAL_GATEWAY, {
+                      method: 'POST',
+                      body: formData
+                    }).then(r => r.json());
+                    if (!response.Hash) {
+                      throw new Error("No hash returned");
+                    }
+                    const GLOBAL_GATEWAY = url.read("gg") ?? LOCAL_GATEWAY;
+                    resourceUrl = `${GLOBAL_GATEWAY}${response.Hash}?filename=${response.Name || response.name || file.name}`;
+                  }
+                } catch (e) {
+                }
+                resourceUrl = resourceUrl || await readAsDataURL(file);
                 return {
                   success: 1,
                   file: {
-                    url,
+                    url: resourceUrl,
                     name: file.name,
                     size: file.size
                   }
