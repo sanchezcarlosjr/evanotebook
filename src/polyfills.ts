@@ -1,3 +1,5 @@
+import {Buffer} from 'buffer';
+
 // @ts-ignore
 globalThis.global = globalThis;
 // @ts-ignore
@@ -8,7 +10,4 @@ globalThis.process = {
 }
 
 //  @ts-ignore
-globalThis.Buffer = {
-  //  @ts-ignore
-  isBuffer: (obj: any) => false
-}
+globalThis.Buffer = Buffer;
