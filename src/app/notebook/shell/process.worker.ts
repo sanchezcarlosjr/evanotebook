@@ -227,6 +227,33 @@ async function create_db() {
     name: 'eva_notebook', multiInstance: true, storage: getRxStorageDexie()
   });
   await database.addCollections({
+    history: {
+      schema: {
+        title: 'history',
+        version: 0,
+        type: 'object',
+        primaryKey: 'topic',
+        properties: {
+          topic: {
+            type: 'string',
+            maxLength: 100
+          },
+          createdAt: {
+            type: 'string',
+            maxLength: 100
+          },
+          title: {
+            type: 'string',
+            maxLength: 255
+          },
+          crdts: getCRDTSchemaPart()
+        },
+        required: ['topic'],
+        crdt: {
+          field: 'crdts'
+        }
+      }
+    },
     blocks: {
       schema: {
         title: 'blocks', version: 0, primaryKey: 'id', type: 'object', properties: {
@@ -424,7 +451,8 @@ class Blocks {
       selector: {
         index: {
           $eq: index
-        }, topic: {
+        },
+        topic: {
           $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
         }
       }
@@ -454,7 +482,8 @@ class Blocks {
         topic: {
           $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
         }
-      }
+      },
+      sort: [{index: 'asc'}]
     }).$));
   }
 }

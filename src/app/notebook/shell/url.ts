@@ -14,3 +14,9 @@ export function read(query: string, defaultValue = "") {
 export function has(query: string): boolean {
   return  new URLSearchParams(window.location.search).has(query);
 }
+
+export function remove(query: string) {
+  const url = new URL(window.location.toString());
+  url.searchParams.delete(query);
+  window.history.pushState({}, "", url);
+}

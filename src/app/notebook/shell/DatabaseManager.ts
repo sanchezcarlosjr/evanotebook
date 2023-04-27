@@ -1,6 +1,6 @@
-import {BehaviorSubject, filter, map, Observable, Subscriber, throttleTime} from "rxjs";
+import {BehaviorSubject, filter, firstValueFrom, map, Observable, Subscriber, switchMap, tap, throttleTime} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
-import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDumpDatabaseAny} from 'rxdb';
+import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDocument, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
 import {RxDBUpdatePlugin} from 'rxdb/plugins/update';
 import brotli from "./brotli";
@@ -15,6 +15,8 @@ import {P2PConnectionHandlerCreator, replicateP2P} from "rxdb/plugins/replicatio
 import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
+import {randomCouchString} from "rxdb/plugins/utils";
+import {RxDatabase} from "rxdb/dist/types/types";
 addRxPlugin(RxDBLeaderElectionPlugin);
 
 addRxPlugin(RxDBUpdatePlugin);
@@ -47,6 +49,7 @@ export class DatabaseManager {
   private textEncoder = new TextEncoder();
   private textDecoder = new TextDecoder();
   private brotli: typeof Brotli | undefined;
+  private database$: BehaviorSubject<RxDatabaseBase<Promise<any>, any>> = new BehaviorSubject<RxDatabaseBase<Promise<any>, any>>(undefined as any);
 
   constructor() {
     this.setupPeer();
@@ -60,6 +63,33 @@ export class DatabaseManager {
        storage: getRxStorageDexie()
      });
      const collections = await this._database.addCollections({
+       history: {
+         schema: {
+           title: 'history',
+           version: 0,
+           type: 'object',
+           primaryKey: 'topic',
+           properties: {
+             topic: {
+               type: 'string',
+               maxLength: 100
+             },
+             createdAt: {
+               type: 'string',
+               maxLength: 100
+             },
+             title: {
+               type: 'string',
+               maxLength: 255
+             },
+             crdts: getCRDTSchemaPart()
+           },
+           required: ['topic'],
+           crdt: {
+             field: 'crdts'
+           }
+         }
+       },
        blocks: {
          schema: {
            title: 'blocks',
@@ -129,6 +159,7 @@ export class DatabaseManager {
        }
      }
      });
+     this.database$.next(this._database);
      return collections.blocks.find({
        selector: {
          topic: {
@@ -146,6 +177,9 @@ export class DatabaseManager {
   }
 
   async registerUrlProviders() {
+    if (!url.has("c") && !url.has("u")) {
+      return [];
+    }
     this.brotli = await brotli;
     if (url.has("c")) {
       return (await this.readBlocksFromURL())?.blocks;
@@ -220,7 +254,7 @@ export class DatabaseManager {
       ifNotMatch: {
         $set: data
       }
-    })
+    });
   }
 
   decompress(base64: string) {
@@ -327,10 +361,7 @@ export class DatabaseManager {
   }
 
   updateIndex(block: any,index: number) {
-    if (!this._database) {
-      return Promise.resolve();
-    }
-    if (block.id === "0") {
+    if (!this._database || !block?.updateCRDT) {
       return Promise.resolve();
     }
     // @ts-ignore
@@ -355,8 +386,8 @@ export class DatabaseManager {
 
   async addBlock(block: BlockDocument) {
     // @ts-ignore
-    if (!this._database?.blocks){
-      return ;
+    if (!this._database?.blocks && block.index < 0){
+      return;
     }
     block.createdBy = this._uuid;
     block.lastEditedBy = this._uuid;
@@ -369,6 +400,7 @@ export class DatabaseManager {
     });
     window.dispatchEvent(new CustomEvent('saving'));
   }
+
   async removeBlock(id: string) {
     // @ts-ignore
     if (!this._database?.blocks){
@@ -430,8 +462,50 @@ export class DatabaseManager {
   }
 
   generateDefaultBlock() {
-    return {id: '0', topic: this.topic, index: 0, type: 'paragraph', data: {text: ''}, createdBy: this._uuid, lastEditedBy: this._uuid};
+    return {id: randomCouchString(10), topic: this.topic, index: 0, type: 'paragraph', data: {text: ''}, createdBy: this._uuid, lastEditedBy: this._uuid};
   }
+
+  get history$() {
+    // @ts-ignore
+    return this.database$.pipe(
+      filter(db => !!db),
+      // @ts-ignore
+      switchMap(db => db.history?.find().$.pipe(
+        map((x: RxDocument[]) =>
+          (x.map((y: any) => ({title: y._data.title, topic: y._data.topic, createdAt: new Date(y._data.createdAt)}))).sort(
+            (a: {createdAt: Date}, b: {createdAt: Date}) => b.createdAt.getTime() - a.createdAt.getTime()
+          )
+        ),
+      ))
+    );
+  }
+
+  saveNotebookInHistory(notebook: {title: string}) {
+    // @ts-ignore
+    return firstValueFrom(
+      this.database$.pipe(
+        filter(db => !!db),
+        // @ts-ignore
+        switchMap(db => db.history.insertCRDT({
+          selector: {
+            topic: {$exists: false}
+          },
+          ifMatch: {
+            $set: {
+              title: notebook.title,
+              topic: this.topic,
+              createdAt: new Date().toString()
+            }
+          },
+          ifNotMatch: {
+            $set: {
+              title: notebook.title
+            }
+          }
+        })))
+    );
+  }
+
 
   saveInUrl() {
     // @ts-ignore

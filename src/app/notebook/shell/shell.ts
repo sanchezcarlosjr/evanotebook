@@ -14,6 +14,7 @@ import {
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
 import {OutputBlockData} from "@editorjs/editorjs";
+import {TitleSubjectService} from "../../title-subject.service";
 
 enum JobStatus {
   created = 0, running = 1
@@ -262,6 +263,17 @@ export class Shell {
     return this;
   }
 
+  history$(): Observable<any> {
+    return this.databaseManager.history$;
+  }
+
+  registerHistoryChanges(titleService: TitleSubjectService) {
+    titleService.get$().subscribe((title) =>
+      this.databaseManager.saveNotebookInHistory({title}).then()
+    );
+    return this;
+  }
+
   private renderFromDatabase(isMode2: boolean) {
     this.databaseManager.start().then(blockCollection => {
       blockCollection.pipe(
@@ -271,8 +283,12 @@ export class Shell {
         let blocks: BlockDocument[] = [];
         if (documents.length > 0) {
           documents.forEach((block, index) =>{
-            this.databaseManager.updateIndex(block, index).then();
-            blocks.push(block._data);
+            if (block && block?.index >= 0) {
+              this.databaseManager.updateIndex(block, index).then();
+              blocks.push(block);
+            } else {
+              this.databaseManager.removeBlock(block.id).then();
+            }
           });
         }
         if (documents.length === 0) {
@@ -295,6 +311,8 @@ export class Shell {
                   }
                 }
               ).then(async _ => {
+                if (isMode2)
+                  return;
                 try {
                   await this.databaseManager.removeAllBlocks();
                   await this.databaseManager.bulkInsertBlocks(blocks);
@@ -335,8 +353,5 @@ export class Shell {
         });
       });
     });
-
-
   }
-
 }

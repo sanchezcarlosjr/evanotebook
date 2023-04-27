@@ -23,7 +23,8 @@
             "assets": [
               "src/favicon.svg",
               "src/assets",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              "src/service-worker.js"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",

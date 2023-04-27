@@ -4,13 +4,14 @@ import { createCustomElement } from '@angular/elements';
 import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
-import {Title} from "@angular/platform-browser";
 import {TableComponent} from "./table/table.component";
 import {MatToolbar} from "@angular/material/toolbar";
 import {MatButton} from "@angular/material/button";
 import {MatMenu} from "@angular/material/menu";
 import {MatCard} from "@angular/material/card";
 import {TreeComponent} from "./tree/tree.component";
+import {TitleSubjectService} from "../title-subject.service";
+import {Observable} from "rxjs";
 
 function readAsDataURL(file: File): Promise<string> {
   if (!file) {
@@ -37,7 +38,8 @@ export class NotebookComponent implements OnInit {
   isMode2: boolean = true;
   loading: boolean = true;
   name: string = "";
-  constructor(private injector: Injector,private _snackBar: MatSnackBar, private titleService: Title) {
+  history$: Observable<any> | undefined;
+  constructor(private injector: Injector,private _snackBar: MatSnackBar, private titleService: TitleSubjectService) {
   }
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
@@ -179,12 +181,14 @@ export class NotebookComponent implements OnInit {
       }
     });
     this.loading = false;
-    this.name = url.read("n", "EvaNotebook");
-    this.titleService.setTitle(this.name);
+    this.titleService.setTitle(url.read("n", "EvaNotebook"));
+    this.name = this.titleService.getTitle();
     editor.isReady.then(() => import('./shell/DatabaseManager').then(lib => new lib.DatabaseManager()))
       .then(manager => import("./shell/shell")
-        .then(lib => new lib.Shell(editor as any, window, manager).start(this.isMode2))).then(
-        () => {
+        .then(lib =>
+          new lib.Shell(editor as any, window, manager).start(this.isMode2).registerHistoryChanges(this.titleService).history$()
+      ).then(
+        (history$: Observable<any>) => {
           customElements.define('nk-form', createCustomElement(FormComponent, {injector: this.injector}));
           customElements.define('nk-table', createCustomElement(TableComponent, {injector: this.injector}));
           customElements.define('nk-tree', createCustomElement(TreeComponent, {injector: this.injector}));
@@ -192,8 +196,9 @@ export class NotebookComponent implements OnInit {
           customElements.define('nk-button', createCustomElement(MatButton, {injector: this.injector}));
           customElements.define('nk-menu', createCustomElement(MatMenu, {injector: this.injector}));
           customElements.define('nk-card', createCustomElement(MatCard, {injector: this.injector}));
+          this.history$ = history$;
         }
-    );
+    ));
     if (!this.isMode2) {
       window.addEventListener('saving', () => {
         this.isSaving = true;
@@ -222,7 +227,7 @@ export class NotebookComponent implements OnInit {
   }
 
   createNewNotebook() {
-    window.dispatchEvent(new CustomEvent('shell.CreateNewNotebook'));
+    location.href = `${location.origin}?p=${url.read('p')}`;
   }
 
   exportNotebook() {
@@ -241,5 +246,14 @@ export class NotebookComponent implements OnInit {
   updateName(name: string) {
     url.write("n", name);
     this.titleService.setTitle(name);
+  }
+
+  removeUrlProviders() {
+    url.remove("c");
+    url.remove("u");
+  }
+
+  getNotebookLocation(item: any) {
+    return `${location.origin}?p=${url.read('p')}&t=${item.topic}&n=${item.title}`
   }
 }

@@ -18,3 +18,13 @@
   text-overflow: ellipsis;
   white-space: pre;
 }
+
+.history-element {
+  display: block;
+  width: 100%;
+}
+
+.input-files {
+  visibility:hidden;
+  width:0;
+}

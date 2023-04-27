@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "node --max_old_space_size=16096 ./node_modules/@angular/cli/bin/ng serve",
+    "start": "node --max_old_space_size=8094 ./node_modules/@angular/cli/bin/ng serve",
     "build": "ng build --configuration production  --allowed-common-js-dependencies",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
