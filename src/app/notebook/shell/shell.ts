@@ -113,6 +113,18 @@ export class Shell {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('transferControlToOffscreen');
     });
     //@ts-ignore
+    environment.addEventListener('shell.RequestCaptureStream', (event: CustomEvent) => {
+      this.editor.blocks.getById(event.detail.payload.threadId)?.call('captureStream');
+    });
+    //@ts-ignore
+    environment.addEventListener('shell.transferStreamToOffscreen', (event: CustomEvent) => {
+      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+        event: 'transferStreamToOffscreen', payload: {
+          message: event.detail.payload.message
+        }
+      }, [event.detail.payload.message]);
+    });
+    //@ts-ignore
     environment.addEventListener('table', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTable');
     });

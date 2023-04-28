@@ -902,7 +902,19 @@ class ProcessWorker {
       obj.message = context;
       return obj;
     }, {message: getCanvas2d()}));
-    environment.focusOnImage = () => pipe(filter(({message}) => message as unknown as boolean), environment.base64ToBlob(), environment.blobToImage, environment.imshow(),);
+    environment.captureStream = (options ?: any /* MediaStreamConstraints | undefined) */) => observeResource('transferStreamToOffscreen', {
+      event: 'shell.RequestCaptureStream', payload: {
+        threadId: self.name,
+        options
+      }
+    });
+    environment.focusOnImage = () =>
+      pipe(
+        filter(({message}) => message as unknown as boolean),
+        environment.base64ToBlob(),
+        environment.blobToImage,
+        environment.imshow()
+      );
     environment.annotationPlugin = annotationPlugin;
     environment.ChartDataLabels = ChartDataLabels;
     environment.basicStatisticsAnnotations = (datasetIndex = 0, borderColor = 'black') => ({

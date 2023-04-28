@@ -164,6 +164,7 @@ export class CodeBlock extends InteractiveBlock {
 
   transferControlToOffscreen() {
     const canvas = document.createElement("canvas");
+    this.cell?.children[1].classList.add('center');
     this.cell?.children[1].appendChild(canvas);
     const offscreenCanvas = canvas.transferControlToOffscreen();
     window.dispatchEvent(new CustomEvent('shell.transferControlToOffscreen', {
@@ -213,21 +214,37 @@ export class CodeBlock extends InteractiveBlock {
     this.cell?.children[1].appendChild(frameElement);
   }
 
-  captureVideo(constraints?: MediaStreamConstraints | undefined) {
-    const canvas = document.createElement("canvas");
-    canvas.captureStream(25);
-    this.cell?.children[1].appendChild(canvas);
-    const offscreenCanvas = canvas.transferControlToOffscreen();
-    window.dispatchEvent(new CustomEvent('shell.transferControlToOffscreen', {
-      bubbles: true, detail: {
-        payload: {
-          canvas: offscreenCanvas,
-          width: this.cell?.clientWidth,
-          height: 400,
-          threadId: this.obj.block?.id
+  captureStream(constraints?: MediaStreamConstraints | undefined) {
+    navigator.mediaDevices.getUserMedia({video: true, audio: false})
+      .then(stream => {
+        const videoTrack = stream.getVideoTracks()[0];
+        // @ts-ignore https://developer.mozilla.org/en-US/docs/Web/API/ImageCapture
+        const imageCapture = new ImageCapture(videoTrack);
+        const feedSubscribers = () => {
+          imageCapture.grabFrame()
+            .then((imageBitmap: ImageBitmap) => {
+              window.dispatchEvent(new CustomEvent('shell.transferStreamToOffscreen', {
+                bubbles: true, detail: {
+                  payload: {
+                    message: imageBitmap,
+                    threadId: this.obj.block?.id
+                  }
+                }
+              }));
+              requestAnimationFrame(feedSubscribers);
+            });
         }
-      }
-    }));
+        feedSubscribers();
+      })
+      .catch(error => {
+        console.warn(error);
+        window.dispatchEvent(new CustomEvent('openSnackBar', {detail: {
+           payload: {
+             message: 'Error accessing camera.',
+             action: 'Close'
+           }
+        }}));
+      });
   }
 
   createTree() {
