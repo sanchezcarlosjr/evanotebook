@@ -1823,8 +1823,6 @@ ${msgIdle}`, { headers: this.adapter.newHeaders({ "Content-Type": "text/plain" }
       try {
         if (req.method === "POST" && req.url.startsWith(`${location.origin}/api/v0/`)) {
           const hash = sha1Binary(await (await new Response(req.body).blob()).arrayBuffer());
-          const cache = await this.cache;
-          console.log(cache);
           return this.adapter.newResponse(new Blob([JSON.stringify({"Hash": `${hash}.ext`})]).stream(), {
             status: 200,
             ok: true,

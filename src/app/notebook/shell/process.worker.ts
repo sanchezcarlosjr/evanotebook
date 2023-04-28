@@ -58,17 +58,21 @@ import * as duckdb from '@duckdb/duckdb-wasm';
 import {AsyncDuckDB, AsyncDuckDBConnection} from '@duckdb/duckdb-wasm';
 import * as TaskVision from "@mediapipe/tasks-vision";
 import {
-  FilesetResolver, GestureRecognizer, HandLandmarker, ImageClassifier, ObjectDetector
+  FilesetResolver,
+  GestureRecognizer,
+  HandLandmarker,
+  ImageClassifier,
+  ObjectDetector
 } from "@mediapipe/tasks-vision";
 import {TextClassifier, TextEmbedder} from "@mediapipe/tasks-text";
 import * as arrow from "apache-arrow";
 import {RxDatabase} from "rxdb/dist/types/types";
 import {OutputData} from "@editorjs/editorjs";
-import Indexed = Immutable.Seq.Indexed;
 import {BlockAPI} from "@editorjs/editorjs/types/api/block";
 import {BlockToolData, ToolConfig} from "@editorjs/editorjs/types/tools";
 import {randomCouchString} from "rxdb/plugins/utils";
 import {precompileJS} from "./precompile";
+import Indexed = Immutable.Seq.Indexed;
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -338,15 +342,18 @@ class Table {
   }
 }
 
-type MatTreeTransformer = (options: {key: string,level: number,valueIsObject:boolean,value: any, type: string, parentType: string, defaultName: string}) => string;
+type MatTreeTransformer = (options: { key: string, level: number, valueIsObject: boolean, value: any, type: string, parentType: string, defaultName: string }) => string;
 
 class MatTree {
   private level = 0;
+
   constructor(private port: MessagePort, private transform: MatTreeTransformer) {
   }
+
   render(dataSource: object) {
     this.port.postMessage({type: 'render', dataSource: this.transformJSONToTree(dataSource)});
   }
+
   transformJSONToTree(json: object, parent?: any): any {
     this.level++;
     const entries = Object.entries(json).map(([key, value]) => {
@@ -356,12 +363,28 @@ class MatTree {
       if (typeof value === 'object' && !!value) {
         type = `${type}${type === "Array" ? `(${value.length})` : ""}`;
         return {
-          name:  this.transform({key,type,value,valueIsObject:true,level: this.level, parentType:parent,defaultName:`${type} ${key}`.trim()}),
+          name: this.transform({
+            key,
+            type,
+            value,
+            valueIsObject: true,
+            level: this.level,
+            parentType: parent,
+            defaultName: `${type} ${key}`.trim()
+          }),
           children: this.transformJSONToTree(value, value?.constructor?.name)
         };
       }
       return {
-        name: this.transform({key,type,value,valueIsObject:false,level: this.level, parentType:parent,defaultName:`${key} ${value}`.trim()})
+        name: this.transform({
+          key,
+          type,
+          value,
+          valueIsObject: false,
+          level: this.level,
+          parentType: parent,
+          defaultName: `${key} ${value}`.trim()
+        })
       };
     });
     this.level--;
@@ -399,47 +422,122 @@ async function buildTree(transformer: MatTreeTransformer) {
   return new MatTree(payload, transformer);
 }
 
-class DocumentObserver extends ReplaySubject<any> {
-  private data: any = {};
+class DocumentObserver {
+  // @ts-ignore
+  private db = (globalThis.db as Observable<RxDatabase>);
 
-  constructor(private environment: any, private documentId: string) {
-    super();
+  constructor(
+    private documentId: string,
+    private collection: string = 'view') {
   }
 
   init() {
-    return firstValueFrom(this.environment.db.pipe(concatMap((d: RxDatabase) => d["view"].findOne(this.documentId).exec()), tap((d: RxDocument) => this.data = d?._data ?? {})));
+    return firstValueFrom(
+      this.db.pipe(
+        concatMap((d: RxDatabase) => d[this.collection].findOne(this.documentId).exec()),
+        tap((d: RxDocument) => {
+          if (d && d._data) {
+            Object.assign(this, d._data);
+          }
+        }))
+    );
   }
 
-  getProxy() {
+  get(path: string = '') {
+    return this.db.pipe(
+      concatMap((d: RxDatabase) => d[this.collection].findOne(this.documentId).exec()),
+      filter(x => !!x),
+      concatMap((d: RxDocument) => d.get$('_data' + `${path ? '.' : ''}${path}`)),
+    );
+  }
+
+  createProxy() {
     return new Proxy(this, {
       get(target: DocumentObserver, p: string | symbol, receiver: any): any {
         if (typeof p === 'string' && p[p.length - 1] === '$') {
-          return target.environment.db.pipe(concatMap((d: RxDatabase) => d["view"].findOne(target.documentId).exec()), filter(x => !!x), concatMap((d: RxDocument) => d.get$('_data.' + p.slice(0, -1))));
+          return target.get(p.slice(0, -1));
         }
-        return target.data[p];
-      }, set(target: DocumentObserver, p: string | symbol, newValue: any, receiver: any): boolean {
-        target.data[p] = newValue;
-        target.next(target.environment.db.pipe(concatMap((d: RxDatabase) => d["view"].insertCRDT({
-          selector: {
-            id: {$exists: false}
-          }, ifMatch: {
-            $set: {
-              id: target.documentId, [p]: newValue
-            }
-          }, ifNotMatch: {
-            $set: {
-              [p]: newValue
-            }
-          }
-        })), first()));
-        return true;
+        // @ts-ignore
+        return Reflect.get(...arguments);
       }
     });
   }
+
+  // Consult https://github.com/lgandecki/modifyjs
+  async set(p: string | symbol, newValue: any, operation: string = '$set') {
+    // @ts-ignore
+    this[p] = newValue;
+    await firstValueFrom(this.db.pipe(concatMap(d => d[this.collection].insertCRDT({
+      selector: {
+        id: {$exists: false}
+      },
+      ifMatch: {
+        $set: {
+          id: this.documentId,
+          [p]: newValue
+        }
+      },
+      ifNotMatch: {
+        [operation]: {
+          [p]: newValue
+        }
+      }
+    }))));
+    return newValue;
+  }
+
+  inc(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$inc');
+  }
+
+  min(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$min');
+  }
+
+  max(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$max');
+  }
+
+  unset(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$unset');
+  }
+
+  push(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$push');
+  }
+
+  pushAll(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$pushAll');
+  }
+
+  addToSet(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$addToSet');
+  }
+
+  pullAll(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$pullAll');
+  }
+
+  rename(p: string | symbol, newValue: any) {
+    return this.set(p, newValue, '$rename');
+  }
+
+
 }
 
 class Blocks {
   constructor(private environment: { db: Observable<RxDatabase>, currentUrl: URL }) {
+  }
+
+  get get$() {
+    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].find({
+      selector: {
+        topic: {
+          $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
+        }
+      },
+      sort: [{index: 'asc'}]
+    }).$));
   }
 
   getById(id: string): Observable<BlockAPI | null> {
@@ -475,17 +573,6 @@ class Blocks {
       }
     })));
   };
-
-  get get$() {
-    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].find({
-      selector: {
-        topic: {
-          $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
-        }
-      },
-      sort: [{index: 'asc'}]
-    }).$));
-  }
 }
 
 class EditorJS {
@@ -533,9 +620,8 @@ class ProcessWorker {
         subscriber.complete();
       }).catch(subscriber.error)
     }).pipe(shareReplay(1));
-    this.environmentObserver = new DocumentObserver(environment, "environment");
-    environment.environment = this.environmentObserver.getProxy();
-    environment.wait = this.environmentObserver.pipe(concatMap(x => x), first());
+    this.environmentObserver = new DocumentObserver("environment");
+    environment.environment = this.environmentObserver.createProxy();
     environment.P = P
     environment.editor = new EditorJS(this.environment);
     environment.from = from
