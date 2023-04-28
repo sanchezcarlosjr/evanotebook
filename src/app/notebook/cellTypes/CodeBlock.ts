@@ -213,6 +213,23 @@ export class CodeBlock extends InteractiveBlock {
     this.cell?.children[1].appendChild(frameElement);
   }
 
+  captureVideo(constraints?: MediaStreamConstraints | undefined) {
+    const canvas = document.createElement("canvas");
+    canvas.captureStream(25);
+    this.cell?.children[1].appendChild(canvas);
+    const offscreenCanvas = canvas.transferControlToOffscreen();
+    window.dispatchEvent(new CustomEvent('shell.transferControlToOffscreen', {
+      bubbles: true, detail: {
+        payload: {
+          canvas: offscreenCanvas,
+          width: this.cell?.clientWidth,
+          height: 400,
+          threadId: this.obj.block?.id
+        }
+      }
+    }));
+  }
+
   createTree() {
     const frameElement = document.createElement("nk-tree");
     frameElement.classList.add('w100');

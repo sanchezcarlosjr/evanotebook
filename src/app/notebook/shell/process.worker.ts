@@ -425,10 +425,21 @@ async function buildTree(transformer: MatTreeTransformer) {
 class DocumentObserver {
   // @ts-ignore
   private db = (globalThis.db as Observable<RxDatabase>);
+  private tasks: Promise<any>[] = [];
 
   constructor(
     private documentId: string,
     private collection: string = 'view') {
+  }
+
+  wait() {
+    return new Promise<boolean>(
+      resolve => queueMicrotask(async () => {
+        console.log(this.tasks);
+        await Promise.allSettled(this.tasks);
+        resolve(true);
+      })
+    );
   }
 
   init() {
@@ -459,6 +470,11 @@ class DocumentObserver {
         }
         // @ts-ignore
         return Reflect.get(...arguments);
+      },
+      set(target: DocumentObserver, path: string | symbol, value: any, receiver: any): any {
+        target.tasks.push(target.set(path, value));
+        // @ts-ignore
+        return this;
       }
     });
   }
