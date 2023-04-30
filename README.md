@@ -9,7 +9,7 @@ A collaborative offline first notebook for Web Technologies (i.e. JavaScript, Py
 
 # Features
 * An user interface similar to Notion's WYSIWYG (What You See Is What You Get) interface thanks to [EditorJS](https://editorjs.io).
-* Built-in support for MQTT, WebRTC, HTTP, and WebSocket protocols. Bypass transparently CORS restrictions. 
+* More intuitive APIs for MQTT, WebRTC, HTTP, and WebSocket protocols e.g. bypass transparently CORS restrictions. 
 * Each cell is run in a separate web worker for increased performance and stability.
 * Real Peer-to-peer collaboration and GitHub replication, with no data saved about you or your peers thanks to RxDB.
 * Reactive charts, forms, email senders, and other interactive elements.
