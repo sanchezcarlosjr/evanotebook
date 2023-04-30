@@ -1,15 +1,22 @@
 # EvaNotebook
-A collaborative offline first notebook for Web Technologies (i.e. JavaScript, Pyscript, Protocols) based on reactive observables, designed to run primarily in modern web browsers.
+A collaborative offline first notebook for Web Technologies (i.e. JavaScript, Python, Protocols) based on reactive observables, designed to run primarily in modern web browsers.
 
 # Demo
-https://notebook.sanchezcarlosjr.com/
+* https://notebook.sanchezcarlosjr.com/ It runs on Web2.0.
+* https://ipfsnotebook.sanchezcarlosjr.com/ It runs on IPFS.
+* https://isolatenotebook.sanchezcarlosjr.com/ You can use some restrictive APIs such as ArraySharedBuffer. The goal is ensuring an higher security level here, even though some features doesn't work.
+
 
 # Features
 * An user interface similar to Notion's WYSIWYG (What You See Is What You Get) interface thanks to [EditorJS](https://editorjs.io).
-* Built-in support for MQTT, WebRTC, HTTP, and WebSocket protocols. We're working on Bluetooth, gRPC, GraphQL and SSH protocols .
+* Built-in support for MQTT, WebRTC, HTTP, and WebSocket protocols. Bypass transparently CORS restrictions. 
 * Each cell is run in a separate web worker for increased performance and stability.
 * Real Peer-to-peer collaboration and GitHub replication, with no data saved about you or your peers thanks to RxDB.
 * Reactive charts, forms, email senders, and other interactive elements.
+
+# Roadmap
+* Implement Bluetooth, gRPC, GraphQL and SSH protocols.
+
 
 # Alternatives
 [ObservableHQ](https://observablehq.com/)
