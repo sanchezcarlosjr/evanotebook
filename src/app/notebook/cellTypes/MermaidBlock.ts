@@ -98,6 +98,13 @@ export class MermaidTool {
             }
             const svg = element.children[0].cloneNode(true) as Element;
             svg.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', 'http://www.w3.org/1999/xlink');
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css';
+            link.integrity = 'sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==';
+            link.crossOrigin = 'anonymous';
+            link.referrerPolicy = 'no-referrer';
+            svg.appendChild(link);
             svg.setAttribute('style', '');
             const styleElement = document.createElement('style');
             styleElement.textContent = `
