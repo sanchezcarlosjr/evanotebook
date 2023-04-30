@@ -3,6 +3,9 @@ The Ultimate P2P Browser Notebook for Fast AI System Development!
 
 We're excited to present EvaNotebook, an open-source platform designed to accelerate your AI development journey. Built for web developers and AI enthusiasts alike, this powerful notebook makes it easy to create and collaborate on projects in real time, directly from your browser.
 
+![webGPT](https://raw.githubusercontent.com/0hq/WebGPT/main/other/misc/header.png)
+Credits WebGPT
+
 🌐 Demo Links:
 * Web2.0: https://notebook.sanchezcarlosjr.com/
     
