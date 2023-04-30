@@ -4,16 +4,22 @@ The Ultimate P2P Browser Notebook for Fast AI System Development!
 We're excited to present EvaNotebook, an open-source platform designed to accelerate your AI development journey. Built for web developers and AI enthusiasts alike, this powerful notebook makes it easy to create and collaborate on projects in real time, directly from your browser.
 
 🌐 Demo Links:
-    Web2.0: https://notebook.sanchezcarlosjr.com/
-    IPFS: https://ipfsnotebook.sanchezcarlosjr.com/
-    Isolated Environment: https://isolatenotebook.sanchezcarlosjr.com/
+* Web2.0: https://notebook.sanchezcarlosjr.com/
+    
+* IPFS: https://ipfsnotebook.sanchezcarlosjr.com/
+    
+* Isolated Environment: https://isolatenotebook.sanchezcarlosjr.com/
 
 🔥 Key Features:
-    User-friendly WYSIWYG interface inspired by Notion (EditorJS)
-    Simplified APIs for MQTT, WebRTC, HTTP, and WebSocket protocols
-    Independent web workers for enhanced performance and stability
-    Secure P2P collaboration with custom replication (RxDB and libp2p) but offline first
-    Interactive elements like reactive charts, forms, and email senders
+* User-friendly WYSIWYG interface inspired by Notion (EditorJS)
+    
+* Simplified APIs for MQTT, WebRTC, HTTP, and WebSocket protocols
+    
+* Independent web workers for enhanced performance and stability
+    
+* Secure P2P collaboration with custom replication (RxDB and libp2p) but offline first
+    
+* Interactive elements like reactive charts, forms, and email senders
 
 🗺️ Roadmap:
 * Implement Bluetooth, gRPC, GraphQL and SSH protocols.
