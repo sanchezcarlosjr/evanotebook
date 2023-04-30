@@ -49,15 +49,19 @@ export class Shell {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('form');
     });
     environment.addEventListener('compress', (event: CustomEvent) => {
-      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
-        event: 'compress',
-        payload: this.databaseManager.compress(event.detail.payload.input, event.detail.payload.options)
-      });
+      this.databaseManager.compress(event.detail.payload.input, event.detail.payload.options).subscribe(payload =>
+        this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+          event: 'compress',
+          payload
+        })
+      )
     });
     environment.addEventListener('decompress', (event: CustomEvent) => {
-      this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
-        event: 'decompress', payload: this.databaseManager.decompress(event.detail.payload.input)
-      });
+      this.databaseManager.decompress(event.detail.payload.input).subscribe(payload =>
+        this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
+          event: 'decompress', payload
+        })
+      )
     });
     environment.addEventListener('shell.SaveInUrl', (event: CustomEvent) => {
       this.databaseManager.saveInUrl();

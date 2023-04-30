@@ -1,12 +1,21 @@
-import {BehaviorSubject, filter, firstValueFrom, map, Observable, Subscriber, switchMap, tap, throttleTime} from "rxjs";
+import {
+  BehaviorSubject,
+  filter,
+  firstValueFrom,
+  map,
+  Observable,
+  shareReplay,
+  Subscriber,
+  switchMap,
+  tap,
+  throttleTime
+} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDocument, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
 import {RxDBUpdatePlugin} from 'rxdb/plugins/update';
 import brotli from "./brotli";
 import * as url from "./url";
-import * as Brotli from "../../../assets/brotli_wasm/brotli_wasm";
-import {replicateRxCollection} from "rxdb/plugins/replication";
 import {getCRDTSchemaPart, RxDBcrdtPlugin} from 'rxdb/plugins/crdt';
 import {OutputBlockData} from "@editorjs/editorjs/types/data-formats/output-data";
 import * as _ from 'lodash';
@@ -16,7 +25,6 @@ import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
-import {RxDatabase} from "rxdb/dist/types/types";
 addRxPlugin(RxDBLeaderElectionPlugin);
 
 addRxPlugin(RxDBUpdatePlugin);
@@ -48,7 +56,12 @@ export class DatabaseManager {
   private txt = document.createElement("textarea");
   private textEncoder = new TextEncoder();
   private textDecoder = new TextDecoder();
-  private brotli: typeof Brotli | undefined;
+  private brotli: Observable<any> = new Observable((subscriber) => {
+    brotli.then(lib => {
+      subscriber.next(lib);
+      subscriber.complete();
+    });
+  }).pipe(shareReplay(1));
   private database$: BehaviorSubject<RxDatabaseBase<Promise<any>, any>> = new BehaviorSubject<RxDatabaseBase<Promise<any>, any>>(undefined as any);
 
   constructor() {
@@ -180,9 +193,8 @@ export class DatabaseManager {
     if (!url.has("c") && !url.has("u")) {
       return [];
     }
-    this.brotli = await brotli;
     if (url.has("c")) {
-      return (await this.readBlocksFromURL())?.blocks;
+      return this.readBlocksFromURL();
     }
     if (url.has("u")) {
       return fetch(url.read("u")).then(response => response.json());
@@ -228,18 +240,9 @@ export class DatabaseManager {
     return this._database?.blocks.bulkInsert(blocks);
   }
 
-  compress(input: string, options?: any) {
-    // @ts-ignore
-    return dataToBase64(this.brotli?.compress(this.textEncoder.encode(input), options));
-  }
-
   decodeHtmlEntities(html: string) {
     this.txt.innerHTML = html;
     return this.txt.value;
-  }
-
-  writeCollectionURL(collection: any, key: string = "c") {
-    url.write(key, this.compress(JSON.stringify(collection)));
   }
 
   upsert(data: any) {
@@ -257,8 +260,22 @@ export class DatabaseManager {
     });
   }
 
+  readBlocksFromURL() {
+    return firstValueFrom(this.brotli.pipe(
+      map(lib => JSON.parse(this.textDecoder.decode(lib.decompress(base64ToData(url.read("c")))))?.blocks)
+    ));
+  }
+
+  writeCollectionURL(collection: any, key: string = "c") {
+    this.compress(JSON.stringify(collection)).subscribe((base64: string) => url.write(key, base64));
+  }
+
+  compress(input: string, options?: any) {
+    return this.brotli.pipe(map(lib => dataToBase64(lib.compress(this.textEncoder.encode(input), options))));
+  }
+
   decompress(base64: string) {
-    return this.textDecoder.decode(this.brotli?.decompress(base64ToData(base64)));
+    return this.brotli.pipe(map(lib => this.textDecoder.decode(lib.decompress(base64ToData(base64)))));
   }
 
   exportDatabase() {
@@ -312,10 +329,6 @@ export class DatabaseManager {
 
   async destroy() {
     await this._database?.destroy();
-  }
-
-  readBlocksFromURL() {
-    return JSON.parse(this.decodeHtmlEntities(this.decompress(url.read("c"))));
   }
 
   increaseIndexes(index: number) {
@@ -427,7 +440,7 @@ export class DatabaseManager {
   async changeBlock(blockRow: BlockDocument) {
     // @ts-ignore
     if (!this._database?.blocks){
-      return ;
+      return;
     }
     // @ts-ignore
     const block = await this._database?.blocks?.findOne(blockRow.id).exec();
@@ -508,27 +521,31 @@ export class DatabaseManager {
 
 
   saveInUrl() {
-    // @ts-ignore
-    if (!this._database?.blocks)
-      return false;
-    // @ts-ignore
-    this._database?.blocks.find({
-      selector: {
-        topic: {
-          $eq: this.topic
-        }
-      },
-      sort: [{index: 'asc'}]
-    }).exec().then((blocks: any[]) => this.writeCollectionURL({
-      version: '2.26.5',
-      blocks: blocks.map((document: any) => ({
-        id: document._data.id,
-        type: document._data.type,
-        data: document._data.data,
-        tunes: document._data.tunes,
-        index: document._data.index
-      }))
-    }));
+    this.database$.pipe(
+      // @ts-ignore
+      filter(db => !!db && !!db.blocks),
+      // @ts-ignore
+      switchMap(db => db.blocks.find({
+        selector: {
+          topic: {
+            $eq: this.topic
+          }
+         },
+         sort: [{index: 'asc'}]
+        }).exec() as Promise<RxDocument[]>
+      ),
+    ).subscribe((blocks: RxDocument[]) => {
+      this.writeCollectionURL({
+        version: '2.26.5',
+        blocks: blocks.map((document: any) => ({
+          id: document._data.id,
+          type: document._data.type,
+          data: document._data.data,
+          tunes: document._data.tunes,
+          index: document._data.index
+        }))
+      })
+    })
     return true;
   }
 }
