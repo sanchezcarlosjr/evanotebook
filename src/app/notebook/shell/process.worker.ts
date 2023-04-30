@@ -1127,13 +1127,13 @@ globalThis.addEventListener('exec', async (event: CustomEvent) => {
     }
     response.subscribe({
       // @ts-ignore
-      complete: () => sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}})
+      complete: () => sendMessage({'event': 'shell.Stop', payload:   {threadId: self.name}})
     });
   } catch (e) {
     // @ts-ignore
     sendMessage({
       'event': 'shell.error', // @ts-ignore
-      payload: {threadId: self.name, text: `<pre class="py-error">${e?.name}: ${e?.message}</pre>`}
+      payload: {threadId: self.name, text: `<pre class="py-error wrap">${e?.name}: ${e?.message}</pre>`}
     });
   }
 });

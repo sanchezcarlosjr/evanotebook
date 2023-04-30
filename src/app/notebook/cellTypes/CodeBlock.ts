@@ -25,8 +25,8 @@ import {InteractiveBlock} from "./InteractiveBlock";
 import {environment} from "../../../environments/environment";
 import {randomCouchString} from "rxdb/plugins/utils";
 
+// eslint configuration
 const config = {
-  // eslint configuration
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: "module",
@@ -36,7 +36,7 @@ const config = {
     node: false,
   },
   rules: {
-    semi: ["error", "never"]
+    semi: ["warning", "always"]
   },
 };
 
@@ -295,8 +295,10 @@ export class CodeBlock extends InteractiveBlock {
     if (this.language !== "javascript") {
       return false;
     }
-    this.clear();
-    this.dispatchShellStop();
+    if (!this.obj.readOnly) {
+      this.clear();
+      this.dispatchShellStop();
+    }
     window.dispatchEvent(new CustomEvent('shell.Run', {
       bubbles: true, detail: {
         payload: {
@@ -375,7 +377,7 @@ export class CodeBlock extends InteractiveBlock {
         this.loadJavaScriptEditor(editor);
       }
       const output = document.createElement('section');
-      output.classList.add('output');
+      output.classList.add('output', 'flex-wrap');
       this.cell.appendChild(output);
       output.innerHTML = this.outputCell;
     }
@@ -409,10 +411,8 @@ export class CodeBlock extends InteractiveBlock {
       });
       const output = document.createElement('div');
       output.innerHTML = this.outputCell;
-      if (!output.id) {
-        output.id = randomCouchString(10);
-      }
-      output.classList.add('output', 'py-output');
+      output.id = this.block.block?.id || "";
+      output.classList.add('output', 'flex-wrap');
       editor.children[0]?.setAttribute('output', output.id);
       this.cell.appendChild(editor);
       this.cell.appendChild(output);
