@@ -1,22 +1,24 @@
 # EvaNotebook
-A collaborative offline first notebook for Web Technologies (i.e. JavaScript, Python, Protocols) based on reactive observables, designed to run primarily in modern web browsers.
+The Ultimate P2P Browser Notebook for Fast AI System Development!
 
-# Demo
-* https://notebook.sanchezcarlosjr.com/ It runs on Web2.0.
-* https://ipfsnotebook.sanchezcarlosjr.com/ It runs on IPFS.
-* https://isolatenotebook.sanchezcarlosjr.com/ You can use some restrictive APIs such as ArraySharedBuffer. The goal is ensuring an higher security level here, even though some features doesn't work.
+We're excited to present EvaNotebook, an open-source platform designed to accelerate your AI development journey. Built for web developers and AI enthusiasts alike, this powerful notebook makes it easy to create and collaborate on projects in real time, directly from your browser.
 
+🌐 Demo Links:
+    Web2.0: https://notebook.sanchezcarlosjr.com/
+    IPFS: https://ipfsnotebook.sanchezcarlosjr.com/
+    Isolated Environment: https://isolatenotebook.sanchezcarlosjr.com/
 
-# Features
-* An user interface similar to Notion's WYSIWYG (What You See Is What You Get) interface thanks to [EditorJS](https://editorjs.io).
-* More intuitive APIs for MQTT, WebRTC, HTTP, and WebSocket protocols.
-* Each cell is run in a separate web worker for increased performance and stability.
-* Real Peer-to-peer collaboration and GitHub replication, with no data saved about you or your peers thanks to RxDB and libp2p.
-* Reactive charts, forms, email senders, and other interactive elements.
+🔥 Key Features:
+    User-friendly WYSIWYG interface inspired by Notion (EditorJS)
+    Simplified APIs for MQTT, WebRTC, HTTP, and WebSocket protocols
+    Independent web workers for enhanced performance and stability
+    Secure P2P collaboration with custom replication (RxDB and libp2p) but offline first
+    Interactive elements like reactive charts, forms, and email senders
 
-# Roadmap
+🗺️ Roadmap:
 * Implement Bluetooth, gRPC, GraphQL and SSH protocols.
 * Bypass transparently CORS restrictions. 
+* Integrate AutoGPT to control whatever environment you want (including the notebook itself) in real-time using the different protocols and languages provided by libp2p.
 
 
 # Alternatives
