@@ -190,9 +190,6 @@ export class DatabaseManager {
   }
 
   async registerUrlProviders() {
-    if (!url.has("c") && !url.has("u")) {
-      return [];
-    }
     if (url.has("c")) {
       return this.readBlocksFromURL();
     }
