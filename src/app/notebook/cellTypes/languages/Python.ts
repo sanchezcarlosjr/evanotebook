@@ -18,6 +18,7 @@ import {searchKeymap} from "@codemirror/search";
 import {espresso} from "thememirror";
 import {python} from "@codemirror/lang-python";
 import {stringToHTML} from "../stringToHTML";
+import {lintGutter} from "@codemirror/lint";
 
 const pyodide = new Observable<{
   runPython: (code: string) => any
@@ -33,6 +34,7 @@ const pyodide = new Observable<{
 
 /*
    TODO: Remove Repeated code between Languages. We must move this to process worker.
+   Update: Process worker is so slow. We must find a way to make it faster.
  */
 export class Python implements Language {
   private doc$: Subject<string> = new Subject();
@@ -156,7 +158,8 @@ export class Python implements Language {
               outline: "none"
             }
           }),
-          python()
+          python(),
+          lintGutter()
         ]
       })
     });
