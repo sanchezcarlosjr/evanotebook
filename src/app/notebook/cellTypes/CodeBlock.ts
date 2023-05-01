@@ -1,93 +1,34 @@
-import {EditorView} from "codemirror"
-import {esLint, javascript} from "@codemirror/lang-javascript"
-import {EditorState} from "@codemirror/state"
-// @ts-ignore
-import EditorjsCodeflask from '@calumk/editorjs-codeflask';
-import {espresso} from "thememirror";
-import {linter, lintGutter, lintKeymap} from "@codemirror/lint";
-import {
-  crosshairCursor,
-  dropCursor,
-  highlightActiveLineGutter,
-  highlightSpecialChars,
-  keymap,
-  lineNumbers,
-  rectangularSelection
-} from "@codemirror/view";
-import {defaultKeymap, history, historyKeymap} from "@codemirror/commands";
-import {bracketMatching, foldGutter, foldKeymap, indentOnInput} from "@codemirror/language";
-import {autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap} from "@codemirror/autocomplete";
-import {searchKeymap} from "@codemirror/search";
-// @ts-ignore
-import * as eslint from "eslint-linter-browserify";
 import {EditorJsTool} from "./EditorJsTool";
 import {InteractiveBlock} from "./InteractiveBlock";
-import {environment} from "../../../environments/environment";
-import {randomCouchString} from "rxdb/plugins/utils";
-
-// eslint configuration
-const config = {
-  parserOptions: {
-    ecmaVersion: 2022,
-    sourceType: "module",
-  },
-  env: {
-    browser: true,
-    node: false,
-  },
-  rules: {
-    semi: ["warning", "always"]
-  },
-};
-
-function loadPyscript() {
-  if (document.getElementById('pyscript-css')) {
-    return;
-  }
-  const link = document.createElement('link');
-  link.id = "pyscript-css";
-  link.rel = 'stylesheet';
-  link.href = '/assets/pyscript/pyscript.css';
-  document.head.appendChild(link);
-  const script = document.createElement('script');
-  script.src = '/assets/pyscript/pyscript.js';
-  script.defer = true;
-  document.body.appendChild(script);
-  const element = document.createElement('py-config');
-  element.innerHTML = `
-    packages = ["matplotlib", "pandas"]
-    terminal = false
-    [splashscreen]
-    enabled = false
-  `;
-  document.body.appendChild(element);
-}
-
-/**
- * From https://gomakethings.com/converting-a-string-into-markup-with-vanilla-js/
- * Convert a template string into HTML DOM nodes
- * @param  {String} str The template string
- * @return {Node}       The template HTML
- */
-function stringToHTML(str: string) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(str, 'text/html');
-  return doc.body.firstChild;
-}
+import {JavaScript} from "./languages/JavaScript";
+import {Language} from "./languages/language";
+import {match} from "ts-pattern";
+import {Python} from "./languages/Python";
+import {stringToHTML} from "./stringToHTML";
 
 export class CodeBlock extends InteractiveBlock {
-  private editorView: EditorView | undefined;
-  private cell: HTMLDivElement | undefined;
+  private cell: HTMLDivElement;
   private input: HTMLInputElement | null = null;
-  private language: string;
+  private language: Language;
   private readonly outputCell: string;
   private code: string;
 
-  constructor(private obj: EditorJsTool) {
-    super(obj);
-    this.language = (obj.data.language === undefined) ? obj.config.language : obj.data.language;
-    this.code = obj.data.code ?? "";
-    this.outputCell = obj.data.output ?? "";
+  constructor(private editorJsTool: EditorJsTool) {
+    super(editorJsTool);
+    this.code = editorJsTool.data.code ?? "";
+    this.outputCell = editorJsTool.data.output ?? "";
+    this.cell = document.createElement('div');
+    this.language = this.languageFactory((editorJsTool.data.language === undefined) ? editorJsTool.config.language : editorJsTool.data.language);
+  }
+
+  private languageFactory(language: string): Language {
+    return match(language).with(
+      "javascript", () => new JavaScript(this.code, this.editorJsTool, this.cell)
+    )
+      .with("python", () => new Python(this.code, this.editorJsTool, this.cell))
+      .otherwise(
+      () => new JavaScript(this.code, this.editorJsTool,this.cell)
+    );
   }
 
   static get toolbox() {
@@ -109,16 +50,9 @@ export class CodeBlock extends InteractiveBlock {
     return true
   }
 
-  run() {
-    if (!this.obj.readOnly) {
-      this.cell?.children[0].classList.add('progress');
-    }
-  }
-
   stop() {
-    if (!this.obj.readOnly) {
-      this.cell?.children[0].classList.remove('progress');
-    }
+    this.language.stop();
+    // @ TODO: Remove this because we have forms
     this.input = null;
   }
 
@@ -136,7 +70,7 @@ export class CodeBlock extends InteractiveBlock {
           payload: {
             // @ts-ignore
             response: fileList,
-            threadId: this.obj.block?.id
+            threadId: this.editorJsTool.block?.id
           }
         }
       }));
@@ -144,8 +78,7 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   override clear() {
-    //@ts-ignore
-    this.cell.children[1].innerHTML = "";
+    this.language.clear();
   }
 
   write(text: string) {
@@ -173,7 +106,7 @@ export class CodeBlock extends InteractiveBlock {
           canvas: offscreenCanvas,
           width: this.cell?.clientWidth,
           height: 400,
-          threadId: this.obj.block?.id
+          threadId: this.editorJsTool.block?.id
         }
       }
     }));
@@ -188,7 +121,7 @@ export class CodeBlock extends InteractiveBlock {
       bubbles: true, detail: {
         payload: {
           port: channel.port2,
-          threadId: this.obj.block?.id
+          threadId: this.editorJsTool.block?.id
         }
       }
     }));
@@ -205,7 +138,7 @@ export class CodeBlock extends InteractiveBlock {
       bubbles: true, detail: {
         payload: {
           port: channel.port2,
-          threadId: this.obj.block?.id
+          threadId: this.editorJsTool.block?.id
         }
       }
     }));
@@ -227,7 +160,7 @@ export class CodeBlock extends InteractiveBlock {
                 bubbles: true, detail: {
                   payload: {
                     message: imageBitmap,
-                    threadId: this.obj.block?.id
+                    threadId: this.editorJsTool.block?.id
                   }
                 }
               }));
@@ -255,7 +188,7 @@ export class CodeBlock extends InteractiveBlock {
       bubbles: true, detail: {
         payload: {
           port: channel.port2,
-          threadId: this.obj.block?.id
+          threadId: this.editorJsTool.block?.id
         }
       }
     }));
@@ -281,7 +214,7 @@ export class CodeBlock extends InteractiveBlock {
             payload: {
               // @ts-ignore
               response: this.input.value,
-              threadId: this.obj.block?.id
+              threadId: this.editorJsTool.block?.id
             }
           }
         }));
@@ -292,37 +225,12 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   override dispatchShellRun() {
-    if (this.language !== "javascript") {
-      return false;
-    }
-    if (!this.obj.readOnly) {
-      this.clear();
-      this.dispatchShellStop();
-    }
-    window.dispatchEvent(new CustomEvent('shell.Run', {
-      bubbles: true, detail: {
-        payload: {
-          // @ts-ignore
-          code: this.editorView?.state?.doc?.toString() || this.code,
-          threadId: this.obj.block?.id
-        }
-      }
-    }));
-    this.run();
+    this.language.dispatchShellRun();
     return true;
   }
 
   override dispatchShellStop() {
-    if (this.language !== "javascript") {
-      return false;
-    }
-    window.dispatchEvent(new CustomEvent('shell.Stop', {
-      bubbles: true, detail: {
-        payload: {
-          threadId: this.obj.block?.id
-        }
-      }
-    }));
+    this.language.dispatchShellStop();
     return true;
   }
 
@@ -334,22 +242,23 @@ export class CodeBlock extends InteractiveBlock {
       const option = document.createElement("option");
       option.value = language;
       option.innerText = language;
-      if(language === this.language) {
+      if(language === this.language.name) {
         option.selected = true;
       }
       languagesSelect.appendChild(option);
     }
     languagesSelect.classList.add('w100');
     languagesSelect.addEventListener('change', (event) => {
+      this.language.destroyEditor();
       // @ts-ignore
-      this.language = event.target.value;
+      this.language = this.languageFactory(event.target?.value);
       this.loadLanguage();
     });
     wrapper.appendChild(languagesSelect);
     return wrapper;
   }
+
   render() {
-    this.cell = document.createElement('div');
     this.cell.addEventListener('keydown', (event) => {
       if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
         event.stopPropagation();
@@ -363,44 +272,18 @@ export class CodeBlock extends InteractiveBlock {
     return this.cell;
   }
 
-  // TODO: Strategy Pattern
   private loadLanguage() {
     if (!this.cell) {
       return;
     }
-    this.cell.innerHTML = "";
-    if(this.language === "javascript") {
-      const editor = document.createElement('section');
+    const editor = document.createElement('section');
+    this.cell.appendChild(editor);
+    const output = document.createElement('section');
+    output.classList.add('output', 'flex-wrap');
+    output.innerHTML = this.outputCell;
+    this.cell.appendChild(output);
+    if (!this.editorJsTool.readOnly) {
       editor.classList.add('editor');
-      this.cell.appendChild(editor);
-      if (!this.obj.readOnly) {
-        this.loadJavaScriptEditor(editor);
-      }
-      const output = document.createElement('section');
-      output.classList.add('output', 'flex-wrap');
-      this.cell.appendChild(output);
-      output.innerHTML = this.outputCell;
-    }
-    if(this.language === "python") {
-      loadPyscript();
-      this.editorView?.destroy();
-      const editor = document.createElement('section');
-      editor.classList.add('editor');
-      this.cell.appendChild(editor);
-      if (!this.obj.readOnly) {
-        const python = document.createElement('py-repl');
-        python.innerHTML = this.code;
-        editor.appendChild(python);
-        // @ts-ignore
-        python.addEventListener('doc-changed', (event: CustomEvent) => {
-          this.code = event.detail as string;
-          this.block.block?.dispatchChange();
-        });
-        // @ts-ignore
-        python.addEventListener('output-changed', (event: CustomEvent) => {
-          this.block.block?.dispatchChange();
-        });
-      }
       editor.addEventListener('keydown', (event) => {
         if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
           event.stopPropagation();
@@ -409,82 +292,19 @@ export class CodeBlock extends InteractiveBlock {
       editor.addEventListener('paste', (event) => {
         event.stopPropagation();
       });
-      const output = document.createElement('div');
-      output.innerHTML = this.outputCell;
-      output.id = this.block.block?.id || "";
-      output.classList.add('output', 'flex-wrap');
-      editor.children[0]?.setAttribute('output', output.id);
-      this.cell.appendChild(editor);
-      this.cell.appendChild(output);
+      this.language.loadEditor(this.cell);
     }
-  }
-
-  validate(savedData: any) {
-    return savedData.code.trim() !== '';
+    this.language.docChanges$().subscribe((doc: string) => {
+      this.code = doc;
+    });
   }
 
   override save(blockContent: any): any {
     return {
       code: this.code,
-      language: this.language,
+      language: this.language.name,
       output: this.cell?.children[1].innerHTML ?? ""
     }
   }
 
-  private loadJavaScriptEditor(editor: HTMLElement) {
-    this.editorView = new EditorView({
-      parent: editor,
-      state: EditorState.create({
-        doc: this.code,
-        extensions: [
-          EditorView.lineWrapping,
-          lineNumbers(),
-          highlightActiveLineGutter(),
-          highlightSpecialChars(),
-          history(),
-          foldGutter(),
-          dropCursor(),
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged) {
-              this.code = update.state.doc.toString();
-            }
-          }),
-          EditorState.allowMultipleSelections.of(true),
-          indentOnInput(),
-          bracketMatching(),
-          closeBrackets(),
-          autocompletion(),
-          rectangularSelection(),
-          crosshairCursor(),
-          keymap.of([
-            ...closeBracketsKeymap,
-            ...defaultKeymap,
-            ...searchKeymap,
-            ...historyKeymap,
-            ...foldKeymap,
-            ...completionKeymap,
-            ...lintKeymap,
-            { key: 'Ctrl-Enter', run: this.dispatchShellRun.bind(this), preventDefault: true },
-            { key: 'Ctrl-Alt-m', run: this.dispatchShellRun.bind(this), preventDefault: true },
-            { key: 'Ctrl-Alt-c', run: this.dispatchShellStop.bind(this), preventDefault: true },
-            { key: 'Shift-Enter', run: this.dispatchShellRun.bind(this), preventDefault: true },
-          ]),
-          espresso,
-          EditorView.theme({
-            "&": {
-              "font-size": "0.8em",
-              border: "1px solid #dcdfe6",
-              "border-radius": "5px"
-            },
-            "&.cm-focused": {
-              outline: "none"
-            }
-          }),
-          javascript(),
-          lintGutter(),
-          linter(esLint(new eslint.Linter(), config))
-        ]
-      })
-    });
-  }
 }
