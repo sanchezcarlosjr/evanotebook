@@ -5,7 +5,6 @@ export interface Language {
   loadEditor(cell: HTMLElement): void;
   dispatchShellStop(): boolean;
   docChanges$(): Observable<string>;
-  outputChanges$(): Observable<void>;
   destroyEditor(): void;
   clear(): void;
   stop(): void;

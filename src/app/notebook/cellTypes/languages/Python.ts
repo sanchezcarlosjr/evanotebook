@@ -36,7 +36,6 @@ const pyodide = new Observable<{
  */
 export class Python implements Language {
   private doc$: Subject<string> = new Subject();
-  private output$: Subject<void> = new Subject();
   private editorView?: EditorView;
 
   constructor(private code: string, private editorJsTool: EditorJsTool,private cell: HTMLElement) {
@@ -103,10 +102,6 @@ export class Python implements Language {
 
   docChanges$(): Observable<string> {
     return this.doc$;
-  }
-
-  outputChanges$(): Observable<void> {
-    return this.output$;
   }
 
   get name() {
