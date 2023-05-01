@@ -165,6 +165,8 @@ export class NotebookComponent implements OnInit {
           }
         },
         mermaid: await import("./cellTypes/MermaidBlock").then(x => x.MermaidTool),
+        // @ts-ignore
+        toc: await import("@phigoro/editorjs-toc").then(x => x.default),
         alert: {
           // @ts-ignore
           class: await import("editorjs-alert").then(x => x.default),

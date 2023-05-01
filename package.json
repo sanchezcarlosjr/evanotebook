@@ -49,6 +49,7 @@
     "@mediapipe/tasks-text": "0.1.0-alpha-10",
     "@mediapipe/tasks-vision": "0.1.0-alpha-10",
     "@nguniversal/express-engine": "15.2.0",
+    "@phigoro/editorjs-toc": "https://github.com/sanchezcarlosjr/editorjs-toc.git",
     "@sotaproject/strikethrough": "1.0.1",
     "@types/babel__generator": "7.6.4",
     "@types/lodash": "4.14.192",
