@@ -40,6 +40,7 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ARSUS_PRODUCTION }}'
           projectId: arsus-production
+          target: live
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
