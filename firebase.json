@@ -1,0 +1,37 @@
+{
+  "hosting": {
+    "public": "dist/terminal/browser",
+    "site": "evanotebook",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(jpg|jpeg|png|gif|webp)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=21600"
+          }
+        ]
+      },
+      {
+        "source": "/service-worker.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

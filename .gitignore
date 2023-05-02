@@ -42,6 +42,5 @@ testem.log
 Thumbs.db
 
 src/env/env.prod.ts
-firebase.json
 .firebaserc
 firebase-debug.log
