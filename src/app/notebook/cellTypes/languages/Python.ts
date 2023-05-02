@@ -26,7 +26,11 @@ const pyodide = new Observable<{
   runPythonAsync(s: string): Promise<any>;
 }>(subscriber => {
   // @ts-ignore
-  loadPyodide().then(instance => {
+  loadPyodide().then(async (instance) => {
+    await instance.loadPackage("micropip");
+    const micropip = instance.pyimport("micropip");
+    await micropip.install("pandas");
+    await micropip.install("numpy");
     subscriber.next(instance);
     subscriber.complete();
   });
