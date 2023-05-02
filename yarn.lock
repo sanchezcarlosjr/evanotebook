@@ -3043,8 +3043,8 @@
     which "^3.0.0"
 
 "@phigoro/editorjs-toc@https://github.com/sanchezcarlosjr/editorjs-toc.git":
-  version "1.1.8"
-  resolved "https://github.com/sanchezcarlosjr/editorjs-toc.git#95569092879a5b14b0ca9058ff6da6b23ffdba64"
+  version "1.1.9"
+  resolved "https://github.com/sanchezcarlosjr/editorjs-toc.git#bc9501231a28b5892d1a56a5ef78a823d2a4a832"
 
 "@protobufjs/aspromise@^1.1.1", "@protobufjs/aspromise@^1.1.2":
   version "1.1.2"
