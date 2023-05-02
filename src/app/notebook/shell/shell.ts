@@ -342,6 +342,9 @@ export class Shell {
             }
           });
         }).then(async _ => {
+          if (location.hash) {
+            document.getElementById(location.hash.substring(1))?.scrollIntoView({ behavior: "smooth", block: "start", inline: "start" });
+          }
           if (isMode2) {
             return;
           }

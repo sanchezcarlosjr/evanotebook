@@ -71,8 +71,10 @@ export class MermaidTool {
 
   render() {
     const wrapper = document.createElement('div');
-    wrapper.classList.add('mermaid-wrapper');
     this.stopPropagation(wrapper);
+    // @ts-ignore
+    wrapper.id = this.block.id;
+    wrapper.classList.add('mermaid-wrapper');
     this.createEditor(wrapper);
     this.createPreview(wrapper);
     this.createCaption(wrapper);

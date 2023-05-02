@@ -56,15 +56,6 @@ import {enforceOptions} from 'broadcast-channel';
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import * as duckdb from '@duckdb/duckdb-wasm';
 import {AsyncDuckDB, AsyncDuckDBConnection} from '@duckdb/duckdb-wasm';
-import * as TaskVision from "@mediapipe/tasks-vision";
-import {
-  FilesetResolver,
-  GestureRecognizer,
-  HandLandmarker,
-  ImageClassifier,
-  ObjectDetector
-} from "@mediapipe/tasks-vision";
-import {TextClassifier, TextEmbedder} from "@mediapipe/tasks-text";
 import * as arrow from "apache-arrow";
 import {RxDatabase} from "rxdb/dist/types/types";
 import {OutputData} from "@editorjs/editorjs";
@@ -688,55 +679,6 @@ class ProcessWorker {
         return text;
       }
     };
-    environment.importGestureRecognizer = new Observable((subscriber: Subscriber<any>) => {
-      FilesetResolver.forVisionTasks("/assets/mediapipe/tasks-vision/wasm").then(vision => {
-        GestureRecognizer.createFromModelPath(vision, "/assets/mediapipe/tasks-vision/gesture_recognizer.task").then(x => {
-          subscriber.next(x);
-          subscriber.complete();
-        })
-      });
-    }).pipe(shareReplay(1));
-    environment.importHandLandmarker = new Observable((subscriber: Subscriber<any>) => {
-      FilesetResolver.forVisionTasks("/assets/mediapipe/tasks-vision/wasm").then(vision => {
-        HandLandmarker.createFromModelPath(vision, "/assets/mediapipe/tasks-vision/hand_landmarker.task").then(x => {
-          subscriber.next(x);
-          subscriber.complete();
-        })
-      });
-    }).pipe(shareReplay(1));
-    environment.importImageClassifier = new Observable((subscriber: Subscriber<any>) => {
-      FilesetResolver.forVisionTasks("/assets/mediapipe/tasks-vision/wasm").then(vision => {
-        ImageClassifier.createFromModelPath(vision, "/assets/mediapipe/tasks-vision/efficientnet_lite0_uint8.tflite").then(x => {
-          subscriber.next(x);
-          subscriber.complete();
-        })
-      });
-    }).pipe(shareReplay(1));
-    environment.importObjectDetector = new Observable((subscriber: Subscriber<any>) => {
-      FilesetResolver.forVisionTasks("/assets/mediapipe/tasks-vision/wasm").then(vision => {
-        ObjectDetector.createFromModelPath(vision, "/assets/mediapipe/tasks-vision/efficientdet_lite0_uint8.tflite").then(x => {
-          subscriber.next(x);
-          subscriber.complete();
-        })
-      });
-    }).pipe(shareReplay(1));
-    environment.TaskVision = TaskVision;
-    environment.importTextClassifier = new Observable((subscriber: Subscriber<any>) => {
-      FilesetResolver.forTextTasks("/assets/mediapipe/tasks-text/wasm").then(vision => {
-        TextClassifier.createFromModelPath(vision, "/assets/mediapipe/tasks-text/bert_text_classifier.tflite").then(x => {
-          subscriber.next(x);
-          subscriber.complete();
-        });
-      });
-    }).pipe(shareReplay(1));
-    environment.importTextEmbedder = new Observable((subscriber: Subscriber<any>) => {
-      FilesetResolver.forTextTasks("/assets/mediapipe/tasks-text/wasm").then(vision => {
-        TextEmbedder.createFromModelPath(vision, "/assets/mediapipe/tasks-text/mobilebert_embedding_with_metadata.tflite").then(x => {
-          subscriber.next(x);
-          subscriber.complete();
-        });
-      });
-    }).pipe(shareReplay(1));
     environment.lastValueFrom = lastValueFrom;
     environment.firstValueFrom = firstValueFrom;
     environment.from = from;

@@ -267,6 +267,8 @@ export class CodeBlock extends InteractiveBlock {
     this.cell.addEventListener('paste', (event) => {
       event.stopPropagation();
     });
+    // @ts-ignore
+    this.cell.id = this.editorJsTool.block?.id ?? "";
     this.cell.classList.add('cell');
     this.loadLanguage();
     return this.cell;

@@ -44,6 +44,7 @@ export class MathBlock extends InteractiveBlock {
   }
   render(){
     const mathBlock = document.createElement('section');
+    mathBlock.id = this.block.block?.id ?? "";
     mathBlock.appendChild(this.inputMathFieldElement);
     this.inputMathFieldElement.value = this.block.data.doc ?? "";
     if (!this.block.readOnly) {
