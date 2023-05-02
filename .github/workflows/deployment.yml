@@ -1,5 +1,4 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Deploy static content to GitHub Pages and Firebase Hosting
 
 on:
   # Runs on pushes targeting the default branch
@@ -38,7 +37,12 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Build
-        run: npm run prerender
+      - run: yarn prerender
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ARSUS_PRODUCTION }}'
+          projectId: arsus-production
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
@@ -49,3 +53,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
+
