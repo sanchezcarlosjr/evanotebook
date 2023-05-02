@@ -47,18 +47,17 @@ Credits [WebGPT](https://github.com/0hq/WebGPT).
 [Runkit](https://runkit.com/)
 
 # Mirrors
-- [Examples](https://github.com/sanchezcarlosjr/javascript-notebook/issues/1){:target="_blank"}
-- [Documentation](/https://raw.githubusercontent.com/sanchezcarlosjr/computer-vision-and-graphics/main/assets/evanotebooks/notebook-documentation.json&n=Documentation){:target="_blank"}
-- [Code](https://github.com/sanchezcarlosjr/javascript-notebook/){:target="_blank"}
-- [IPFS Branch](https://ipfsnotebook.sanchezcarlosjr.com/){:target="_blank"}
-- [GitHub Page (Default)](https://notebook.sanchezcarlosjr.com/){:target="_blank"}
-- [Isolate notebook (Firebase)](https://isolatenotebook.sanchezcarlosjr.com/){:target="_blank"}
-- [CID: QmVcZLrzGPrw6Yv9SfchPvHUaU2ZA6zzrSZPy2FZysZp7x](https://ipfs.io/ipfs/QmVcZLrzGPrw6Yv9SfchPvHUaU2ZA6zzrSZPy2FZysZp7x){:target="_blank"}
-- [Fleek](https://billowing-dawn-4565.on.fleek.co/){:target="_blank"}
-- [Firebase 1](https://n.sanchezcarlosjr.com/){:target="_blank"}
-- [Firebase 2](https://evanotebook.web.app/){:target="_blank"}
-- [Firebase 3](https://evanotebook.firebaseapp.com/){:target="_blank"}
-- [About](https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b){:target="_blank"}
+- [Examples](https://github.com/sanchezcarlosjr/javascript-notebook/issues/1)
+- [Code](https://github.com/sanchezcarlosjr/javascript-notebook/)
+- [IPFS Branch](https://ipfsnotebook.sanchezcarlosjr.com/)
+- [GitHub Page (Default)](https://notebook.sanchezcarlosjr.com/)
+- [Isolate notebook (Firebase)](https://isolatenotebook.sanchezcarlosjr.com/)
+- [CID: QmVcZLrzGPrw6Yv9SfchPvHUaU2ZA6zzrSZPy2FZysZp7x](https://ipfs.io/ipfs/QmVcZLrzGPrw6Yv9SfchPvHUaU2ZA6zzrSZPy2FZysZp7x)
+- [Fleek](https://billowing-dawn-4565.on.fleek.co/)
+- [Firebase 1](https://n.sanchezcarlosjr.com/)
+- [Firebase 2](https://evanotebook.web.app/)
+- [Firebase 3](https://evanotebook.firebaseapp.com/)
+- [About](https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b)
 
 ## Contribuitors
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.1.5.
