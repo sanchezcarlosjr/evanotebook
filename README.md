@@ -19,7 +19,7 @@ We're excited to present EvaNotebook, an open-source platform designed to accele
     
 * Secure P2P collaboration with custom replication (RxDB and libp2p) but offline first
     
-* Reactive elements like reactive charts, forms, and email senders
+* Reactive elements like reactive charts, forms, and notebook itself
 
 🗺️ Roadmap:
 * Implement Bluetooth, gRPC, GraphQL and SSH protocols.
