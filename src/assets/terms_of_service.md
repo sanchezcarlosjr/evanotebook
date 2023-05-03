@@ -1,0 +1,45 @@
+# Terms of Service for EvaNotebook
+
+Last updated: May 3, 2023
+
+## Use of Service
+
+You are responsible for your use of the Service and any data, text, images, or other content that you create, share, or display through the Service ("User Content"). You must not use the Service for any unlawful purposes or in a manner that violates any applicable laws or regulations.
+
+## Intellectual Property
+
+All content and materials provided on the Service, excluding User Content, are the intellectual property of Carlos Eduardo Sanchez Torres or its licensors. The EvaNotebook platform is open source and licensed under the MIT License and Creative Commons Attribution 4.0 International License.
+
+The MIT License is a permissive and widely used open-source software license that allows you to freely use, copy, modify, distribute, and sublicense the software, without any restrictions, as long as the copyright notice and the license's permission notice are included in any copies or substantial portions of the software.
+
+The Creative Commons Attribution 4.0 International License allows you to share, copy, redistribute, and adapt the material in any medium or format, and remix, transform, and build upon the material for any purpose, even commercially, as long as you provide appropriate credit, indicate changes made, and distribute your contributions under the same license.
+User Content
+
+You retain ownership of any intellectual property rights that you hold in your User Content. By submitting or sharing User Content through the Service, you grant us a worldwide, non-exclusive, royalty-free, sublicensable, and transferable license to use, reproduce, distribute, prepare derivative works of, display, and perform your User Content solely for the purpose of operating and improving the Service.
+
+## Termination
+
+We may terminate or suspend access to our Service immediately, without prior notice or liability, for any reason, including without limitation if you breach the Terms.
+
+All provisions of the Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity, and limitations of liability.
+Changes
+
+We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
+
+By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, please stop using the Service.
+
+## Disclaimer and Limitation of Liability
+
+The Service is provided on an "AS IS" and "AS AVAILABLE" basis, without warranties of any kind, either express or implied, including, without limitation, implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+In no event shall Carlos Eduardo Sanchez Torres, its affiliates, or their respective officers, directors, employees, or agents, be liable for any direct, indirect, incidental, special, consequential, or punitive damages, including, without limitation, loss of profits, data, use, or goodwill, arising out of or in connection with the use or inability to use the Service, even if advised of the possibility of such damages.
+
+## Governing Law
+
+These Terms shall be governed and construed in accordance with the laws of the jurisdiction in which Carlos Eduardo Sanchez Torres operates, without regard to its conflict of law provisions.
+
+Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions of these Terms will remain in effect.
+
+# Contact Us
+
+If you have any questions or concerns about this Terms of Service, please feel free to contact us.
