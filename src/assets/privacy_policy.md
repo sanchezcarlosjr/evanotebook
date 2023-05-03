@@ -18,4 +18,7 @@ We do not use any tracking or analytics tools to monitor your activity within th
 
 Although we do not collect or store any personal information, we still prioritize the security of the data used within our Service. EvaNotebook utilizes modern encryption methods and secure communication protocols to protect your data during real-time collaboration and custom vendor replication.
 
-By using EvaNotebook, you can trust that your privacy is respected and your data remains under your control. If you have any questions or concerns about this Privacy Policy, please feel free to contact us.
+By using EvaNotebook, you can trust that your privacy is respected and your data remains under your control. 
+
+# Contact us
+If you have any questions or concerns about this Privacy Policy, please feel free to contact us.
