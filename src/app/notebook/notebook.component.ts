@@ -95,37 +95,9 @@ export class NotebookComponent implements OnInit {
           class: await import("@editorjs/attaches").then(x => x.default),
           config: {
             uploader: {
-              async uploadByFile(file: File) {
-                let resourceUrl = "";
-                try {
-                  if (url.has("lg")) {
-                    const formData = new FormData();
-                    formData.append('file', file, file.name);
-                    const LOCAL_GATEWAY = url.read("lg");
-                    const response = await fetch(LOCAL_GATEWAY, {
-                      method: 'POST',
-                      body: formData
-                    }).then(r => r.json());
-                    if (!response.Hash) {
-                      throw new Error("No hash returned");
-                    }
-                    const GLOBAL_GATEWAY = url.read("gg") ?? LOCAL_GATEWAY;
-                    resourceUrl = `${GLOBAL_GATEWAY}${response.Hash}?filename=${response.Name || response.name || file.name}`;
-                  }
-                } catch (e) {
-                }
-                resourceUrl = resourceUrl || await readAsDataURL(file);
-                return {
-                  success: 1,
-                  file: {
-                    url: resourceUrl,
-                    name: file.name,
-                    size: file.size
-                  }
-                }
-              },
-            }
-          }
+             uploadByFile: this.uploadByFile.bind(this),
+           }
+         }
         },
         mathlive: {
           class: await import("./cellTypes/MathBlock").then(x => x.MathBlock),
@@ -161,6 +133,9 @@ export class NotebookComponent implements OnInit {
             unsplash: {
               appName: url.read("ua"),
               clientId: url.read("uc")
+            },
+            uploader: {
+              uploadByFile: this.uploadByFile.bind(this)
             }
           }
         },
@@ -218,6 +193,36 @@ export class NotebookComponent implements OnInit {
     window.addEventListener('openSnackBar' , (e: CustomEvent) =>
       this._snackBar.open(e.detail.payload.message, e.detail.payload.action)
     );
+  }
+
+  async uploadByFile(file: File) {
+    let resourceUrl = "";
+    try {
+      if (url.has("lg")) {
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+        const LOCAL_GATEWAY = url.read("lg");
+        const response = await fetch(LOCAL_GATEWAY, {
+          method: 'POST',
+          body: formData
+        }).then(r => r.json());
+        if (!response.Hash) {
+          throw new Error("No hash returned");
+        }
+        const GLOBAL_GATEWAY = url.read("gg") ?? LOCAL_GATEWAY;
+        resourceUrl = `${GLOBAL_GATEWAY}${response.Hash}?filename=${response.Name || response.name || file.name}`;
+      }
+    } catch (e) {
+    }
+    resourceUrl = resourceUrl || await readAsDataURL(file);
+    return {
+      success: 1,
+      file: {
+        url: resourceUrl,
+        name: file.name,
+        size: file.size
+      }
+    }
   }
 
   runAll() {
