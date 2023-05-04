@@ -1,15 +1,4 @@
-import {
-  BehaviorSubject,
-  filter,
-  firstValueFrom,
-  map,
-  Observable,
-  shareReplay,
-  Subscriber,
-  switchMap,
-  tap,
-  throttleTime
-} from "rxjs";
+import {BehaviorSubject, filter, firstValueFrom, map, Observable, shareReplay, Subscriber, switchMap} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDocument, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
@@ -25,6 +14,7 @@ import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
+
 addRxPlugin(RxDBLeaderElectionPlugin);
 
 addRxPlugin(RxDBUpdatePlugin);
@@ -44,15 +34,13 @@ enforceOptions({
   type: 'native'
 });
 
-export type BlockDocument = OutputBlockData&{createdBy?: string, index?: number, lastEditedBy?: string, topic?: string};
+export type BlockDocument =
+  OutputBlockData
+  & { createdBy?: string, index?: number, lastEditedBy?: string, topic?: string };
 
 export class DatabaseManager {
   private _uuid: string | undefined;
   private topic: string | undefined;
-  get database(): RxDatabaseBase<Promise<any>, any> | undefined {
-    return this._database;
-  }
-  private _database: RxDatabaseBase<Promise<any>, any> | undefined;
   private txt = document.createElement("textarea");
   private textEncoder = new TextEncoder();
   private textDecoder = new TextDecoder();
@@ -68,133 +56,164 @@ export class DatabaseManager {
     this.setupPeer();
   }
 
+  private _database: RxDatabaseBase<Promise<any>, any> | undefined;
+
+  get database(): RxDatabaseBase<Promise<any>, any> | undefined {
+    return this._database;
+  }
+
+  get history$() {
+    // @ts-ignore
+    return this.database$.pipe(
+      filter(db => !!db),
+      // @ts-ignore
+      switchMap(db => db.history?.find().$.pipe(
+        map((x: RxDocument[]) =>
+          (x.map((y: any) => ({
+            title: y._data.title,
+            topic: y._data.topic,
+            createdAt: new Date(y._data.createdAt)
+          }))).sort(
+            (a: { createdAt: Date }, b: { createdAt: Date }) => b.createdAt.getTime() - a.createdAt.getTime()
+          )
+        ),
+      ))
+    );
+  }
+
   async start() {
-   try {
-     this._database = await createRxDatabase({
-       name: 'eva_notebook',
-       multiInstance: true,
-       storage: getRxStorageDexie()
-     });
-     const collections = await this._database.addCollections({
-       history: {
-         schema: {
-           title: 'history',
-           version: 0,
-           type: 'object',
-           primaryKey: 'topic',
-           properties: {
-             topic: {
-               type: 'string',
-               maxLength: 100
-             },
-             createdAt: {
-               type: 'string',
-               maxLength: 100
-             },
-             title: {
-               type: 'string',
-               maxLength: 255
-             },
-             crdts: getCRDTSchemaPart()
-           },
-           required: ['topic'],
-           crdt: {
-             field: 'crdts'
-           }
-         }
-       },
-       blocks: {
-         schema: {
-           title: 'blocks',
-           version: 0,
-           primaryKey: 'id',
-           type: 'object',
-           properties: {
-             id: {
-               type: 'string',
-               maxLength: 100
-             },
-             topic: {
-               type: 'string',
-               maxLength: 100,
-               default: "EvaNotebook"
-             },
-             lastEditedBy: {
-               type: 'string',
-             },
-             index: {
-               type: 'number',
-               minimum: 0,
-               maximum: 1000,
-               multipleOf: 1
-             },
-             createdBy: {
-               type: 'string',
-             },
-             type: {
-               type: 'string'
-             },
-             data: {
-               type: 'object'
-             },
-             tunes: {
-               type: 'object'
-             },
-             crdts: getCRDTSchemaPart()
-           },
-           required: ['id', 'type', 'data', 'index', 'lastEditedBy', 'createdBy'],
-           indexes: ['index'],
-           crdt: {
-             field: 'crdts'
-           }
-         }
-       },
-       view: {
-       schema: {
-         title: 'view',
-           version: 0,
-           primaryKey: 'id',
-           type: 'object',
-           properties: {
-           id: {
-             type: 'string',
-               maxLength: 100
-           },
-           m: {
-             type: 'object'
-           },
-           crdts: getCRDTSchemaPart()
-         },
-         required: ['id'],
-           crdt: {
-           field: 'crdts'
-         }
-       }
-     }
-     });
-     this.database$.next(this._database);
-     return collections.blocks.find({
-       selector: {
-         topic: {
-           $eq: this.topic
-         }
-       },
-       sort: [{index: 'asc'}]
-     }).$;
-   } catch (e) {
-     return new Observable((subscriber: Subscriber<OutputBlockData[]>) => {
-       subscriber.next([this.generateDefaultBlock()]);
-       subscriber.complete();
-     });
-   }
+    try {
+      this._database = await createRxDatabase({
+        name: 'eva_notebook',
+        multiInstance: true,
+        storage: getRxStorageDexie()
+      });
+      const collections = await this._database.addCollections({
+        history: {
+          schema: {
+            title: 'history',
+            version: 0,
+            type: 'object',
+            primaryKey: 'topic',
+            properties: {
+              topic: {
+                type: 'string',
+                maxLength: 100
+              },
+              createdAt: {
+                type: 'string',
+                maxLength: 100
+              },
+              title: {
+                type: 'string',
+                maxLength: 255
+              },
+              crdts: getCRDTSchemaPart()
+            },
+            required: ['topic'],
+            crdt: {
+              field: 'crdts'
+            }
+          }
+        },
+        blocks: {
+          schema: {
+            title: 'blocks',
+            version: 0,
+            primaryKey: 'id',
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                maxLength: 100
+              },
+              topic: {
+                type: 'string',
+                maxLength: 100,
+                default: "EvaNotebook"
+              },
+              lastEditedBy: {
+                type: 'string',
+              },
+              index: {
+                type: 'number',
+                minimum: 0,
+                maximum: 1000,
+                multipleOf: 1
+              },
+              createdBy: {
+                type: 'string',
+              },
+              type: {
+                type: 'string'
+              },
+              data: {
+                type: 'object'
+              },
+              tunes: {
+                type: 'object'
+              },
+              crdts: getCRDTSchemaPart()
+            },
+            required: ['id', 'type', 'data', 'index', 'lastEditedBy', 'createdBy'],
+            indexes: ['index'],
+            crdt: {
+              field: 'crdts'
+            }
+          }
+        },
+        view: {
+          schema: {
+            title: 'view',
+            version: 0,
+            primaryKey: 'id',
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                maxLength: 100
+              },
+              m: {
+                type: 'object'
+              },
+              crdts: getCRDTSchemaPart()
+            },
+            required: ['id'],
+            crdt: {
+              field: 'crdts'
+            }
+          }
+        }
+      });
+      this.database$.next(this._database);
+      return collections.blocks.find({
+        selector: {
+          topic: {
+            $eq: this.topic
+          }
+        },
+        sort: [{index: 'asc'}]
+      }).$;
+    } catch (e) {
+      return new Observable((subscriber: Subscriber<OutputBlockData[]>) => {
+        subscriber.next([this.generateDefaultBlock()]);
+        subscriber.complete();
+      });
+    }
   }
 
   async registerUrlProviders() {
     if (url.has("c")) {
-      return this.readBlocksFromURL();
+      return this.readBlocksFromURL().then(blocks => {
+        url.remove("c");
+        return blocks;
+      });
     }
     if (url.has("u")) {
-      return fetch(url.read("u")).then(response => response.json());
+      return fetch(url.read("u")).then(response => response.json()).then(blocks => {
+        url.remove("u");
+        return blocks;
+      });
     }
     return [];
   }
@@ -246,7 +265,7 @@ export class DatabaseManager {
     // @ts-ignore
     return this._database.blocks.insertCRDT({
       selector: {
-        id: { $exists: false }
+        id: {$exists: false}
       },
       ifMatch: {
         $set: data
@@ -286,8 +305,8 @@ export class DatabaseManager {
   index(name: string) {
     // @ts-ignore
     return this._database[name]?.find().$.pipe(
-        map((x: any) => x)
-      );
+      map((x: any) => x)
+    );
   }
 
   insert$() {
@@ -370,7 +389,7 @@ export class DatabaseManager {
     });
   }
 
-  updateIndex(block: any,index: number) {
+  updateIndex(block: any, index: number) {
     if (!this._database || !block?.updateCRDT) {
       return Promise.resolve();
     }
@@ -396,7 +415,7 @@ export class DatabaseManager {
 
   async addBlock(block: BlockDocument) {
     // @ts-ignore
-    if (!this._database?.blocks && block.index < 0){
+    if (!this._database?.blocks && block.index < 0) {
       return;
     }
     block.createdBy = this._uuid;
@@ -413,7 +432,7 @@ export class DatabaseManager {
 
   async removeBlock(id: string) {
     // @ts-ignore
-    if (!this._database?.blocks){
+    if (!this._database?.blocks) {
       return;
     }
     // @ts-ignore
@@ -424,7 +443,7 @@ export class DatabaseManager {
     window.dispatchEvent(new CustomEvent('saving'));
     return block.updateCRDT({
       selector: {
-        id: { $exists: true }
+        id: {$exists: true}
       },
       ifMatch: {
         $set: {
@@ -434,15 +453,16 @@ export class DatabaseManager {
       }
     });
   }
+
   async changeBlock(blockRow: BlockDocument) {
     // @ts-ignore
-    if (!this._database?.blocks){
+    if (!this._database?.blocks) {
       return;
     }
     // @ts-ignore
     const block = await this._database?.blocks?.findOne(blockRow.id).exec();
     if (!block) {
-      return  this.addBlock(blockRow);
+      return this.addBlock(blockRow);
     }
     if (_.isEqual(blockRow.data, block?._data?.data)) {
       return block;
@@ -472,25 +492,18 @@ export class DatabaseManager {
   }
 
   generateDefaultBlock() {
-    return {id: randomCouchString(10), topic: this.topic, index: 0, type: 'paragraph', data: {text: ''}, createdBy: this._uuid, lastEditedBy: this._uuid};
+    return {
+      id: randomCouchString(10),
+      topic: this.topic,
+      index: 0,
+      type: 'paragraph',
+      data: {text: ''},
+      createdBy: this._uuid,
+      lastEditedBy: this._uuid
+    };
   }
 
-  get history$() {
-    // @ts-ignore
-    return this.database$.pipe(
-      filter(db => !!db),
-      // @ts-ignore
-      switchMap(db => db.history?.find().$.pipe(
-        map((x: RxDocument[]) =>
-          (x.map((y: any) => ({title: y._data.title, topic: y._data.topic, createdAt: new Date(y._data.createdAt)}))).sort(
-            (a: {createdAt: Date}, b: {createdAt: Date}) => b.createdAt.getTime() - a.createdAt.getTime()
-          )
-        ),
-      ))
-    );
-  }
-
-  saveNotebookInHistory(notebook: {title: string}) {
+  saveNotebookInHistory(notebook: { title: string }) {
     // @ts-ignore
     return firstValueFrom(
       this.database$.pipe(
@@ -523,12 +536,12 @@ export class DatabaseManager {
       filter(db => !!db && !!db.blocks),
       // @ts-ignore
       switchMap(db => db.blocks.find({
-        selector: {
-          topic: {
-            $eq: this.topic
-          }
-         },
-         sort: [{index: 'asc'}]
+          selector: {
+            topic: {
+              $eq: this.topic
+            }
+          },
+          sort: [{index: 'asc'}]
         }).exec() as Promise<RxDocument[]>
       ),
     ).subscribe((blocks: RxDocument[]) => {

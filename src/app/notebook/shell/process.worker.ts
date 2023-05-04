@@ -795,6 +795,12 @@ class ProcessWorker {
     environment.throwError = (error: Error) => {
       throw error;
     }
+    environment.print = (...params: string[]) => {
+      params.forEach(param => {
+        this.terminal.write(param);
+      });
+      return params;
+    }
     environment.importOpenCV = new Observable(observer => {
       if (environment.cv) {
         observer.next(environment.cv);
@@ -1027,7 +1033,7 @@ class ProcessWorker {
 
   println(next: any) {
     match(next)
-      .with(P.string, (next: string) => this.terminal.rewrite(next)).otherwise(next => this.environment.println(next))
+      .with(P.string, (next: string) => this.terminal.write(next)).otherwise(next => this.environment.println(next))
   }
 
   async exec(code: string) {

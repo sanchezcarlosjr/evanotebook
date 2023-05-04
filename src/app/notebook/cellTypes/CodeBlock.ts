@@ -82,13 +82,23 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   write(text: string) {
+    const html = stringToHTML(text) as HTMLElement;
     //@ts-ignore
-    this.cell.children[1].appendChild(stringToHTML(text));
+    this.cell.children[1].appendChild(html);
+    this.exec(html);
+  }
+
+  private exec(html: HTMLElement) {
+    const elements = html.getElementsByTagName('script');
+    for (let i = 0; i < elements.length; i++) {
+      eval(elements.item(i)?.text ?? "");
+    }
   }
 
   rewrite(text: string) {
     //@ts-ignore
     this.cell.children[1].innerHTML = text;
+    this.exec(this.cell.children[1] as HTMLElement);
   }
 
   println(text: any) {
