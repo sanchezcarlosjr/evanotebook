@@ -49,7 +49,7 @@ import * as protocols from './protocols';
 import * as _ from 'lodash';
 
 import {ComputeEngine} from "@cortex-js/compute-engine";
-import {addRxPlugin, createRxDatabase, RxDocument} from "rxdb";
+import {addRxPlugin, createRxDatabase} from "rxdb";
 import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
 import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
@@ -63,6 +63,7 @@ import {BlockAPI} from "@editorjs/editorjs/types/api/block";
 import {BlockToolData, ToolConfig} from "@editorjs/editorjs/types/tools";
 import {randomCouchString} from "rxdb/plugins/utils";
 import {precompileJS} from "./precompile";
+import {DocumentObserver} from "./documentObserver";
 import Indexed = Immutable.Seq.Indexed;
 
 addRxPlugin(RxDBLeaderElectionPlugin);
@@ -413,125 +414,6 @@ async function buildTree(transformer: MatTreeTransformer) {
   return new MatTree(payload, transformer);
 }
 
-class DocumentObserver {
-  // @ts-ignore
-  private db = (globalThis.db as Observable<RxDatabase>);
-  private tasks: Promise<any>[] = [];
-
-  constructor(
-    private documentId: string,
-    private collection: string = 'view') {
-  }
-
-  wait() {
-    return new Promise<boolean>(
-      resolve => queueMicrotask(async () => {
-        console.log(this.tasks);
-        await Promise.allSettled(this.tasks);
-        resolve(true);
-      })
-    );
-  }
-
-  init() {
-    return firstValueFrom(
-      this.db.pipe(
-        concatMap((d: RxDatabase) => d[this.collection].findOne(this.documentId).exec()),
-        tap((d: RxDocument) => {
-          if (d && d._data) {
-            Object.assign(this, d._data);
-          }
-        }))
-    );
-  }
-
-  get(path: string = '') {
-    return this.db.pipe(
-      concatMap((d: RxDatabase) => d[this.collection].findOne(this.documentId).exec()),
-      filter(x => !!x),
-      concatMap((d: RxDocument) => d.get$('_data' + `${path ? '.' : ''}${path}`)),
-    );
-  }
-
-  createProxy() {
-    return new Proxy(this, {
-      get(target: DocumentObserver, p: string | symbol, receiver: any): any {
-        if (typeof p === 'string' && p[p.length - 1] === '$') {
-          return target.get(p.slice(0, -1));
-        }
-        // @ts-ignore
-        return Reflect.get(...arguments);
-      },
-      set(target: DocumentObserver, path: string | symbol, value: any, receiver: any): any {
-        target.tasks.push(target.set(path, value));
-        // @ts-ignore
-        return this;
-      }
-    });
-  }
-
-  // Consult https://github.com/lgandecki/modifyjs
-  async set(p: string | symbol, newValue: any, operation: string = '$set') {
-    // @ts-ignore
-    this[p] = newValue;
-    await firstValueFrom(this.db.pipe(concatMap(d => d[this.collection].insertCRDT({
-      selector: {
-        id: {$exists: false}
-      },
-      ifMatch: {
-        $set: {
-          id: this.documentId,
-          [p]: newValue
-        }
-      },
-      ifNotMatch: {
-        [operation]: {
-          [p]: newValue
-        }
-      }
-    }))));
-    return newValue;
-  }
-
-  inc(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$inc');
-  }
-
-  min(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$min');
-  }
-
-  max(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$max');
-  }
-
-  unset(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$unset');
-  }
-
-  push(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$push');
-  }
-
-  pushAll(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$pushAll');
-  }
-
-  addToSet(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$addToSet');
-  }
-
-  pullAll(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$pullAll');
-  }
-
-  rename(p: string | symbol, newValue: any) {
-    return this.set(p, newValue, '$rename');
-  }
-
-
-}
-
 class Blocks {
   constructor(private environment: { db: Observable<RxDatabase>, currentUrl: URL }) {
   }
@@ -627,7 +509,7 @@ class ProcessWorker {
         subscriber.complete();
       }).catch(subscriber.error)
     }).pipe(shareReplay(1));
-    this.environmentObserver = new DocumentObserver("environment");
+    this.environmentObserver = new DocumentObserver("environment", environment.db);
     environment.environment = this.environmentObserver.createProxy();
     environment.P = P
     environment.editor = new EditorJS(this.environment);

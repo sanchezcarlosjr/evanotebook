@@ -1,4 +1,4 @@
-import {BehaviorSubject, filter, firstValueFrom, map, Observable, shareReplay, Subscriber, switchMap} from "rxjs";
+import {BehaviorSubject, filter, firstValueFrom, map, Observable, shareReplay, Subscriber, tap, switchMap} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDocument, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
@@ -14,6 +14,7 @@ import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
+import {DocumentObserver} from "./documentObserver";
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 
@@ -186,6 +187,14 @@ export class DatabaseManager {
         }
       });
       this.database$.next(this._database);
+      // @ts-ignore
+      globalThis.environment = DocumentObserver.setup(this.database$);
+      // @ts-ignore
+      globalThis.tap = tap;
+      // @ts-ignore
+      globalThis.map = map;
+      // @ts-ignore
+      globalThis.filter = filter;
       return collections.blocks.find({
         selector: {
           topic: {

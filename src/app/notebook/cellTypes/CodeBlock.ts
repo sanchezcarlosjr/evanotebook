@@ -83,22 +83,27 @@ export class CodeBlock extends InteractiveBlock {
 
   write(text: string) {
     const html = stringToHTML(text) as HTMLElement;
-    //@ts-ignore
     this.cell.children[1].appendChild(html);
-    this.exec(html);
+    this.execHtml(html);
   }
 
-  private exec(html: HTMLElement) {
+  private execHtml(html: HTMLElement) {
     const elements = html.getElementsByTagName('script');
     for (let i = 0; i < elements.length; i++) {
-      eval(elements.item(i)?.text ?? "");
+      const scriptElement = elements.item(i) as any;
+      const clonedElement = document.createElement("script");
+      Array.from(scriptElement.attributes).forEach((attribute: any) => {
+        clonedElement.setAttribute(attribute.name, attribute.value);
+      });
+      clonedElement.text = scriptElement.text;
+      scriptElement.parentNode.replaceChild(clonedElement, scriptElement);
     }
   }
 
   rewrite(text: string) {
     //@ts-ignore
     this.cell.children[1].innerHTML = text;
-    this.exec(this.cell.children[1] as HTMLElement);
+    this.execHtml(this.cell.children[1] as HTMLElement);
   }
 
   println(text: any) {

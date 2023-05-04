@@ -33,7 +33,7 @@ const config = {
     node: false,
   },
   rules: {
-    semi: ["error", "always"]
+    semi: ["warning", "always"]
   },
 };
 
