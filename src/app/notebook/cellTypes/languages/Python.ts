@@ -54,20 +54,17 @@ export class Python implements Language {
       this.cell?.children[0].classList.add('progress');
     }
     pyodide.subscribe(instance => {
-      try {
-        instance.setStdout({
-          batched: (input: string) => {
-            this.write(input+"\n");
-          }
-        });
-        instance.runPythonAsync(this.editorView?.state?.doc?.toString() || this.code).then((output: string) => {
-          this.write(output);
-        });
-      } catch (e) {
-        // @ts-ignore
+      instance.setStdout({
+        batched: (input: string) => {
+          this.write(input+"\n");
+        }
+      });
+      instance.runPythonAsync(this.editorView?.state?.doc?.toString() || this.code).then((output: string) => {
+        this.write(output);
+        this.stop();
+      }).catch((e: any) => {
         this.rewrite(`<pre class="py-error wrap">${e.message}</pre>`);
-      }
-      this.stop();
+      });
     })
     return true;
   }
