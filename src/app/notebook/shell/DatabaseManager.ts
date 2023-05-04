@@ -287,7 +287,7 @@ export class DatabaseManager {
 
   readBlocksFromURL() {
     return firstValueFrom(this.brotli.pipe(
-      map(lib => JSON.parse(this.textDecoder.decode(lib.decompress(base64ToData(url.read("c")))))?.blocks)
+      map(lib => JSON.parse(this.decodeHtmlEntities(this.textDecoder.decode(lib.decompress(base64ToData(url.read("c"))))))?.blocks)
     ));
   }
 
