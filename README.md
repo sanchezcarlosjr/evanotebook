@@ -46,6 +46,8 @@ Credits [WebGPT](https://github.com/0hq/WebGPT).
 
 [Runkit](https://runkit.com/)
 
+[Jupyter Lite](https://jupyterlite.readthedocs.io/en/latest/index.html)
+
 # Mirrors
 - [Examples](https://github.com/sanchezcarlosjr/javascript-notebook/issues/1)
 - [Code](https://github.com/sanchezcarlosjr/javascript-notebook/)
