@@ -1,0 +1,13 @@
+<div *ngFor="let node of nodes; let i = index">
+  <h1>Node {{i}}</h1>
+  <p>Listening on</p>
+  <p [id]="'node'+i">{{multiaddress[i]}}</p>
+  <h2>Connections</h2>
+  <ul>
+    <li *ngFor="let c of nodes[i].getConnections()">
+      {{c}}
+    </li>
+  </ul>
+  <h2>Messages</h2>
+  <pre> {{nodes[i].as() | async | json}}</pre>
+</div>

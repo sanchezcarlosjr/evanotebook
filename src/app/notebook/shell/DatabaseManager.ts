@@ -10,7 +10,7 @@ import {OutputBlockData} from "@editorjs/editorjs/types/data-formats/output-data
 import * as _ from 'lodash';
 import {RxDBJsonDumpPlugin} from 'rxdb/plugins/json-dump';
 import {P2PConnectionHandlerCreator, replicateP2P} from "rxdb/plugins/replication-p2p";
-import {getConnectionHandlerPeerJS} from "./getConnectionHandlerPeerJS";
+import {getConnectionHandlerLibP2P} from "./getConnectionHandlerLibP2P";
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
@@ -195,6 +195,7 @@ export class DatabaseManager {
       globalThis.map = map;
       // @ts-ignore
       globalThis.filter = filter;
+      url.write("t", this.topic);
       return collections.blocks.find({
         selector: {
           topic: {
@@ -213,16 +214,10 @@ export class DatabaseManager {
 
   async registerUrlProviders() {
     if (url.has("c")) {
-      return this.readBlocksFromURL().then(blocks => {
-        url.remove("c");
-        return blocks;
-      });
+      return this.readBlocksFromURL();
     }
     if (url.has("u")) {
-      return fetch(url.read("u")).then(response => response.json()).then(blocks => {
-        url.remove("u");
-        return blocks;
-      });
+      return fetch(url.read("u"));
     }
     return [];
   }
@@ -230,13 +225,11 @@ export class DatabaseManager {
   async replicateCollections() {
     if (!this._database)
       return;
-    url.write("p", this._uuid);
-    url.write("t", this.topic);
-    const handler = getConnectionHandlerPeerJS(this._uuid);
+    const handler = await getConnectionHandlerLibP2P(this._uuid);
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
     // @ts-ignore
-    await this.replicatePool(this._database?.view, handler);
+    // await this.replicatePool(this._database?.view, handler);
   }
 
   async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
@@ -414,7 +407,7 @@ export class DatabaseManager {
   }
 
   setupPeer() {
-    this._uuid = url.read("p") || crypto.randomUUID();
+    this._uuid = crypto.randomUUID();
     this.topic = url.read("t") || crypto.randomUUID();
   }
 

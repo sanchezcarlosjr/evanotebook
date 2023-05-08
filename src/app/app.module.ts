@@ -5,10 +5,12 @@ import { AppComponent } from './app.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { AppRoutingModule } from './app-routing.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { P2PComponent } from './p2p/p2p.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    P2PComponent
   ],
   imports: [
     BrowserModule.withServerTransition({appId: 'serverApp'}),

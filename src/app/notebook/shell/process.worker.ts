@@ -526,6 +526,14 @@ class ProcessWorker {
     environment.map = map;
     environment.reduce = reduce;
     environment.math = math;
+    environment.shareNotebook = () => {
+      this.environment.currentUrl.searchParams.set("mas", environment.currentUrl.searchParams.get("ma"));
+      this.environment.currentUrl.searchParams.delete("ma");
+      this.environment.currentUrl.searchParams.delete("c");
+      this.environment.currentUrl.searchParams.delete("p");
+      this.environment.currentUrl.searchParams.delete("u");
+      return this.environment.currentUrl;
+    }
     environment.generate = generate;
     environment.mergeMap = mergeMap;
     environment.concatMap = concatMap;

@@ -19,16 +19,16 @@ describe('RxDB Playground', () => {
   });
   it('should compress and decompress a redundant string', async () => {
     const input = "aaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbcccccccccccccccddddddddddddddddeeeeeeeeeeeeeeeefffffffffffffffff";
-    const output = manager.compress(input);
+    const output = await firstValueFrom(manager.compress(input));
     expect(input.length).toBeGreaterThanOrEqual(output.length);
     expect(output.length).toBeLessThan(btoa(input).length);
-    expect(manager.decompress(output)).toEqual(input);
+    expect(await firstValueFrom(manager.decompress(output))).toEqual(input);
   });
   it('should compress and decompress the OutputData from EditorJS', async () => {
     const url = new URL("https://notebook.sanchezcarlosjr.com/?c=G3AAMIzTFfOihHUP%2Fptb6i%2BPsbttHxeiKIZiFVQQFozXOixdfZ1ywJw0D8MEc49u94CLl16x0jUFuGFailSsDrWWUN8%2FzuC9wDPHdqz7%2FU2izWAu33QTchBYE5hX%2FkUKXJ5duXM%3D");
     const input = url.searchParams.get("c") || "";
-    const output = JSON.parse(manager.decompress(input));
+    const output = JSON.parse(await firstValueFrom(manager.decompress(input)));
     expect(output.blocks[0].data.text).toEqual("123");
-    expect(manager.compress(JSON.stringify(output))).toEqual(input);
+    expect(await firstValueFrom(manager.compress(JSON.stringify(output)))).toEqual(input);
   });
 });
