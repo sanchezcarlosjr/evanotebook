@@ -19,13 +19,14 @@ We're excited to present EvaNotebook, an open-source platform designed to accele
     
 * Secure P2P collaboration with custom replication (RxDB and libp2p) but offline first
     
-* Reactive elements like reactive charts, forms, and notebook itself
+* Reactive elements like reactive charts, forms, and notebook itself. You can use them with LangChain.
 
 🗺️ Roadmap:
 * Implement Bluetooth, gRPC, GraphQL and SSH protocols.
 * Bypass transparently CORS restrictions. 
 * Integrate [Langchain](https://js.langchain.com/docs/) to control whatever environment you want (including the notebook itself) in real-time using the different protocols and languages provided by libp2p.
 * Built-in open source alternatives to commercial AI products.
+* Jupyter Notebook format complaint.
 
 # Why?
 ![webGPT](https://raw.githubusercontent.com/0hq/WebGPT/main/other/misc/header.png)
