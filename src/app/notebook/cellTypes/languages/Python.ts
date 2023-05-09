@@ -31,6 +31,8 @@ const pyodide = new Observable<{
     const micropip = instance.pyimport("micropip");
     await micropip.install("pandas");
     await micropip.install("numpy");
+    await micropip.install("sckit-learn");
+    await micropip.install("matplotlib");
     subscriber.next(instance);
     subscriber.complete();
   });
@@ -65,7 +67,7 @@ export class Python implements Language {
       }).catch((e: any) => {
         this.rewrite(`<pre class="py-error wrap">${e.message}</pre>`);
       });
-    })
+    });
     return true;
   }
 

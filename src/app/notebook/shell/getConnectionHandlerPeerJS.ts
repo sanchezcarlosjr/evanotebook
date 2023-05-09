@@ -1,4 +1,4 @@
-import {filter, Subject, tap} from 'rxjs';
+import {filter, ReplaySubject, Subject, tap} from 'rxjs';
 import {PROMISE_RESOLVE_VOID, randomCouchString} from 'rxdb/plugins/utils';
 import type {
   P2PConnectionHandler,
@@ -78,11 +78,11 @@ export function getConnectionHandlerPeerJS(
 ): P2PConnectionHandlerCreator {
   const peer = new Peer(id, peerOptions);
   const connections = new Map<string, DataConnection>();
-  const globalConnect$ = new Subject<P2PPeer>();
-  const globalDisconnect$ = new Subject<P2PPeer>();
-  const globalMessage$ = new Subject<PeerWithMessage>();
-  const globalResponse$ = new Subject<PeerWithResponse>();
-  const globalError$ = new Subject<RxError | RxTypeError>();
+  const globalConnect$ = new ReplaySubject<P2PPeer>();
+  const globalDisconnect$ = new ReplaySubject<P2PPeer>();
+  const globalMessage$ = new ReplaySubject<PeerWithMessage>();
+  const globalResponse$ = new ReplaySubject<PeerWithResponse>();
+  const globalError$ = new ReplaySubject<RxError | RxTypeError>();
 
   peer.on('open', function (id) {
     connectToPeers();

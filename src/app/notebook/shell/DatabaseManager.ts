@@ -214,13 +214,11 @@ export class DatabaseManager {
   async registerUrlProviders() {
     if (url.has("c")) {
       return this.readBlocksFromURL().then(blocks => {
-        url.remove("c");
         return blocks;
       });
     }
     if (url.has("u")) {
       return fetch(url.read("u")).then(response => response.json()).then(blocks => {
-        url.remove("u");
         return blocks;
       });
     }
@@ -232,7 +230,13 @@ export class DatabaseManager {
       return;
     url.write("p", this._uuid);
     url.write("t", this.topic);
-    const handler = getConnectionHandlerPeerJS(this._uuid);
+    const handler = getConnectionHandlerPeerJS(this._uuid, {
+      host: url.read("peerjshost", "0.peerjs.com"),
+      port: parseInt(url.read("peerjsport", "443")),
+      secure: JSON.parse(url.read("peerjssecure", "true")),
+      path: url.read("peerjspath", "/"),
+      key: url.read("peerjskey", "")
+    });
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
     // @ts-ignore

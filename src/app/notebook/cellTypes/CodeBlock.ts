@@ -88,7 +88,11 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   private execHtml(html: HTMLElement) {
-    const elements = html.getElementsByTagName('script');
+    let elements: any = [];
+    try {
+      elements = html.getElementsByTagName('script');
+    } catch (e) {
+    }
     for (let i = 0; i < elements.length; i++) {
       const scriptElement = elements.item(i) as any;
       const clonedElement = document.createElement("script");
