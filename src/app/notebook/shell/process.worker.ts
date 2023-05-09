@@ -56,6 +56,7 @@ import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import * as duckdb from '@duckdb/duckdb-wasm';
+import ajv from 'ajv';
 import {AsyncDuckDB, AsyncDuckDBConnection} from '@duckdb/duckdb-wasm';
 import * as arrow from "apache-arrow";
 import {RxDatabase} from "rxdb/dist/types/types";
@@ -589,6 +590,7 @@ class ProcessWorker {
     environment.AgentExecutor = AgentExecutor;
     environment.ChatAgent = ChatAgent;
     environment.MessagesPlaceholder = MessagesPlaceholder;
+    environment.ajv = ajv;
     environment.math = math;
     environment.generate = generate;
     environment.mergeMap = mergeMap;

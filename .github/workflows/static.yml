@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: '18.10.0'
       - name: Install dependencies
-        run: yarn
+        run: npm i --force
       - name: Build
         run: npm run prerender
       - name: Setup Pages

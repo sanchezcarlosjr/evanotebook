@@ -236,6 +236,14 @@ export class Shell {
     environment.addEventListener('shell.Prompt', (event: CustomEvent) => this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
       event: 'prompt', payload: event.detail.payload.response
     }));
+    environment.addEventListener('shell.ListenRawRun', (workerEvent: CustomEvent) => {
+      // @ts-ignore
+     window.addEventListener('shell.RawRun', (rawEvent: CustomEvent) => {
+       this.jobs.get(workerEvent.detail.payload.threadId)?.worker?.postMessage({
+         event: 'shell.RawRun', payload: rawEvent.detail.payload
+       });
+     });
+    });
     environment.addEventListener('localStorage.getItem', (event: CustomEvent) => event.detail.port.postMessage({
       event: 'localStorage.getItem', payload: localStorage.getItem(event.detail.payload.key)
     }));
