@@ -47,7 +47,8 @@ import {fromFetch} from "rxjs/fetch";
 import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as protocols from './protocols';
 import * as _ from 'lodash';
-
+import { OpenAI } from "langchain/llms/openai";
+import {MessagesPlaceholder, PromptTemplate} from "langchain/prompts";
 import {ComputeEngine} from "@cortex-js/compute-engine";
 import {addRxPlugin, createRxDatabase} from "rxdb";
 import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
@@ -59,7 +60,37 @@ import {AsyncDuckDB, AsyncDuckDBConnection} from '@duckdb/duckdb-wasm';
 import * as arrow from "apache-arrow";
 import {RxDatabase} from "rxdb/dist/types/types";
 import {OutputData} from "@editorjs/editorjs";
+import { JsonSpec } from "langchain/tools";
+import { JsonToolkit, createJsonAgent } from "langchain/agents";
+import {AgentExecutor, ChatAgent, initializeAgentExecutorWithOptions} from "langchain/agents";
+import {
+  StructuredOutputParser,
+  OutputFixingParser,
+  CombiningOutputParser,
+  CommaSeparatedListOutputParser,
+  RegexParser
+} from "langchain/output_parsers";
+import { SerpAPI } from "langchain/tools";
+import {
+  SystemMessagePromptTemplate,
+  HumanMessagePromptTemplate,
+  ChatPromptTemplate,
+  LengthBasedExampleSelector,
+  FewShotPromptTemplate,
+  SemanticSimilarityExampleSelector
+} from "langchain/prompts";
+import { Calculator } from "langchain/tools/calculator";
+import { ChatOpenAI } from "langchain/chat_models/openai";
+import { HumanChatMessage, SystemChatMessage, AIChatMessage } from "langchain/schema";
 import {BlockAPI} from "@editorjs/editorjs/types/api/block";
+import { BufferMemory } from "langchain/memory";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { ZapierNLAWrapper } from "langchain/tools";
+import {
+  ZapierToolKit,
+} from "langchain/agents";
+import {ConversationChain, LLMChain} from "langchain/chains";
 import {BlockToolData, ToolConfig} from "@editorjs/editorjs/types/tools";
 import {randomCouchString} from "rxdb/plugins/utils";
 import {precompileJS} from "./precompile";
@@ -525,6 +556,39 @@ class ProcessWorker {
     environment.tap = tap;
     environment.map = map;
     environment.reduce = reduce;
+    environment.OpenAI = OpenAI;
+    environment.PromptTemplate = PromptTemplate;
+    environment.LLMChain = LLMChain;
+    environment.ChatOpenAI = ChatOpenAI;
+    environment.SystemChatMessage = SystemChatMessage;
+    environment.AIChatMessage = AIChatMessage;
+    environment.HumanChatMessage = HumanChatMessage;
+    environment.SerpAPI = SerpAPI;
+    environment.ConversationChain = ConversationChain;
+    environment.BufferMemory = BufferMemory;
+    environment.ZapierNLAWrapper = ZapierNLAWrapper;
+    environment.ZapierToolKit = ZapierToolKit;
+    environment.JsonSpec = JsonSpec;
+    environment.JsonToolkit = JsonToolkit;
+    environment.createJsonAgent = createJsonAgent;
+    environment.OutputFixingParser = OutputFixingParser;
+    environment.StructuredOutputParser = StructuredOutputParser;
+    environment.CommaSeparatedListOutputParser = CommaSeparatedListOutputParser;
+    environment.CombiningOutputParser = CombiningOutputParser;
+    environment.RegexParser = RegexParser;
+    environment.Calculator = Calculator;
+    environment.LengthBasedExampleSelector = LengthBasedExampleSelector;
+    environment.LengthBasedExampleSelector = FewShotPromptTemplate;
+    environment.initializeAgentExecutorWithOptions = initializeAgentExecutorWithOptions;
+    environment.SystemMessagePromptTemplate = SystemMessagePromptTemplate;
+    environment.HumanMessagePromptTemplate = HumanMessagePromptTemplate;
+    environment.ChatPromptTemplate = ChatPromptTemplate;
+    environment.MemoryVectorStore = MemoryVectorStore;
+    environment.OpenAIEmbeddings = OpenAIEmbeddings;
+    environment.SemanticSimilarityExampleSelector = SemanticSimilarityExampleSelector;
+    environment.AgentExecutor = AgentExecutor;
+    environment.ChatAgent = ChatAgent;
+    environment.MessagesPlaceholder = MessagesPlaceholder;
     environment.math = math;
     environment.generate = generate;
     environment.mergeMap = mergeMap;
