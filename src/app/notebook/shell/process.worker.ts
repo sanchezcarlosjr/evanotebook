@@ -494,6 +494,42 @@ class Blocks {
       }
     })));
   };
+
+  update(id: string, data: BlockToolData) {
+    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
+      selector: {
+        id: {$exists: false}
+      },
+      ifNotMatch: {
+        // @ts-ignore
+        id,
+        data,
+        updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
+      }
+    })));
+  }
+
+  delete(id: string) {
+    return this.environment.db.pipe(
+      switchMap((db: RxDatabase) => db["blocks"].findOne(id).exec()),
+      switchMap(document => document.updateCRDT({
+        selector: {
+          id: {$exists: true}
+        },
+        ifMatch: {
+          $set: {
+            id,
+            updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
+            _deleted: true
+          }
+        }
+      }))
+    );
+  }
+
+
+
+
 }
 
 class EditorJS {
