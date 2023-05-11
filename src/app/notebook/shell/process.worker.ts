@@ -1017,7 +1017,7 @@ class ProcessWorker {
 
   println(next: any) {
     match(next)
-      .with(P.string, (next: string) => this.terminal.write(next)).otherwise(next => this.environment.println(next))
+      .with(P.string, (next: string) => this.terminal.rewrite(next)).otherwise(next => this.environment.println(next))
   }
 
   async exec(code: string) {
