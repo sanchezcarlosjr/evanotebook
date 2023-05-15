@@ -38,7 +38,7 @@ export class Python extends Language {
           this.write(input + "\n");
         }
       });
-      const code = `BLOCK_ID = "${this.editorJsTool.block?.id}"\n${this.mostRecentCode}`;
+      const code = `BLOCK_ID = "${this.editorJsTool?.block?.id}"\n${this.mostRecentCode}`;
       instance.runPythonAsync(code).then((output: string) => {
         this.write(output);
         this.stop();

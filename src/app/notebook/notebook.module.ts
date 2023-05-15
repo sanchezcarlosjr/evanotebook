@@ -21,33 +21,36 @@ import {MatRippleModule} from "@angular/material/core";
 import {MatCardModule} from "@angular/material/card";
 import { TreeComponent } from './tree/tree.component';
 import {MatTreeModule} from "@angular/material/tree";
+import { CodeComponent } from './form/code/code.component';
 
 @NgModule({
   declarations: [
     NotebookComponent,
     FormComponent,
     TableComponent,
-    TreeComponent
+    TreeComponent,
+    CodeComponent
   ],
-  imports: [
-    CommonModule,
-    NotebookRoutingModule,
-    JsonFormsModule,
-    JsonFormsAngularMaterialModule,
-    MatAutocompleteModule,
-    MatButtonModule,
-    MatToolbarModule,
-    MatMenuModule,
-    MatButtonModule,
-    MatSnackBarModule,
-    FormsModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
-    MatTreeModule,
-    MatCardModule,
-    MatRippleModule
-  ]
+    imports: [
+        CommonModule,
+        NotebookRoutingModule,
+        JsonFormsModule,
+        JsonFormsAngularMaterialModule,
+        MatAutocompleteModule,
+        MatButtonModule,
+        MatToolbarModule,
+        MatMenuModule,
+        MatButtonModule,
+        MatSnackBarModule,
+        FormsModule,
+        MatTableModule,
+        MatSortModule,
+        MatPaginatorModule,
+        MatTreeModule,
+        MatCardModule,
+        MatRippleModule,
+        MatRadioModule
+    ]
 })
 export class NotebookModule {
 }

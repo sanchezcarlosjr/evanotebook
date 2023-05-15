@@ -26,7 +26,7 @@ export class JavaScript extends Language {
       bubbles: true, detail: {
         payload: {
           code: this.mostRecentCode,
-          threadId: this.editorJsTool.block?.id
+          threadId: this.editorJsTool?.block?.id
         }
       }
     }));

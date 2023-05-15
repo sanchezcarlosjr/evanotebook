@@ -20,19 +20,18 @@ import {lintGutter} from "@codemirror/lint";
 export abstract class Language {
   protected doc$: Subject<string> = new Subject();
   protected editorView?: EditorView;
-  constructor(protected code: string, protected editorJsTool: EditorJsTool, protected cell: HTMLElement) {
+  constructor(protected code: string, protected editorJsTool: EditorJsTool | undefined = undefined, protected cell: HTMLElement) {
   }
   dispatchShellRun(): boolean {
-    if (!this.editorJsTool.readOnly) {
+    if (!this.editorJsTool?.readOnly) {
       this.clear();
       this.dispatchShellStop();
       this.cell?.children[0].classList.add('progress');
     }
-
     return true;
   }
   stop() {
-    if (!this.editorJsTool.readOnly) {
+    if (!this.editorJsTool?.readOnly) {
       this.cell?.children[0].classList.remove('progress');
     }
   }
@@ -40,7 +39,7 @@ export abstract class Language {
     window.dispatchEvent(new CustomEvent('shell.Stop', {
       bubbles: true, detail: {
         payload: {
-          threadId: this.editorJsTool.block?.id
+          threadId: this.editorJsTool?.block?.id
         }
       }
     }));

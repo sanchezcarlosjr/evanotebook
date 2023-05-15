@@ -1,7 +1,7 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import { angularMaterialRenderers } from '@jsonforms/angular-material';
-import { Generate } from '@jsonforms/core';
-import { Subject } from 'rxjs';
+import {and, Generate, isControl, rankWith, scopeEndsWith} from '@jsonforms/core';
+import {CodeComponent} from "./code/code.component";
 
 @Component({
   selector: 'app-form',
@@ -13,10 +13,25 @@ export class FormComponent implements OnInit {
   uischema = {type: ""};
   data = null;
   schema = {};
-  renderers = angularMaterialRenderers;
+  renderers = [
+    ...angularMaterialRenderers,
+    {
+      renderer: CodeComponent,
+      tester: rankWith(
+        6,
+        and(
+          isControl,
+          scopeEndsWith('code')
+        )
+      )
+    }
+  ];
   readonly: boolean = false;
   state: any = {};
   ngOnInit(): void {
+    if(!this.port) {
+      return;
+    }
     // @ts-ignore
     this.port.onmessage = (event: MessageEvent) => {
       if (event.data.type === 'setOptions') {
