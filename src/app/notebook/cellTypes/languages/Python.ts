@@ -15,6 +15,7 @@ const pyodide = new Observable<{
     const micropip = instance.pyimport("micropip");
     await micropip.install("pandas");
     await micropip.install("numpy");
+    await micropip.install("scikit-learn");
     await micropip.install("matplotlib");
     subscriber.next(instance);
     subscriber.complete();
