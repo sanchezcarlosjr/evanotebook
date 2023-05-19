@@ -39,7 +39,15 @@ export class Python extends Language {
           this.write(input + "\n");
         }
       });
-      const code = `BLOCK_ID = "${this.editorJsTool?.block?.id}"\n${this.mostRecentCode}`;
+      const code = `BLOCK_ID = "${this.editorJsTool?.block?.id}"
+from js import document
+def create_root_element(self):
+    return document.getElementById(BLOCK_ID).children[1]
+def display(f):
+    f.canvas.create_root_element = create_root_element.__get__(create_root_element, f.canvas.__class__)
+    f.canvas.show()
+    return "<div></div>"
+${this.mostRecentCode}`;
       instance.runPythonAsync(code).then((output: string) => {
         this.write(output);
         this.stop();

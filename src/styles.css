@@ -364,7 +364,7 @@ body {
   font-display: swap;
 }
 
-* :not(i) {
+* :not(.fas):not(.far):not(.fab):not(.fa) {
   font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
   letter-spacing: 0;
 }
