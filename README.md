@@ -22,7 +22,7 @@ We're excited to present EvaNotebook, an open-source platform designed to accele
 * Reactive elements like reactive charts, forms, and notebook itself. You can use them with LangChain.
 
 🗺️ Roadmap:
-* Implement Bluetooth, gRPC, GraphQL and SSH protocols.
+* Implement Bluetooth, gRPC, GraphQL and SSH protocols. Call your operating system from a browser should be possible securely. 
 * Bypass transparently CORS restrictions. 
 * Integrate [Langchain](https://js.langchain.com/docs/) to control whatever environment you want (including the notebook itself) in real-time using the different protocols and languages provided by libp2p.
 * Built-in open source alternatives to commercial AI products.
