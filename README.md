@@ -24,7 +24,7 @@ We're excited to present EvaNotebook, an open-source platform designed to accele
 🗺️ Roadmap:
 * Implement Bluetooth, gRPC, GraphQL and SSH protocols. Call your operating system from a browser should be possible securely. 
 * Bypass transparently CORS restrictions. 
-* Integrate [Langchain](https://js.langchain.com/docs/) to control whatever environment you want (including the notebook itself) in real-time using the different protocols and languages provided by libp2p.
+* Integrate [Langchain](https://js.langchain.com/docs/) to control whatever environment you want (including the notebook itself) in real-time using the different protocols and languages provided by libp2p. Integrate offline large models such as WebGPT.
 * Built-in open source alternatives to commercial AI products.
 * Jupyter Notebook format complaint.
 
