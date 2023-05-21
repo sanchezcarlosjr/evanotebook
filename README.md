@@ -13,7 +13,7 @@ We're excited to present EvaNotebook, an open-source platform designed to accele
 🔥 Key Features:
 * User-friendly WYSIWYG interface inspired by Notion (EditorJS)
     
-* Simplified APIs for MQTT, WebRTC, HTTP, and WebSocket protocols
+* Since real applications are reactive ones rather than static ones, so it offers simplified APIs for MQTT, WebRTC, HTTP, and WebSocket protocols based on RxJS.  
     
 * Independent web workers for enhanced performance and stability
     
