@@ -3,17 +3,13 @@ The Ultimate P2P Browser Notebook for Fast AI System Development!
 
 We're excited to present EvaNotebook, an open-source platform designed to accelerate your AI development journey. Built for web developers and AI enthusiasts alike, this powerful notebook makes it easy to create and collaborate on projects in real time, directly from your browser.
 
-🌐 Demo Links:
-* Web2.0: https://notebook.sanchezcarlosjr.com/
-    
-* IPFS: https://ipfsnotebook.sanchezcarlosjr.com/
-    
-* Isolated Environment: https://isolatenotebook.sanchezcarlosjr.com/
+🌐 Demo Link:
+* https://notebook.sanchezcarlosjr.com/
 
 🔥 Key Features:
 * User-friendly WYSIWYG interface inspired by Notion (EditorJS)
     
-* Simplified APIs for MQTT, WebRTC, HTTP, and WebSocket protocols
+* Since real applications are reactive ones rather than static ones, so it offers simplified APIs for MQTT, WebRTC, HTTP, and WebSocket protocols based on RxJS.  
     
 * Independent web workers for enhanced performance and stability
     
@@ -22,9 +18,9 @@ We're excited to present EvaNotebook, an open-source platform designed to accele
 * Reactive elements like reactive charts, forms, and notebook itself. You can use them with LangChain.
 
 🗺️ Roadmap:
-* Implement Bluetooth, gRPC, GraphQL and SSH protocols.
+* Implement Bluetooth, gRPC, GraphQL and SSH protocols. Call your operating system from a browser should be possible securely. 
 * Bypass transparently CORS restrictions. 
-* Integrate [Langchain](https://js.langchain.com/docs/) to control whatever environment you want (including the notebook itself) in real-time using the different protocols and languages provided by libp2p.
+* Integrate [Langchain](https://js.langchain.com/docs/) to control whatever environment you want (including the notebook itself) in real-time using the different protocols and languages provided by libp2p. Integrate offline large models such as WebGPT.
 * Built-in open source alternatives to commercial AI products.
 * Jupyter Notebook format complaint.
 
