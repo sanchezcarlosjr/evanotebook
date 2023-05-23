@@ -30,6 +30,7 @@
     "@angular/service-worker": "15.2.5",
     "@babel/generator": "7.21.4",
     "@babel/types": "7.21.4",
+    "@codemirror/lang-html": "^6.4.3",
     "@codemirror/lang-javascript": "6.1.4",
     "@codemirror/lang-python": "6.1.2",
     "@cortex-js/compute-engine": "0.12.2",

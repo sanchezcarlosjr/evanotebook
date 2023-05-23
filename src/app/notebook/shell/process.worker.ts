@@ -574,20 +574,18 @@ class HostOperatingSystem {
     }).then(x => x.json());
   }
   async platformInfo() {
-    return fetch("http://localhost:8382/v1/plaformInfo", {
-      "method": "GET",
+    return fetch("http://localhost:8382/v1/platformInfo", {
       headers: {
         "Authorization": `Bearer ${this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN}`,
-        "Content-Type": "application/json"
       }
-    }).then(x => x.json());
+    })
+      .then(response => response.json())
   }
   async changeToken() {
     const response = await fetch("http://localhost:8382/v1/newToken", {
       "method": "GET",
       headers: {
-        "Authorization": `Bearer ${this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN}`,
-        "Content-Type": "application/json"
+        "Authorization": `Bearer ${this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN}`
       }
     }).then(x => x.json());
     this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN = response.token;
@@ -643,6 +641,11 @@ interface GitHubCommit {
 }
 
 
+class Exit implements Error {
+  name: string = "Exit";
+  constructor(public message: string) {}
+}
+
 class ProcessWorker {
   private environmentObserver: DocumentObserver;
 
@@ -657,6 +660,9 @@ class ProcessWorker {
     environment.environment = this.environmentObserver.createProxy();
     environment.hos = new HostOperatingSystem(environment);
     environment.hfs = new HostFilesystem(environment.hos);
+    environment.exit = (message: string = "0") => {
+      throw new Exit(message);
+    }
     environment.P = P;
     environment.editor = new EditorJS(this.environment);
     environment.from = from;
@@ -1140,6 +1146,11 @@ globalThis.addEventListener('exec', async (event: CustomEvent) => {
       complete: () => sendMessage({'event': 'shell.Stop', payload:   {threadId: self.name}})
     });
   } catch (e) {
+    if (e instanceof Exit) {
+      processWorker.println(e.message);
+      sendMessage({'event': 'shell.Stop', payload: {threadId: self.name}});
+      return;
+    }
     // @ts-ignore
     sendMessage({
       'event': 'shell.error', // @ts-ignore

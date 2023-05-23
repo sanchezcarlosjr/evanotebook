@@ -235,7 +235,7 @@ export class DatabaseManager {
       port: parseInt(url.read("peerjsport", "443")),
       secure: JSON.parse(url.read("peerjssecure", "true")),
       path: url.read("peerjspath", "/"),
-      key: url.read("peerjskey", "")
+      key: url.read("peerjskey", "peerjs")
     });
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);

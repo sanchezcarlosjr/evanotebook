@@ -5,6 +5,7 @@ import {Language} from "./languages/language";
 import {match} from "ts-pattern";
 import {Python} from "./languages/Python";
 import {stringToHTML} from "./stringToHTML";
+import {Html} from "./languages/Html";
 
 export class CodeBlock extends InteractiveBlock {
   private cell: HTMLDivElement;
@@ -26,6 +27,7 @@ export class CodeBlock extends InteractiveBlock {
       "javascript", () => new JavaScript(this.code, this.editorJsTool, this.cell)
     )
       .with("python", () => new Python(this.code, this.editorJsTool, this.cell))
+      .with("html", () => new Html(this.code, this.editorJsTool, this.cell))
       .otherwise(
       () => new JavaScript(this.code, this.editorJsTool,this.cell)
     );
@@ -257,7 +259,7 @@ export class CodeBlock extends InteractiveBlock {
     const wrapper = super.renderSettings();
     let languagesSelect = document.createElement("select");
     languagesSelect.classList.add("small");
-    for (const language of ["javascript", "python"]) {
+    for (const language of ["javascript", "python", "html"]) {
       const option = document.createElement("option");
       option.value = language;
       option.innerText = language;

@@ -42,7 +42,7 @@ function setupConnection<T>(dataConnection: DataConnection&{id: string}, connect
       messageOrResponse = JSON.parse(messageOrResponse.toString());
     } catch (e) {
     }
-    if (messageOrResponse.message.result) {
+    if (messageOrResponse?.message?.result) {
       globalResponse$.next({
         peer: dataConnection as DataConnection & { id: string },
         // @ts-ignore
@@ -54,7 +54,7 @@ function setupConnection<T>(dataConnection: DataConnection&{id: string}, connect
         peer: dataConnection as DataConnection & { id: string },
         // @ts-ignore
         collectionName: messageOrResponse.collectionName,
-        message: messageOrResponse.message
+        message: messageOrResponse?.message || messageOrResponse
       });
     }
   });
@@ -77,6 +77,8 @@ export function getConnectionHandlerPeerJS(
   peerOptions?: PeerJSOption
 ): P2PConnectionHandlerCreator {
   const peer = new Peer(id, peerOptions);
+  // @ts-ignore
+  window.peer = peer;
   const connections = new Map<string, DataConnection>();
   const globalConnect$ = new ReplaySubject<P2PPeer>();
   const globalDisconnect$ = new ReplaySubject<P2PPeer>();
