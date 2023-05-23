@@ -359,6 +359,7 @@ export class Shell {
             this.peerChangeBlock = true;
             this.editor.blocks.update(block.id, block.data);
           });
+          this.databaseManager.replicateCollections().then().catch(console.log);
           if (isMode2) {
             return;
           }
@@ -368,7 +369,6 @@ export class Shell {
               this.databaseManager.saveInUrl();
             }
           });
-          this.databaseManager.replicateCollections().then().catch(console.log);
         });
       });
     });
