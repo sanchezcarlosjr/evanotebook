@@ -345,15 +345,6 @@ export class Shell {
           if (location.hash) {
             document.getElementById(location.hash.substring(1))?.scrollIntoView({ behavior: "smooth", block: "start", inline: "start" });
           }
-          if (isMode2) {
-            return;
-          }
-          window.addEventListener('keydown', (event: KeyboardEvent )=>{
-            if (event.ctrlKey && event.key === 's') {
-              event.preventDefault();
-              this.databaseManager.saveInUrl();
-            }
-          });
           this.databaseManager.insert$()?.subscribe((block: any) => {
             this.peerAddBlock = true;
             this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
@@ -367,6 +358,15 @@ export class Shell {
             this.peerAddBlock = true;
             this.peerChangeBlock = true;
             this.editor.blocks.update(block.id, block.data);
+          });
+          if (isMode2) {
+            return;
+          }
+          window.addEventListener('keydown', (event: KeyboardEvent )=>{
+            if (event.ctrlKey && event.key === 's') {
+              event.preventDefault();
+              this.databaseManager.saveInUrl();
+            }
           });
           this.databaseManager.replicateCollections().then().catch(console.log);
         });

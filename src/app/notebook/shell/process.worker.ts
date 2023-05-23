@@ -101,6 +101,11 @@ import Indexed = Immutable.Seq.Indexed;
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
 
+// @ts-ignore
+globalThis.window = {
+  // @ts-ignore
+  async requestFileSystem() {}
+};
 
 function sendMessage(message: any) {
   self.postMessage(message);
@@ -478,7 +483,7 @@ class Blocks {
     }).$));
   }
 
-  insert(type?: string, data?: BlockToolData, config?: ToolConfig, index?: number, needToFocus?: boolean, replace?: boolean, id?: string,) {
+  insert(type?: string, data?: BlockToolData, config?: ToolConfig, index?: number, needToFocus?: boolean, replace?: boolean, id?: string) {
     return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
       ifMatch: {
         $set: {
@@ -495,16 +500,44 @@ class Blocks {
     })));
   };
 
+  upsert(id?: string, data?: BlockToolData, type?: string, index?: number, config?: ToolConfig, needToFocus?: boolean, replace?: boolean) {
+    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
+      selector: {
+        id: {$exists: true}
+      },
+      ifMatch: {
+        $set: {
+          id,
+          data,
+          updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker"
+        }
+      },
+      ifNotMatch: {
+        $set: {
+          type,
+          data,
+          config,
+          index,
+          createdBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
+          updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
+          id: id ?? randomCouchString(7),
+          topic: this.environment.currentUrl.searchParams.get("t") ?? ""
+        }
+      }
+    })));
+  }
+
   update(id: string, data: BlockToolData) {
     return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
       selector: {
-        id: {$exists: false}
+        id: {$exists: true}
       },
-      ifNotMatch: {
-        // @ts-ignore
-        id,
-        data,
-        updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
+      ifMatch: {
+        $set: {
+          id,
+          data,
+          updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker"
+        }
       }
     })));
   }
@@ -512,7 +545,7 @@ class Blocks {
   delete(id: string) {
     return this.environment.db.pipe(
       switchMap((db: RxDatabase) => db["blocks"].findOne(id).exec()),
-      switchMap(document => document.updateCRDT({
+      switchMap(document => document?.updateCRDT({
         selector: {
           id: {$exists: true}
         },
@@ -526,10 +559,54 @@ class Blocks {
       }))
     );
   }
+}
 
+class HostOperatingSystem {
+  constructor(private environment: any) {}
+  exec(command: string) {
+    return fetch("http://localhost:8382/v1/shell", {
+      "method": "POST",
+      headers: {
+        "Authorization": `Bearer ${this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      "body": JSON.stringify({command})
+    }).then(x => x.json());
+  }
+  async platformInfo() {
+    return fetch("http://localhost:8382/v1/plaformInfo", {
+      "method": "GET",
+      headers: {
+        "Authorization": `Bearer ${this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    }).then(x => x.json());
+  }
+  async changeToken() {
+    const response = await fetch("http://localhost:8382/v1/newToken", {
+      "method": "GET",
+      headers: {
+        "Authorization": `Bearer ${this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    }).then(x => x.json());
+    this.environment.environment.HOST_OPERATING_SYSTEM_TOKEN = response.token;
+    await this.environment.environment.wait();
+  }
+}
 
-
-
+class HostFilesystem {
+  constructor(private host: HostOperatingSystem) {
+  }
+  readdir(path: string) {
+    return this.host.exec(`ls ${path}`);
+  }
+  writeFile(path: string, content: string) {
+    return this.host.exec(`echo "${content}" > ${path}`);
+  }
+  read(path: string) {
+    return this.host.exec(`cat ${path}`);
+  }
 }
 
 class EditorJS {
@@ -570,7 +647,6 @@ class ProcessWorker {
   private environmentObserver: DocumentObserver;
 
   constructor(private environment: (typeof globalThis) & any, private localEcho: LocalEcho, private terminal: Terminal) {
-    environment.window = {};
     environment.db = new Observable((subscriber: Subscriber<any>) => {
       create_db().then(db => {
         subscriber.next(db);
@@ -579,12 +655,14 @@ class ProcessWorker {
     }).pipe(shareReplay(1));
     this.environmentObserver = new DocumentObserver("environment", environment.db);
     environment.environment = this.environmentObserver.createProxy();
-    environment.P = P
+    environment.hos = new HostOperatingSystem(environment);
+    environment.hfs = new HostFilesystem(environment.hos);
+    environment.P = P;
     environment.editor = new EditorJS(this.environment);
-    environment.from = from
-    environment.Pattern = Pattern
-    environment.isMatching = isMatching
-    environment.match = match
+    environment.from = from;
+    environment.Pattern = Pattern;
+    environment.isMatching = isMatching;
+    environment.match = match;
     environment.regex = (expr: RegExp) => P.when((str: string): str is never => expr.test(str));
     environment.Immutable = Immutable;
     environment.clear = tap(() => this.terminal.clear());
