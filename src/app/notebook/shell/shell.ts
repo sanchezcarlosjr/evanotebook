@@ -1,19 +1,7 @@
-import EditorJS, {BlockAPI, OutputData} from "@editorjs/editorjs";
-import {
-  debounceTime, filter,
-  first, firstValueFrom,
-  from,
-  interval,
-  map,
-  Observable, skip,
-  Subject,
-  Subscription,
-  switchMap, tap,
-  throttleTime
-} from 'rxjs';
+import EditorJS, {BlockAPI, OutputBlockData} from "@editorjs/editorjs";
+import {first, from, Observable, Subject, Subscription, switchMap} from 'rxjs';
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
-import {OutputBlockData} from "@editorjs/editorjs";
 import {TitleSubjectService} from "../../title-subject.service";
 
 enum JobStatus {
@@ -204,10 +192,13 @@ export class Shell {
       }
       blockChanges$.next(event.detail);
     });
-    const readDetailFromBlockChanged = async (detail: any)  => ({index: detail.index, savedData: await detail.target.save()});
+    const readDetailFromBlockChanged = async (detail: any) => ({
+      index: detail.index,
+      savedData: await detail.target.save()
+    });
     blockChanges$.pipe(
       switchMap(detail => from(readDetailFromBlockChanged(detail))),
-    ).subscribe((next: {index: number, savedData: SavedData}) => {
+    ).subscribe((next: { index: number, savedData: SavedData }) => {
       this.databaseManager.changeBlock({
         id: next.savedData.id,
         type: next.savedData.tool,
@@ -271,7 +262,7 @@ export class Shell {
           }
         });
       })
-    }
+    };
   }
 
   start(isMode2: boolean) {
@@ -298,7 +289,7 @@ export class Shell {
       ).subscribe((documents) => {
         let blocks: BlockDocument[] = [];
         if (documents.length > 0) {
-          documents.forEach((block, index) =>{
+          documents.forEach((block, index) => {
             if (block && block?.index >= 0) {
               this.databaseManager.updateIndex(block, index).then();
               blocks.push(block);
@@ -316,7 +307,7 @@ export class Shell {
           blocks
         }).then(_ => {
           return this.databaseManager.registerUrlProviders().then((blocks: OutputBlockData[]) => {
-            if(blocks.length > 0) {
+            if (blocks.length > 0) {
               this.editor.render({
                 'version': '2.26.5',
                 blocks
@@ -343,11 +334,15 @@ export class Shell {
           });
         }).then(async _ => {
           if (location.hash) {
-            document.getElementById(location.hash.substring(1))?.scrollIntoView({ behavior: "smooth", block: "start", inline: "start" });
+            document.getElementById(location.hash.substring(1))?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+              inline: "start"
+            });
           }
           this.databaseManager.insert$()?.subscribe((block: any) => {
             this.peerAddBlock = true;
-            this.editor.blocks.insert(block.type, block.data,  undefined, block.index, false, false, block.id);
+            this.editor.blocks.insert(block.type, block.data, undefined, block.index, false, false, block.id);
           });
           this.databaseManager.remove$()?.subscribe((block: any) => {
             this.peerRemoveBlock = true;
@@ -363,7 +358,7 @@ export class Shell {
           if (isMode2) {
             return;
           }
-          window.addEventListener('keydown', (event: KeyboardEvent )=>{
+          window.addEventListener('keydown', (event: KeyboardEvent) => {
             if (event.ctrlKey && event.key === 's') {
               event.preventDefault();
               this.databaseManager.saveInUrl();

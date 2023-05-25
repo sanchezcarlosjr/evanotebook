@@ -418,8 +418,8 @@ export class DatabaseManager {
   }
 
   setupPeer() {
-    this._uuid = url.read("p") || crypto.randomUUID();
-    this.topic = url.read("t") || crypto.randomUUID();
+    this._uuid = url.read("p") || randomCouchString(10);
+    this.topic = url.read("t") || randomCouchString(10);
   }
 
   createNewDatabase() {
@@ -475,9 +475,9 @@ export class DatabaseManager {
     // @ts-ignore
     const block = await this._database?.blocks?.findOne(blockRow.id).exec();
     if (!block) {
-      return this.addBlock(blockRow);
+      return;
     }
-    if (_.isEqual(blockRow.data, block?._data?.data)) {
+    if (blockRow?.index === block?.index && _.isEqual(blockRow.data, block?._data?.data)) {
       return block;
     }
     window.dispatchEvent(new CustomEvent('saving'));

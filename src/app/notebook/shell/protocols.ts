@@ -88,7 +88,6 @@ export class WebRTC implements Protocol {
 
 export class MQTT implements Protocol {
   private mqtt: MqttService | null = null;
-
   send(options: any) {
     this.mqtt?.unsafePublish(options.topic, options.message, options.options);
   }
@@ -98,14 +97,6 @@ export class MQTT implements Protocol {
   }
 
   connect(options: IMqttServiceOptions & { topic: string }) {
-    options = {
-       protocol: 'wss',
-       hostname: 'test.mosquitto.org',
-      // @ts-ignore
-       topic: "eva-main",
-       port: 8081,
-       ...options
-    };
     this.mqtt = new MqttService(options);
     return this.mqtt?.observe(options.topic).pipe(
       map((message) => ({
@@ -123,3 +114,10 @@ export class MQTT implements Protocol {
     );
   }
 }
+
+// @ts-ignore
+globalThis.Mqtt = MQTT;
+// @ts-ignore
+globalThis.WebSocket = WebSocket;
+// @ts-ignore
+globalThis.WebRTC = WebRTC;
