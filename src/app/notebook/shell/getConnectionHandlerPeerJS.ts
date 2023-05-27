@@ -38,6 +38,8 @@ function setupConnection<T>(dataConnection: DataConnection&{id: string}, connect
   dataConnection.id = dataConnection.peer;
   connections.set(dataConnection.peer, dataConnection);
   dataConnection.on('data', (messageOrResponse: any) => {
+    console.log(messageOrResponse);
+    debugger;
     try {
       messageOrResponse = JSON.parse(messageOrResponse.toString());
     } catch (e) {
