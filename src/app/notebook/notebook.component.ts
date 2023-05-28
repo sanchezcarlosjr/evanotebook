@@ -106,8 +106,6 @@ export class NotebookComponent implements OnInit {
           inlineToolbar: true,
         },
         // @ts-ignore
-        delimiter: await import("@editorjs/delimiter").then(x => x.default),
-        // @ts-ignore
         Strikethrough: await import("@sotaproject/strikethrough").then(x => x.default),
         // @ts-ignore
         embed: {

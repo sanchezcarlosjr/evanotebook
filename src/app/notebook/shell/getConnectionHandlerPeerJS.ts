@@ -1,4 +1,4 @@
-import {filter, ReplaySubject, Subject, tap} from 'rxjs';
+import {filter, ReplaySubject, shareReplay, Subject, tap} from 'rxjs';
 import {PROMISE_RESOLVE_VOID, randomCouchString} from 'rxdb/plugins/utils';
 import type {
   P2PConnectionHandler,
@@ -13,26 +13,6 @@ import {DataConnection, Peer, PeerConnectOption, PeerJSOption} from 'peerjs';
 import {newRxError, RxError, RxTypeError} from 'rxdb';
 import * as url from "./url";
 import {SyncOptionsP2P} from "rxdb/plugins/replication-p2p";
-
-function connectToPeers() {
-  const peers = url.read('ps');
-  if (!peers) {
-    return;
-  }
-  peers.split(',').forEach((peerId: string) => {
-    window.dispatchEvent(new CustomEvent('peer.connect', {
-      detail: {
-        payload: {
-          options: {
-            options: {
-              peerId
-            }
-          }
-        }
-      }
-    }));
-  });
-}
 
 function setupConnection<T>(dataConnection: DataConnection&{id: string}, connections: Map<string, DataConnection>, globalResponse$: Subject<any>, globalMessage$: Subject<any>, globalConnect$: Subject<any>, globalDisconnect$: Subject<any>, globalError$: Subject<any>) {
   dataConnection.id = dataConnection.peer;
@@ -54,7 +34,7 @@ function setupConnection<T>(dataConnection: DataConnection&{id: string}, connect
         peer: dataConnection as DataConnection & { id: string },
         // @ts-ignore
         collectionName: messageOrResponse.collectionName,
-        message: messageOrResponse?.message || messageOrResponse
+        message: messageOrResponse.message
       });
     }
   });
@@ -87,43 +67,20 @@ export function getConnectionHandlerPeerJS(
   const globalError$ = new Subject<RxError | RxTypeError>();
 
   peer.on('open', function (id) {
-    connectToPeers();
-  });
-
-  // @ts-ignore
-  window.addEventListener('peer.connect', (event:CustomEvent) => {
-    if (event.detail?.port) {
-      globalMessage$.asObservable().pipe(
-        filter((peerWithMessage: PeerWithMessage) => peerWithMessage.peer.id === event.detail.payload.options?.options.peerId)
-      ).subscribe((peerWithMessage: PeerWithMessage) => {
-        event.detail?.port?.postMessage({
-          event: event.detail.payload.options?.event, payload: peerWithMessage.message
-        });
+    const peers = url.read('ps');
+    if (!peers) {
+      return;
+    }
+    peers.split(',').forEach((peerId: string) => {
+      const dataConnection = peer.connect(peerId, {
+        reliable: true,
       });
-    }
-    if (connections.has(event.detail.payload.options.options.peerId)) {
-      return;
-    }
-    const dataConnection = peer.connect(event.detail.payload.options.options.peerId, {
-      reliable: true,
+      // @ts-ignore
+      setupConnection(dataConnection, connections, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
     });
-    // @ts-ignore
-    setupConnection(dataConnection, connections, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
-  });
-
-  // @ts-ignore
-  window.addEventListener('peer.send', (event:CustomEvent) => {
-    const dataConnection = connections.get(event.detail.payload.peerId);
-    if (!dataConnection) {
-      return;
-    }
-    dataConnection.send(event.detail.payload.message);
   });
 
   peer.on('connection', (dataConnection: DataConnection) => {
-    if (connections.has(dataConnection.peer)) {
-      return;
-    }
     // @ts-ignore
     setupConnection(dataConnection, connections, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
   });
@@ -144,9 +101,11 @@ export function getConnectionHandlerPeerJS(
       connect$: globalConnect$,
       disconnect$: globalDisconnect$,
       message$: globalMessage$.pipe(
+        shareReplay(),
         filter((x: any) => x.collectionName === options.collection.name)
       ),
       response$: globalResponse$.pipe(
+        shareReplay(),
         filter((x: any) => x.collectionName === options.collection.name)
       ),
       async send(peer: P2PPeer|DataConnection, message: P2PMessage) {

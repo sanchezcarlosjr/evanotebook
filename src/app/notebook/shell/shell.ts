@@ -1,9 +1,20 @@
 import EditorJS, {BlockAPI, OutputBlockData} from "@editorjs/editorjs";
-import {first, firstValueFrom, from, Observable, Subject, Subscription, switchMap} from 'rxjs';
+import {
+  concatMap,
+  first,
+  firstValueFrom,
+  from,
+  interval,
+  Observable,
+  Subject,
+  Subscription,
+  switchMap,
+  throttleTime
+} from 'rxjs';
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
 import {TitleSubjectService} from "../../title-subject.service";
-import * as url from "url";
+import * as url from "./url";
 
 enum JobStatus {
   created = 0, running = 1
@@ -25,7 +36,6 @@ export class Shell {
   private peerAddBlock = false;
   private peerRemoveBlock = false;
   private peerChangeBlock = false;
-
   constructor(private editor: EditorJS, private environment: any, private databaseManager: DatabaseManager) {
     environment.addEventListener('terminal.clear', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('clear');
@@ -192,20 +202,21 @@ export class Shell {
       }
       blockChanges$.next(event.detail);
     });
-    const readDetailFromBlockChanged = async (detail: any) => ({
-      index: detail.index,
-      savedData: await detail.target.save()
-    });
     blockChanges$.pipe(
-      switchMap(detail => from(readDetailFromBlockChanged(detail))),
-    ).subscribe((next: { index: number, savedData: SavedData }) => {
-      this.databaseManager.changeBlock({
-        id: next.savedData.id,
-        type: next.savedData.tool,
-        data: next.savedData.data,
-        index: next.index,
-      });
-    });
+      throttleTime(10),
+      concatMap(async (detail: any) => ({
+          index: detail.index,
+          savedData: await detail.target.save()
+        })),
+      concatMap((next: any) =>
+       this.databaseManager.changeBlock({
+          id: next.savedData.id,
+          type: next.savedData.tool,
+          data: next.savedData.data,
+          index: next.index,
+        })
+      )
+    ).subscribe();
     environment.addEventListener('shell.FormMessageChannel', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'form', payload: event.detail.payload.port
@@ -286,7 +297,7 @@ export class Shell {
       const blockCollection = await this.databaseManager.start();
       const documents = await firstValueFrom(blockCollection);
       let blocks: BlockDocument[] = await this.processDocuments(documents);
-      if (blocks.length === 0) {
+      if (blocks.length === 0 && !url.has("ps")) {
         blocks.push(this.databaseManager.generateDefaultBlock());
         this.databaseManager.upsert(blocks[0]);
       }
@@ -301,10 +312,13 @@ export class Shell {
     let blocks: BlockDocument[] = [];
     if (documents.length > 0) {
       for (const [index, block] of documents.entries()) {
-        if (block && block?.index >= 0) {
+        if (block && block?.index !== index) {
           await this.databaseManager.updateIndex(block, index);
+        }
+        if (block && block?.index >= 0) {
           blocks.push(block);
-        } else {
+        }
+        if (block && block?.index < 0) {
           await this.databaseManager.removeBlock(block.id);
         }
       }
@@ -313,6 +327,8 @@ export class Shell {
   }
 
   private async renderEditor(blocks: BlockDocument[], isMode2: boolean) {
+    if (url.has("ps") && blocks.length <= 1 && blocks[0]?.data?.text === "")
+      return;
     await this.editor.render({ 'version': '2.26.5', blocks });
     const newBlocks: OutputBlockData[] = await this.databaseManager.registerUrlProviders();
     if (newBlocks.length > 0) {
@@ -358,6 +374,10 @@ export class Shell {
     this.peerRemoveBlock = true;
     this.peerAddBlock = true;
     this.peerChangeBlock = true;
+    const toId = this.editor.blocks.getBlockByIndex(block.index)?.id ?? "";
+    if (block.id !== toId) {
+      this.editor.blocks.move(block.index, this.editor.blocks.getBlockIndex(block.id));
+    }
     this.editor.blocks.update(block.id, block.data);
   }
 

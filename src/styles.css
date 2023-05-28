@@ -502,6 +502,13 @@ h6 {
   width: 100%;
 }
 
+.ce-block {
+  -webkit-animation: none;
+  animation: none;
+  -webkit-animation-fill-mode: none;
+  animation-fill-mode: none;
+}
+
 .ce-block__content,
 .ce-toolbar__content {
   max-width: 70%;
