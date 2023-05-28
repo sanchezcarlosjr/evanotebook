@@ -195,6 +195,12 @@ export class DatabaseManager {
       globalThis.map = map;
       // @ts-ignore
       globalThis.filter = filter;
+      collections.blocks.postInsert((plainData, rxDocument) =>{
+        return this.increaseIndexes(plainData.index);
+      }, false);
+      collections.blocks.postRemove((plainData, rxDocument) =>{
+        return this.decreaseIndexes(plainData.index);
+      }, false);
       return collections.blocks.find({
         selector: {
           topic: {
@@ -509,8 +515,8 @@ export class DatabaseManager {
       id: randomCouchString(10),
       topic: this.topic,
       index: 0,
-      type: 'paragraph',
-      data: {text: ''},
+      type: 'header',
+      data: {level: 1, text: ''},
       createdBy: this._uuid,
       lastEditedBy: this._uuid
     };

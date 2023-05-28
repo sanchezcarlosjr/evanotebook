@@ -38,8 +38,6 @@ function setupConnection<T>(dataConnection: DataConnection&{id: string}, connect
   dataConnection.id = dataConnection.peer;
   connections.set(dataConnection.peer, dataConnection);
   dataConnection.on('data', (messageOrResponse: any) => {
-    console.log(messageOrResponse);
-    debugger;
     try {
       messageOrResponse = JSON.parse(messageOrResponse.toString());
     } catch (e) {
@@ -82,11 +80,11 @@ export function getConnectionHandlerPeerJS(
   // @ts-ignore
   window.peer = peer;
   const connections = new Map<string, DataConnection>();
-  const globalConnect$ = new ReplaySubject<P2PPeer>();
-  const globalDisconnect$ = new ReplaySubject<P2PPeer>();
-  const globalMessage$ = new ReplaySubject<PeerWithMessage>();
-  const globalResponse$ = new ReplaySubject<PeerWithResponse>();
-  const globalError$ = new ReplaySubject<RxError | RxTypeError>();
+  const globalConnect$ = new Subject<P2PPeer>();
+  const globalDisconnect$ = new Subject<P2PPeer>();
+  const globalMessage$ = new Subject<PeerWithMessage>();
+  const globalResponse$ = new Subject<PeerWithResponse>();
+  const globalError$ = new Subject<RxError | RxTypeError>();
 
   peer.on('open', function (id) {
     connectToPeers();

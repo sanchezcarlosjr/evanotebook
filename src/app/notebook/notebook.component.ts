@@ -12,6 +12,8 @@ import {MatCard} from "@angular/material/card";
 import {TreeComponent} from "./tree/tree.component";
 import {TitleSubjectService} from "../title-subject.service";
 import {Observable} from "rxjs";
+import {MatDialog} from "@angular/material/dialog";
+import {ShareDialogComponent} from "./share-dialog.component";
 
 function readAsDataURL(file: File): Promise<string> {
   if (!file) {
@@ -39,7 +41,7 @@ export class NotebookComponent implements OnInit {
   loading: boolean = true;
   name: string = "";
   history$: Observable<any> | undefined;
-  constructor(private injector: Injector,private _snackBar: MatSnackBar, private titleService: TitleSubjectService) {
+  constructor(private injector: Injector,private _snackBar: MatSnackBar, private titleService: TitleSubjectService, private dialog: MatDialog) {
   }
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
@@ -262,5 +264,9 @@ export class NotebookComponent implements OnInit {
 
   getNotebookLocation(item: any) {
     return `${location.origin}?p=${url.read('p')}&t=${item.topic}&n=${item.title}`
+  }
+
+  shareNotebook() {
+    this.dialog.open(ShareDialogComponent);
   }
 }

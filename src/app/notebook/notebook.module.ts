@@ -22,6 +22,9 @@ import {MatCardModule} from "@angular/material/card";
 import { TreeComponent } from './tree/tree.component';
 import {MatTreeModule} from "@angular/material/tree";
 import { CodeComponent } from './form/code/code.component';
+import { ShareDialogComponent } from './share-dialog.component';
+import {MatDialogModule} from "@angular/material/dialog";
+import { ClipboardModule } from '@angular/cdk/clipboard';
 
 @NgModule({
   declarations: [
@@ -29,6 +32,7 @@ import { CodeComponent } from './form/code/code.component';
     FormComponent,
     TableComponent,
     TreeComponent,
+    ShareDialogComponent,
     CodeComponent
   ],
     imports: [
@@ -43,10 +47,12 @@ import { CodeComponent } from './form/code/code.component';
         MatButtonModule,
         MatSnackBarModule,
         FormsModule,
+        MatDialogModule,
         MatTableModule,
         MatSortModule,
         MatPaginatorModule,
         MatTreeModule,
+        ClipboardModule,
         MatCardModule,
         MatRippleModule,
         MatRadioModule

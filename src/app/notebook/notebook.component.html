@@ -10,6 +10,7 @@
     <button mat-menu-item [matMenuTriggerFor]="history" >Open recent</button>
     <button mat-menu-item (click)="saveInUrl()">Save in URL</button>
     <button mat-menu-item (click)="removeUrlProviders()">Delete the URL parameter</button>
+    <button mat-menu-item (click)="shareNotebook()">Share notebook</button>
   </mat-menu>
   <mat-menu #history="matMenu">
     <a mat-menu-item *ngFor='let item of (history$ | async)' target="_blank" [href]="getNotebookLocation(item)">

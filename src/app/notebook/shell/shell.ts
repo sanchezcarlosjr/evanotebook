@@ -1,8 +1,9 @@
 import EditorJS, {BlockAPI, OutputBlockData} from "@editorjs/editorjs";
-import {first, from, Observable, Subject, Subscription, switchMap} from 'rxjs';
+import {first, firstValueFrom, from, Observable, Subject, Subscription, switchMap} from 'rxjs';
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
 import {TitleSubjectService} from "../../title-subject.service";
+import * as url from "url";
 
 enum JobStatus {
   created = 0, running = 1
@@ -174,7 +175,6 @@ export class Shell {
         data: savedData.data,
         index: event.detail.index
       });
-      await this.databaseManager.increaseIndexes(event.detail.index);
     });
     environment.addEventListener('block-removed', async (event: CustomEvent) => {
       if (this.peerRemoveBlock) {
@@ -281,91 +281,92 @@ export class Shell {
     return this;
   }
 
-  private renderFromDatabase(isMode2: boolean) {
-    this.databaseManager.start().then(blockCollection => {
-      blockCollection.pipe(
-        // @ts-ignore
-        first()
-      ).subscribe((documents) => {
-        let blocks: BlockDocument[] = [];
-        if (documents.length > 0) {
-          documents.forEach((block, index) => {
-            if (block && block?.index >= 0) {
-              this.databaseManager.updateIndex(block, index).then();
-              blocks.push(block);
-            } else {
-              this.databaseManager.removeBlock(block.id).then();
-            }
-          });
-        }
-        if (documents.length === 0) {
-          blocks.push(this.databaseManager.generateDefaultBlock());
-          this.databaseManager.upsert(blocks[0]);
-        }
-        this.editor.render({
-          'version': '2.26.5',
-          blocks
-        }).then(_ => {
-          return this.databaseManager.registerUrlProviders().then((blocks: OutputBlockData[]) => {
-            if (blocks.length > 0) {
-              this.editor.render({
-                'version': '2.26.5',
-                blocks
-              }).then(
-                _ => {
-                  if (isMode2) {
-                    window.dispatchEvent(new CustomEvent('shell.RunAll'));
-                  }
-                }
-              ).then(async _ => {
-                if (isMode2)
-                  return;
-                try {
-                  await this.databaseManager.removeAllBlocks();
-                  await this.databaseManager.bulkInsertBlocks(blocks);
-                } catch (e) {
-                }
-              });
-            } else {
-              if (isMode2) {
-                window.dispatchEvent(new CustomEvent('shell.RunAll'));
-              }
-            }
-          });
-        }).then(async _ => {
-          if (location.hash) {
-            document.getElementById(location.hash.substring(1))?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-              inline: "start"
-            });
-          }
-          this.databaseManager.insert$()?.subscribe((block: any) => {
-            this.peerAddBlock = true;
-            this.editor.blocks.insert(block.type, block.data, undefined, block.index, false, false, block.id);
-          });
-          this.databaseManager.remove$()?.subscribe((block: any) => {
-            this.peerRemoveBlock = true;
-            this.editor.blocks.delete(this.editor.blocks.getBlockIndex(block.id));
-          });
-          this.databaseManager.update$()?.subscribe((block: any) => {
-            this.peerRemoveBlock = true;
-            this.peerAddBlock = true;
-            this.peerChangeBlock = true;
-            this.editor.blocks.update(block.id, block.data);
-          });
-          this.databaseManager.replicateCollections().then().catch(console.log);
-          if (isMode2) {
-            return;
-          }
-          window.addEventListener('keydown', (event: KeyboardEvent) => {
-            if (event.ctrlKey && event.key === 's') {
-              event.preventDefault();
-              this.databaseManager.saveInUrl();
-            }
-          });
-        });
-      });
-    });
+  private async renderFromDatabase(isMode2: boolean) {
+    try {
+      const blockCollection = await this.databaseManager.start();
+      const documents = await firstValueFrom(blockCollection);
+      let blocks: BlockDocument[] = await this.processDocuments(documents);
+      if (blocks.length === 0) {
+        blocks.push(this.databaseManager.generateDefaultBlock());
+        this.databaseManager.upsert(blocks[0]);
+      }
+      await this.renderEditor(blocks, isMode2);
+      await this.addDatabaseEventHandlers(isMode2);
+    } catch (error) {
+      console.error('Error in renderFromDatabase:', error);
+    }
   }
+
+  private async processDocuments(documents: any[]) {
+    let blocks: BlockDocument[] = [];
+    if (documents.length > 0) {
+      for (const [index, block] of documents.entries()) {
+        if (block && block?.index >= 0) {
+          await this.databaseManager.updateIndex(block, index);
+          blocks.push(block);
+        } else {
+          await this.databaseManager.removeBlock(block.id);
+        }
+      }
+    }
+    return blocks;
+  }
+
+  private async renderEditor(blocks: BlockDocument[], isMode2: boolean) {
+    await this.editor.render({ 'version': '2.26.5', blocks });
+    const newBlocks: OutputBlockData[] = await this.databaseManager.registerUrlProviders();
+    if (newBlocks.length > 0) {
+      await this.editor.render({ 'version': '2.26.5', blocks: newBlocks });
+      if (isMode2) {
+        window.dispatchEvent(new CustomEvent('shell.RunAll'));
+      } else {
+        await this.databaseManager.removeAllBlocks();
+        await this.databaseManager.bulkInsertBlocks(newBlocks);
+      }
+    } else if (isMode2) {
+      window.dispatchEvent(new CustomEvent('shell.RunAll'));
+    }
+  }
+
+  private async addDatabaseEventHandlers(isMode2: boolean) {
+    if (location.hash) {
+      document.getElementById(location.hash.substring(1))?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "start"
+      });
+    }
+    this.databaseManager.insert$()?.subscribe((block: any) => this.handleBlockInsert(block));
+    this.databaseManager.remove$()?.subscribe((block: any) => this.handleBlockRemove(block));
+    this.databaseManager.update$()?.subscribe((block: any) => this.handleBlockUpdate(block));
+    await this.databaseManager.replicateCollections().catch(console.log);
+    if (isMode2) return;
+    window.addEventListener('keydown', (event: KeyboardEvent) => this.handleKeyPress(event));
+  }
+
+  private handleBlockInsert(block: any) {
+    this.peerAddBlock = true;
+    this.editor.blocks.insert(block.type, block.data, undefined, block.index, false, false, block.id);
+  }
+
+  private handleBlockRemove(block: any) {
+    this.peerRemoveBlock = true;
+    this.editor.blocks.delete(this.editor.blocks.getBlockIndex(block.id));
+  }
+
+  private handleBlockUpdate(block: any) {
+    this.peerRemoveBlock = true;
+    this.peerAddBlock = true;
+    this.peerChangeBlock = true;
+    this.editor.blocks.update(block.id, block.data);
+  }
+
+  private handleKeyPress(event: KeyboardEvent) {
+    if (event.ctrlKey && event.key === 's') {
+      event.preventDefault();
+      this.databaseManager.saveInUrl();
+    }
+  }
+
+
 }
