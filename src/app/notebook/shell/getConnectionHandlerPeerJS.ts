@@ -13,10 +13,10 @@ import {DataConnection, Peer, PeerConnectOption, PeerJSOption} from 'peerjs';
 import {newRxError, RxError, RxTypeError} from 'rxdb';
 import * as url from "./url";
 import {SyncOptionsP2P} from "rxdb/plugins/replication-p2p";
+import {DocumentObserver} from "./documentObserver";
 
-function setupConnection<T>(dataConnection: DataConnection&{id: string}, connections: Map<string, DataConnection>, globalResponse$: Subject<any>, globalMessage$: Subject<any>, globalConnect$: Subject<any>, globalDisconnect$: Subject<any>, globalError$: Subject<any>) {
+function setupConnection<T>(dataConnection: DataConnection&{id: string}, globalResponse$: Subject<any>, globalMessage$: Subject<any>, globalConnect$: Subject<any>, globalDisconnect$: Subject<any>, globalError$: Subject<any>) {
   dataConnection.id = dataConnection.peer;
-  connections.set(dataConnection.peer, dataConnection);
   dataConnection.on('data', (messageOrResponse: any) => {
     try {
       messageOrResponse = JSON.parse(messageOrResponse.toString());
@@ -42,7 +42,6 @@ function setupConnection<T>(dataConnection: DataConnection&{id: string}, connect
     globalConnect$.next(dataConnection as DataConnection & { id: string });
   });
   dataConnection.on('close', function () {
-    connections.delete(dataConnection.peer);
     globalDisconnect$.next(dataConnection as DataConnection & { id: string });
   });
   dataConnection.on('error', (error: any) => {
@@ -56,15 +55,14 @@ export function getConnectionHandlerPeerJS(
   id: string = randomCouchString(10),
   peerOptions?: PeerJSOption
 ): P2PConnectionHandlerCreator {
+  const globalConnect$ = new ReplaySubject<P2PPeer>();
+  const globalDisconnect$ = new ReplaySubject<P2PPeer>();
+  const globalMessage$ = new ReplaySubject<PeerWithMessage>();
+  const globalResponse$ = new ReplaySubject<PeerWithResponse>();
+  const globalError$ = new ReplaySubject<RxError | RxTypeError>();
   const peer = new Peer(id, peerOptions);
   // @ts-ignore
   window.peer = peer;
-  const connections = new Map<string, DataConnection>();
-  const globalConnect$ = new Subject<P2PPeer>();
-  const globalDisconnect$ = new Subject<P2PPeer>();
-  const globalMessage$ = new Subject<PeerWithMessage>();
-  const globalResponse$ = new Subject<PeerWithResponse>();
-  const globalError$ = new Subject<RxError | RxTypeError>();
 
   peer.on('open', function (id) {
     const peers = url.read('ps');
@@ -76,13 +74,13 @@ export function getConnectionHandlerPeerJS(
         reliable: true,
       });
       // @ts-ignore
-      setupConnection(dataConnection, connections, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
+      setupConnection(dataConnection, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
     });
   });
 
   peer.on('connection', (dataConnection: DataConnection) => {
     // @ts-ignore
-    setupConnection(dataConnection, connections, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
+    setupConnection(dataConnection, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
   });
 
   peer.on('error', function (error) {
@@ -100,14 +98,8 @@ export function getConnectionHandlerPeerJS(
       error$: globalError$,
       connect$: globalConnect$,
       disconnect$: globalDisconnect$,
-      message$: globalMessage$.pipe(
-        shareReplay(),
-        filter((x: any) => x.collectionName === options.collection.name)
-      ),
-      response$: globalResponse$.pipe(
-        shareReplay(),
-        filter((x: any) => x.collectionName === options.collection.name)
-      ),
+      message$: globalMessage$,
+      response$: globalResponse$,
       async send(peer: P2PPeer|DataConnection, message: P2PMessage) {
         (peer as DataConnection).send(JSON.stringify({collectionName: options.collection.name, message}));
       },

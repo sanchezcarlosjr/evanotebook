@@ -192,7 +192,14 @@ export class Shell {
         return;
       }
       await this.databaseManager.removeBlock(event.detail.target.id);
-      await this.databaseManager.decreaseIndexes(event.detail.index);
+    });
+    environment.addEventListener('block-moved', async (event: CustomEvent) => {
+      if (this.peerChangeBlock) {
+        this.peerChangeBlock = false;
+        return;
+      }
+      await this.databaseManager.updateBlockIndexById(event.detail.target.id, event.detail.toIndex);
+      await this.databaseManager.updateBlockIndexById(this.editor.blocks.getBlockByIndex(event.detail.toIndex)?.id ?? "", event.detail.fromIndex);
     });
     const blockChanges$ = new Subject<BlockAPI>();
     environment.addEventListener('block-changed', async (event: CustomEvent) => {
@@ -203,7 +210,6 @@ export class Shell {
       blockChanges$.next(event.detail);
     });
     blockChanges$.pipe(
-      throttleTime(10),
       concatMap(async (detail: any) => ({
           index: detail.index,
           savedData: await detail.target.save()
@@ -329,10 +335,10 @@ export class Shell {
   private async renderEditor(blocks: BlockDocument[], isMode2: boolean) {
     if (url.has("ps") && blocks.length <= 1 && blocks[0]?.data?.text === "")
       return;
-    await this.editor.render({ 'version': '2.26.5', blocks });
+    await this.editor.render({ version: '2.27.0', blocks });
     const newBlocks: OutputBlockData[] = await this.databaseManager.registerUrlProviders();
     if (newBlocks.length > 0) {
-      await this.editor.render({ 'version': '2.26.5', blocks: newBlocks });
+      await this.editor.render({ version: '2.27.0', blocks: newBlocks });
       if (isMode2) {
         window.dispatchEvent(new CustomEvent('shell.RunAll'));
       } else {

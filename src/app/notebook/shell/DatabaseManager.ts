@@ -15,6 +15,8 @@ import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
 import {DocumentObserver} from "./documentObserver";
+import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
+addRxPlugin(RxDBDevModePlugin);
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 
@@ -186,15 +188,9 @@ export class DatabaseManager {
           }
         }
       });
-      this.database$.next(this._database);
+      this.database$.next(this._database)
       // @ts-ignore
       globalThis.environment = DocumentObserver.setup(this.database$);
-      // @ts-ignore
-      globalThis.tap = tap;
-      // @ts-ignore
-      globalThis.map = map;
-      // @ts-ignore
-      globalThis.filter = filter;
       collections.blocks.postInsert((plainData, rxDocument) =>{
         return this.increaseIndexes(plainData.index);
       }, false);
@@ -246,7 +242,7 @@ export class DatabaseManager {
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
     // @ts-ignore
-    await this.replicatePool(this._database?.view, handler);
+    // await this.replicatePool(this._database?.view, handler);
   }
 
   async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
@@ -366,52 +362,45 @@ export class DatabaseManager {
     await this._database?.destroy();
   }
 
-  increaseIndexes(index: number) {
+  async modifyIndex(index: number, value: number) {
     // @ts-ignore
-    return this._database?.blocks?.find({
+    const blocks = await this._database?.blocks?.find({
       selector: {
         index: {
-          $gte: index
+          $gt: index
         },
         topic: {
           $eq: this.topic
         }
       }
-    }).update({
-      $inc: {
-        index: 1
-      },
-      $set: {
-        lastEditedBy: this._uuid
-      }
-    });
+    }).exec();
+    return Promise.all(blocks.map((block: RxDocument) =>
+      block.updateCRDT({
+        ifMatch: {
+          $inc: {
+            index: value
+          },
+          $set: {
+            lastEditedBy: this._uuid
+          }
+        }
+      })
+    ));
+  }
+
+  increaseIndexes(index: number) {
+    return this.modifyIndex(index, 1);
   }
 
   decreaseIndexes(index: number) {
-    // @ts-ignore
-    return this._database?.blocks?.find({
-      selector: {
-        index: {
-          $gte: index
-        },
-        topic: {
-          $eq: this.topic
-        }
-      }
-    }).update({
-      $inc: {
-        index: -1
-      },
-      $set: {
-        lastEditedBy: this._uuid
-      }
-    });
+    return this.modifyIndex(index, -1);
   }
 
   updateIndex(block: any, index: number) {
     if (!this._database || !block?.updateCRDT) {
       return Promise.resolve();
     }
+    console.log("UPDATE INDEX", block.id, index);
     // @ts-ignore
     return block?.updateCRDT({
       ifMatch: {
@@ -437,11 +426,15 @@ export class DatabaseManager {
     if (!this._database?.blocks && block.index < 0) {
       return;
     }
+    console.log("BLOCK", block);
     block.createdBy = this._uuid;
     block.lastEditedBy = this._uuid;
     block.topic = this.topic;
     // @ts-ignore
     await this._database?.blocks?.insertCRDT({
+      selector: {
+        id: {$exists: false}
+      },
       ifMatch: {
         $set: block
       }
@@ -459,7 +452,7 @@ export class DatabaseManager {
     if (!block) {
       return;
     }
-    window.dispatchEvent(new CustomEvent('saving'));
+    console.log("removeBlock", id, block.index);
     return block.updateCRDT({
       selector: {
         id: {$exists: true}
@@ -470,7 +463,31 @@ export class DatabaseManager {
           _deleted: true
         }
       }
-    });
+    }).then((_: any) => window.dispatchEvent(new CustomEvent('saving')));
+  }
+
+  async updateBlockIndexById(id: string, index: number) {
+    // @ts-ignore
+    if (!this._database?.blocks) {
+      return;
+    }
+    // @ts-ignore
+    const block = await this._database?.blocks?.findOne(id).exec();
+    if (!block)
+      return;
+    console.log("updateBlockIndexById", id, index);
+    // @ts-ignore
+    return block?.updateCRDT({
+      selector: {
+        index: { $ne: index }
+      },
+      ifMatch: {
+        $set: {
+          index,
+          lastEditedBy: this._uuid
+        }
+      },
+    }).then((_: any) => window.dispatchEvent(new CustomEvent('saving')));
   }
 
   async changeBlock(blockRow: BlockDocument) {
@@ -480,23 +497,20 @@ export class DatabaseManager {
     }
     // @ts-ignore
     const block = await this._database?.blocks?.findOne(blockRow.id).exec();
-    if (!block) {
+    if (!block)
       return;
-    }
     if (blockRow?.index === block?.index && _.isEqual(blockRow.data, block?._data?.data)) {
       return block;
     }
-    window.dispatchEvent(new CustomEvent('saving'));
+    console.log("changeBlock", blockRow.id, blockRow.data, block?._data?.data);
+    const changes = _.fromPairs(_.differenceWith(_.toPairs(blockRow), _.toPairs(block), _.isEqual));
+    changes["lastEditedBy"] = this._uuid;
+    // @ts-ignore
     return block.updateCRDT({
       ifMatch: {
-        $set: {
-          data: blockRow.data,
-          index: blockRow.index,
-          lastEditedBy: this._uuid,
-          _deleted: false
-        }
+        $set: changes
       }
-    });
+    }).then((_: any) => window.dispatchEvent(new CustomEvent('saving')));
   }
 
   removeAllBlocks() {
@@ -565,7 +579,7 @@ export class DatabaseManager {
       ),
     ).subscribe((blocks: RxDocument[]) => {
       this.writeCollectionURL({
-        version: '2.26.5',
+        version: '2.27.0',
         blocks: blocks.map((document: any) => ({
           id: document._data.id,
           type: document._data.type,

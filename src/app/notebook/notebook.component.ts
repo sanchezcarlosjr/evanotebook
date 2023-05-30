@@ -46,14 +46,26 @@ export class NotebookComponent implements OnInit {
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
     this.isMode2 = url.read("m") === "2";
+    let isLoadingPeer = url.has("ps");
     const editor = new EditorJS.default({
       holder: 'editor-js',
       autofocus: true,
       readOnly: this.isMode2,
       // @ts-ignore
       logLevel: "ERROR",
-      onChange(api: API, event: CustomEvent) {
-         window.dispatchEvent(event);
+      onChange(api: API, event: CustomEvent | CustomEvent[]) {
+        console.log(isLoadingPeer, event);
+         if(isLoadingPeer) {
+           isLoadingPeer  = false;
+           return;
+         }
+        if (Array.isArray(event)) {
+            event.forEach((e, id) => {
+              window.dispatchEvent(e);
+            });
+         } else {
+           window.dispatchEvent(event);
+         }
       },
       tools: {
         header: {
