@@ -22,19 +22,15 @@ function setupConnection<T>(dataConnection: DataConnection&{id: string}, globalR
       messageOrResponse = JSON.parse(messageOrResponse.toString());
     } catch (e) {
     }
-    if (messageOrResponse?.message?.result) {
+    if (messageOrResponse?.result) {
       globalResponse$.next({
         peer: dataConnection as DataConnection & { id: string },
-        // @ts-ignore
-        collectionName: messageOrResponse.collectionName,
-        response: messageOrResponse.message
+        response: messageOrResponse
       });
     } else {
       globalMessage$.next({
         peer: dataConnection as DataConnection & { id: string },
-        // @ts-ignore
-        collectionName: messageOrResponse.collectionName,
-        message: messageOrResponse.message
+        message: messageOrResponse
       });
     }
   });
@@ -95,13 +91,24 @@ export function getConnectionHandlerPeerJS(
 
   return (options: SyncOptionsP2P<any>) => {
     const handler: P2PConnectionHandler = {
-      error$: globalError$,
-      connect$: globalConnect$,
-      disconnect$: globalDisconnect$,
-      message$: globalMessage$,
-      response$: globalResponse$,
+      error$: globalError$.pipe(
+        tap(message => console.log("getConnectionHandlerPeerJS error", message))
+      ),
+      connect$: globalConnect$.pipe(
+        tap(message => console.log("getConnectionHandlerPeerJS connect", message))
+      ),
+      disconnect$: globalDisconnect$.pipe(
+        tap(message => console.log("getConnectionHandlerPeerJS disconnect", message))
+      ),
+      message$: globalMessage$.pipe(
+        tap(message => console.log("getConnectionHandlerPeerJS message", message))
+      ),
+      response$: globalResponse$.pipe(
+        tap(message => console.log("getConnectionHandlerPeerJS response", message))
+      ),
       async send(peer: P2PPeer|DataConnection, message: P2PMessage) {
-        (peer as DataConnection).send(JSON.stringify({collectionName: options.collection.name, message}));
+        console.log(message);
+        (peer as DataConnection).send(JSON.stringify(message));
       },
       destroy() {
         peer.destroy();
