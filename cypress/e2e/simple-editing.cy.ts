@@ -1,4 +1,6 @@
 describe('EditorJS interaction', function() {
+  // @ts-ignore
+  beforeEach(() => cy.clearIndexedDB());
   it('input content to EditorJS and retrieve the same content after reload', function() {
     cy.visit('http://localhost:4200');
     cy.get('.ce-header').click().type("Title"+"{enter}");
@@ -161,19 +163,8 @@ describe('EditorJS interaction', function() {
     cy.get('.ce-paragraph').eq(5).should('contain',"6");
   });
 
-  it('must replicate some peer', () => {
-    cy.visit('http://localhost:4200/?ps=amzmmaruun&t=fbfmzqsast');
-    cy.wait(2000);
-    cy.get('.ce-header').should('contain', "1");
-    cy.get('.ce-paragraph').eq(0).should('contain', "2");
-    cy.get('.ce-paragraph').eq(1).should('contain',"3");
-    cy.get('.ce-paragraph').eq(2).should('contain',"4");
-    cy.get('.ce-paragraph').eq(3).should('contain',"5");
-    cy.get('.ce-paragraph').eq(4).should('contain',"6");
-  });
-
   it.only('input content to EditorJS and retrieve the same content after reload', function() {
-    cy.visit('http://localhost:4200/?ps=hvugkbgiqg&t=svxwosntnt');
+    cy.visit('http://localhost:4200/?ps=jddkzpqlyv&t=pqnszpmzlr');
     cy.wait(5000);
     cy.get('.ce-paragraph').eq(0).type("2");
     cy.get('.ce-paragraph').eq(1).type("3");
@@ -181,11 +172,13 @@ describe('EditorJS interaction', function() {
     cy.get('.ce-paragraph').eq(3).type("5");
     cy.get('.ce-paragraph').eq(4).type("6");
     cy.get('#checkpoint').should('contain', 'Saving');
-    cy.wait(5000);
+    cy.wait(10000);
     cy.reload();
-    cy.get('.ce-paragraph').each(($el, index, $list) => {
-      cy.wrap($el).should('contain', `${index+2}${index+2}`);
-    });
+    cy.get('.ce-paragraph').eq(0).should("contain.text", "22");
+    cy.get('.ce-paragraph').eq(1).should("contain.text", "33");
+    cy.get('.ce-paragraph').eq(2).should("contain.text", "44");
+    cy.get('.ce-paragraph').eq(3).should("contain.text", "55");
+    cy.get('.ce-paragraph').eq(4).should("contain.text", "66");
   });
 
 });

@@ -1,15 +1,8 @@
 import EditorJS, {BlockAPI, OutputBlockData} from "@editorjs/editorjs";
 import {
-  concatMap,
-  first,
   firstValueFrom,
-  from,
-  interval,
   Observable,
-  Subject,
-  Subscription,
-  switchMap,
-  throttleTime
+  Subscription
 } from 'rxjs';
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
@@ -172,57 +165,60 @@ export class Shell {
         }
       }));
     });
-    environment.addEventListener('block-added', async (event: CustomEvent) => {
-      const savedData: SavedData = await event.detail.target.save();
-      // Peer can generate cycles because of the way it handles block-added events.
-      if (this.peerAddBlock) {
-        this.peerAddBlock = false;
-        return;
+    environment.addEventListener('bulk-editor-changes', async ({detail}: any) => {
+      const operations = detail.reduce((acc: Map<any, any>, event: CustomEvent) => {
+        if (!this.editor.blocks.getById(event.detail.target.id) && event.type !== 'block-removed') {
+          return acc;
+        }
+        event.detail.type = event.type;
+        acc.set(event.detail.target.id, event.detail);
+        return acc;
+      }, new Map());
+      for (const [_,operation] of operations) {
+        const savedData: SavedData = await operation.target.save();
+        const block = {
+          id: savedData.id,
+          type: savedData.tool,
+          data: savedData.data,
+          index: operation.index
+        };
+        switch (operation.type) {
+          case 'block-added': {
+            if (this.peerAddBlock) {
+              this.peerAddBlock = false;
+              return;
+            }
+            await this.databaseManager.addBlock(block);
+            break;
+          }
+          case 'block-removed': {
+            if (this.peerRemoveBlock) {
+              this.peerRemoveBlock = false;
+              return;
+            }
+            await this.databaseManager.removeBlock(block.id);
+            break;
+          }
+          case 'block-changed': {
+            if (this.peerChangeBlock) {
+              this.peerChangeBlock = false;
+              return;
+            }
+            await this.databaseManager.changeBlock(block);
+            break;
+          }
+          case 'block-moved': {
+            if (this.peerChangeBlock) {
+              this.peerChangeBlock = false;
+              return;
+            }
+            await this.databaseManager.updateBlockIndexById(operation.target.id, operation.toIndex);
+            await this.databaseManager.updateBlockIndexById(this.editor.blocks.getBlockByIndex(operation.toIndex)?.id ?? "", operation.fromIndex);
+            break;
+          }
+        }
       }
-      await this.databaseManager.addBlock({
-        id: savedData.id,
-        type: savedData.tool,
-        data: savedData.data,
-        index: event.detail.index
-      });
     });
-    environment.addEventListener('block-removed', async (event: CustomEvent) => {
-      if (this.peerRemoveBlock) {
-        this.peerRemoveBlock = false;
-        return;
-      }
-      await this.databaseManager.removeBlock(event.detail.target.id);
-    });
-    environment.addEventListener('block-moved', async (event: CustomEvent) => {
-      if (this.peerChangeBlock) {
-        this.peerChangeBlock = false;
-        return;
-      }
-      await this.databaseManager.updateBlockIndexById(event.detail.target.id, event.detail.toIndex);
-      await this.databaseManager.updateBlockIndexById(this.editor.blocks.getBlockByIndex(event.detail.toIndex)?.id ?? "", event.detail.fromIndex);
-    });
-    const blockChanges$ = new Subject<BlockAPI>();
-    environment.addEventListener('block-changed', async (event: CustomEvent) => {
-      if (this.peerChangeBlock) {
-        this.peerChangeBlock = false;
-        return;
-      }
-      blockChanges$.next(event.detail);
-    });
-    blockChanges$.pipe(
-      concatMap(async (detail: any) => ({
-          index: detail.index,
-          savedData: await detail.target.save()
-        })),
-      concatMap((next: any) =>
-       this.databaseManager.changeBlock({
-          id: next.savedData.id,
-          type: next.savedData.tool,
-          data: next.savedData.data,
-          index: next.index,
-        })
-      )
-    ).subscribe();
     environment.addEventListener('shell.FormMessageChannel', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'form', payload: event.detail.payload.port
@@ -282,8 +278,8 @@ export class Shell {
     };
   }
 
-  start(isMode2: boolean) {
-    this.renderFromDatabase(isMode2);
+  async start(isMode2: boolean) {
+    await this.renderFromDatabase(isMode2);
     return this;
   }
 

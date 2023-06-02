@@ -9,33 +9,36 @@ import type {
   PeerWithResponse
 } from 'rxdb/plugins/replication-p2p';
 
-import {DataConnection, Peer, PeerConnectOption, PeerJSOption} from 'peerjs';
 import {newRxError, RxError, RxTypeError} from 'rxdb';
 import * as url from "./url";
 import {SyncOptionsP2P} from "rxdb/plugins/replication-p2p";
-import {DocumentObserver} from "./documentObserver";
+import {PeerJSOption, Peer, DataConnection} from "peerjs";
 
 function setupConnection<T>(dataConnection: DataConnection&{id: string}, globalResponse$: Subject<any>, globalMessage$: Subject<any>, globalConnect$: Subject<any>, globalDisconnect$: Subject<any>, globalError$: Subject<any>) {
   dataConnection.id = dataConnection.peer;
+  dataConnection.on('open', function () {
+    globalConnect$.next(dataConnection as DataConnection & { id: string });
+  });
   dataConnection.on('data', (messageOrResponse: any) => {
     try {
       messageOrResponse = JSON.parse(messageOrResponse.toString());
     } catch (e) {
     }
-    if (messageOrResponse?.result) {
+    if (messageOrResponse?.message.result) {
       globalResponse$.next({
         peer: dataConnection as DataConnection & { id: string },
-        response: messageOrResponse
+        // @ts-ignore
+        collectionName: messageOrResponse.collectionName,
+        response: messageOrResponse.message
       });
     } else {
       globalMessage$.next({
         peer: dataConnection as DataConnection & { id: string },
-        message: messageOrResponse
+        // @ts-ignore
+        collectionName: messageOrResponse.collectionName,
+        message: messageOrResponse?.message || messageOrResponse
       });
     }
-  });
-  dataConnection.on('open', function () {
-    globalConnect$.next(dataConnection as DataConnection & { id: string });
   });
   dataConnection.on('close', function () {
     globalDisconnect$.next(dataConnection as DataConnection & { id: string });
@@ -67,7 +70,7 @@ export function getConnectionHandlerPeerJS(
     }
     peers.split(',').forEach((peerId: string) => {
       const dataConnection = peer.connect(peerId, {
-        reliable: true,
+        reliable: true
       });
       // @ts-ignore
       setupConnection(dataConnection, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
@@ -85,6 +88,12 @@ export function getConnectionHandlerPeerJS(
     }));
   });
 
+  peer.on('close', function () {
+    globalError$.next(newRxError('RC_P2P_PEER', {
+      error: new Error('peerjs connection closed')
+    }));
+  });
+
   peer.on('disconnected', function () {
     peer.reconnect();
   });
@@ -92,23 +101,26 @@ export function getConnectionHandlerPeerJS(
   return (options: SyncOptionsP2P<any>) => {
     const handler: P2PConnectionHandler = {
       error$: globalError$.pipe(
-        tap(message => console.log("getConnectionHandlerPeerJS error", message))
+        tap(error =>
+          window.dispatchEvent(new CustomEvent('openSnackBar', {detail: {payload: {message: error.message, action: "Got it!"}}}))
+        )
       ),
       connect$: globalConnect$.pipe(
-        tap(message => console.log("getConnectionHandlerPeerJS connect", message))
+        tap(peer =>
+          window.dispatchEvent(new CustomEvent('openSnackBar', {detail: {payload: {message: `Peer ${peer.id} has connected.`, action: "Got it!"}}}))
+        )
       ),
       disconnect$: globalDisconnect$.pipe(
-        tap(message => console.log("getConnectionHandlerPeerJS disconnect", message))
+        tap(peer => window.dispatchEvent(new CustomEvent('openSnackBar', {detail: {payload: {message: `Peer ${peer.id} has disconnected.`, action: "Got it!"}}})))
       ),
       message$: globalMessage$.pipe(
-        tap(message => console.log("getConnectionHandlerPeerJS message", message))
+        filter((x: any) => x.collectionName === options.collection.name)
       ),
       response$: globalResponse$.pipe(
-        tap(message => console.log("getConnectionHandlerPeerJS response", message))
+        filter((x: any) => x.collectionName === options.collection.name)
       ),
       async send(peer: P2PPeer|DataConnection, message: P2PMessage) {
-        console.log(message);
-        (peer as DataConnection).send(JSON.stringify(message));
+        (peer as DataConnection).send(JSON.stringify({collectionName: options.collection.name, message}));
       },
       destroy() {
         peer.destroy();

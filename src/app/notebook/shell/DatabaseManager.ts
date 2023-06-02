@@ -15,8 +15,6 @@ import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
 import {DocumentObserver} from "./documentObserver";
-import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
-addRxPlugin(RxDBDevModePlugin);
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 
@@ -188,7 +186,7 @@ export class DatabaseManager {
           }
         }
       });
-      this.database$.next(this._database)
+      this.database$.next(this._database);
       // @ts-ignore
       globalThis.environment = DocumentObserver.setup(this.database$);
       collections.blocks.postInsert((plainData, rxDocument) =>{
@@ -237,12 +235,12 @@ export class DatabaseManager {
       port: parseInt(url.read("peerjsport", "443")),
       secure: JSON.parse(url.read("peerjssecure", "true")),
       path: url.read("peerjspath", "/"),
-      key: url.read("peerjskey", "peerjs")
+      key: url.read("peerjskey", "peerjs"),
     });
     // @ts-ignore
     await this.replicatePool(this._database?.blocks, handler);
     // @ts-ignore
-    // await this.replicatePool(this._database?.view, handler);
+    await this.replicatePool(this._database?.view, handler);
   }
 
   async replicatePool(collection: any, connectionHandlerCreator: P2PConnectionHandlerCreator) {
@@ -400,8 +398,7 @@ export class DatabaseManager {
     if (!this._database || !block?.updateCRDT) {
       return Promise.resolve();
     }
-    console.log("UPDATE INDEX", block.id, index);
-    // @ts-ignore
+``    // @ts-ignore
     return block?.updateCRDT({
       ifMatch: {
         $set: {
@@ -426,7 +423,6 @@ export class DatabaseManager {
     if (!this._database?.blocks && block.index < 0) {
       return;
     }
-    console.log("BLOCK", block);
     block.createdBy = this._uuid;
     block.lastEditedBy = this._uuid;
     block.topic = this.topic;
@@ -452,7 +448,6 @@ export class DatabaseManager {
     if (!block) {
       return;
     }
-    console.log("removeBlock", id, block.index);
     return block.updateCRDT({
       selector: {
         id: {$exists: true}
@@ -475,7 +470,6 @@ export class DatabaseManager {
     const block = await this._database?.blocks?.findOne(id).exec();
     if (!block)
       return;
-    console.log("updateBlockIndexById", id, index);
     // @ts-ignore
     return block?.updateCRDT({
       selector: {
@@ -493,22 +487,23 @@ export class DatabaseManager {
   async changeBlock(blockRow: BlockDocument) {
     // @ts-ignore
     if (!this._database?.blocks) {
-      return;
+      return null;
     }
     // @ts-ignore
     const block = await this._database?.blocks?.findOne(blockRow.id).exec();
-    if (!block)
-      return;
-    if (blockRow?.index === block?.index && _.isEqual(blockRow.data, block?._data?.data)) {
+    if (!block) {
+      return this.addBlock(blockRow);
+    }
+    if (_.isEqual(blockRow.data, block?._data?.data)) {
       return block;
     }
-    console.log("changeBlock", blockRow.id, blockRow.data, block?._data?.data);
-    const changes = _.fromPairs(_.differenceWith(_.toPairs(blockRow), _.toPairs(block), _.isEqual));
-    changes["lastEditedBy"] = this._uuid;
-    // @ts-ignore
     return block.updateCRDT({
       ifMatch: {
-        $set: changes
+        $set: {
+          data: blockRow.data,
+          index: blockRow.index,
+          lastEditedBy: this._uuid
+        }
       }
     }).then((_: any) => window.dispatchEvent(new CustomEvent('saving')));
   }

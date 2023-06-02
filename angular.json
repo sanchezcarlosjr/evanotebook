@@ -32,7 +32,6 @@
               "@fortawesome/fontawesome-free/css/all.css"
             ],
             "scripts": [
-              "src/app/notebook/shell/peer.js"
             ],
             "webWorkerTsConfig": "tsconfig.worker.json",
             "serviceWorker": true,

@@ -46,7 +46,6 @@ export class NotebookComponent implements OnInit {
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
     this.isMode2 = url.read("m") === "2";
-    let isLoadingPeer = url.has("ps");
     const editor = new EditorJS.default({
       holder: 'editor-js',
       autofocus: true,
@@ -54,17 +53,10 @@ export class NotebookComponent implements OnInit {
       // @ts-ignore
       logLevel: "ERROR",
       onChange(api: API, event: CustomEvent | CustomEvent[]) {
-        console.log(isLoadingPeer, event);
-         if(isLoadingPeer) {
-           isLoadingPeer  = false;
-           return;
-         }
         if (Array.isArray(event)) {
-            event.forEach((e, id) => {
-              window.dispatchEvent(e);
-            });
+           window.dispatchEvent(new CustomEvent('bulk-editor-changes', {detail: event}));
          } else {
-           window.dispatchEvent(event);
+          window.dispatchEvent(new CustomEvent('bulk-editor-changes', {detail: [event]}));
          }
       },
       tools: {
@@ -175,8 +167,8 @@ export class NotebookComponent implements OnInit {
     editor.isReady.then(() => import('./shell/DatabaseManager').then(lib => new lib.DatabaseManager()))
       .then(manager => import("./shell/shell")
         .then(lib =>
-          new lib.Shell(editor as any, window, manager).start(this.isMode2).registerHistoryChanges(this.titleService).history$()
-      ).then(
+          new lib.Shell(editor as any, window, manager).start(this.isMode2)
+      ).then(shell => shell.registerHistoryChanges(this.titleService).history$()).then(
         (history$: Observable<any>) => {
           customElements.define('nk-form', createCustomElement(FormComponent, {injector: this.injector}));
           customElements.define('nk-table', createCustomElement(TableComponent, {injector: this.injector}));
