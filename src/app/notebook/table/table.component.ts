@@ -9,7 +9,7 @@ import {MatSort} from "@angular/material/sort";
   styleUrls: ['./table.component.css']
 })
 export class TableComponent implements OnInit, AfterViewInit {
-  @Input() port: MessagePort | undefined;
+  @Input() port: MessagePort | any;
   displayedColumns: string[] = [];
   dataSource: MatTableDataSource<object> = new MatTableDataSource<object>([]);
   @ViewChild(MatSort) sort: MatSort | null = null;
@@ -40,8 +40,6 @@ export class TableComponent implements OnInit, AfterViewInit {
     }
   }
 
-
-
   ngAfterViewInit() {
     this.dataSource.sort = this.sort;
     this.dataSource.paginator = this.paginator;
@@ -52,5 +50,9 @@ export class TableComponent implements OnInit, AfterViewInit {
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();
     }
+  }
+
+  clickRecord(row: any) {
+    this.port.postMessage({type: 'click', row});
   }
 }

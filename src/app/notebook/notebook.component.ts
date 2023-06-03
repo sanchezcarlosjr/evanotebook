@@ -8,12 +8,12 @@ import {TableComponent} from "./table/table.component";
 import {MatToolbar} from "@angular/material/toolbar";
 import {MatButton} from "@angular/material/button";
 import {MatMenu} from "@angular/material/menu";
-import {MatCard} from "@angular/material/card";
 import {TreeComponent} from "./tree/tree.component";
 import {TitleSubjectService} from "../title-subject.service";
-import {Observable} from "rxjs";
 import {MatDialog} from "@angular/material/dialog";
 import {ShareDialogComponent} from "./share-dialog.component";
+import {HistoryComponent} from "./history.component";
+import {DatabaseManager} from "./shell/DatabaseManager";
 
 function readAsDataURL(file: File): Promise<string> {
   if (!file) {
@@ -40,8 +40,13 @@ export class NotebookComponent implements OnInit {
   isMode2: boolean = true;
   loading: boolean = true;
   name: string = "";
-  history$: Observable<any> | undefined;
-  constructor(private injector: Injector,private _snackBar: MatSnackBar, private titleService: TitleSubjectService, private dialog: MatDialog) {
+  constructor(
+    private injector: Injector,
+    private _snackBar: MatSnackBar,
+    private titleService: TitleSubjectService,
+    private dialog: MatDialog,
+    private database: DatabaseManager,
+    ) {
   }
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
@@ -164,20 +169,18 @@ export class NotebookComponent implements OnInit {
     this.loading = false;
     this.titleService.setTitle(url.read("n", "EvaNotebook"));
     this.name = this.titleService.getTitle();
-    editor.isReady.then(() => import('./shell/DatabaseManager').then(lib => new lib.DatabaseManager()))
-      .then(manager => import("./shell/shell")
+    editor.isReady
+      .then(_ => import("./shell/shell")
         .then(lib =>
-          new lib.Shell(editor as any, window, manager).start(this.isMode2)
-      ).then(shell => shell.registerHistoryChanges(this.titleService).history$()).then(
-        (history$: Observable<any>) => {
+          new lib.Shell(editor as any, window, this.database).start(this.isMode2)
+      ).then(shell => shell.registerHistoryChanges(this.titleService)).then(
+        () => {
           customElements.define('nk-form', createCustomElement(FormComponent, {injector: this.injector}));
           customElements.define('nk-table', createCustomElement(TableComponent, {injector: this.injector}));
           customElements.define('nk-tree', createCustomElement(TreeComponent, {injector: this.injector}));
           customElements.define('nk-toolbar', createCustomElement(MatToolbar, {injector: this.injector}));
           customElements.define('nk-button', createCustomElement(MatButton, {injector: this.injector}));
           customElements.define('nk-menu', createCustomElement(MatMenu, {injector: this.injector}));
-          customElements.define('nk-card', createCustomElement(MatCard, {injector: this.injector}));
-          this.history$ = history$;
         }
     ));
     if (!this.isMode2) {
@@ -264,11 +267,11 @@ export class NotebookComponent implements OnInit {
     url.remove("u");
   }
 
-  getNotebookLocation(item: any) {
-    return `${location.origin}?p=${url.read('p')}&t=${item.topic}&n=${item.title}`
-  }
-
   shareNotebook() {
     this.dialog.open(ShareDialogComponent);
+  }
+
+  openRecent() {
+    this.dialog.open(HistoryComponent);
   }
 }

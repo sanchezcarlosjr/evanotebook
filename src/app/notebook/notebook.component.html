@@ -7,16 +7,10 @@
     <button mat-menu-item onclick="document.getElementById('notebook-file').click()">
       Open <input id="notebook-file" class="input-files" type="file" accept="application/json" (change)="importNotebook($event)">
     </button>
-    <button mat-menu-item [matMenuTriggerFor]="history" >Open recent</button>
+    <button mat-menu-item  (click)="openRecent()" >Open recent</button>
     <button mat-menu-item (click)="saveInUrl()">Save in URL</button>
     <button mat-menu-item (click)="removeUrlProviders()">Delete the URL parameter</button>
     <button mat-menu-item (click)="shareNotebook()">Share notebook</button>
-  </mat-menu>
-  <mat-menu #history="matMenu">
-    <a mat-menu-item *ngFor='let item of (history$ | async)' target="_blank" [href]="getNotebookLocation(item)">
-      <span class="mdc-list-item__primary-text history-element">{{item.title}}</span>
-      <span class="mdc-list-item__secondary-text history-element">{{item.createdAt.toLocaleString()}}</span>
-    </a>
   </mat-menu>
   <button mat-button [matMenuTriggerFor]="runtimeMenu">Runtime</button>
   <mat-menu #runtimeMenu="matMenu">

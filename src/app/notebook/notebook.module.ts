@@ -25,6 +25,7 @@ import { CodeComponent } from './form/code/code.component';
 import { ShareDialogComponent } from './share-dialog.component';
 import {MatDialogModule} from "@angular/material/dialog";
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import {HistoryComponent} from "./history.component";
 
 @NgModule({
   declarations: [
@@ -33,6 +34,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     TableComponent,
     TreeComponent,
     ShareDialogComponent,
+    HistoryComponent,
     CodeComponent
   ],
     imports: [

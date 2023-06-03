@@ -15,6 +15,7 @@ import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
 import {DocumentObserver} from "./documentObserver";
+import {Injectable} from "@angular/core";
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 
@@ -39,6 +40,9 @@ export type BlockDocument =
   OutputBlockData
   & { createdBy?: string, index?: number, lastEditedBy?: string, topic?: string };
 
+@Injectable({
+  providedIn: 'root',
+})
 export class DatabaseManager {
   private _uuid: string | undefined;
   private topic: string | undefined;
@@ -73,10 +77,11 @@ export class DatabaseManager {
           (x.map((y: any) => ({
             title: y._data.title,
             topic: y._data.topic,
-            createdAt: new Date(y._data.createdAt)
-          }))).sort(
-            (a: { createdAt: Date }, b: { createdAt: Date }) => b.createdAt.getTime() - a.createdAt.getTime()
-          )
+            ['Created By']: y._data.createdBy,
+            ['Last Edited By']: y._data.lastEditedBy,
+            ['Created At']: new Date(y._data.createdAt).toLocaleString(),
+            ['Updated At']: new Date(y._data.updatedAt).toLocaleString(),
+          })))
         ),
       ))
     );
@@ -102,6 +107,18 @@ export class DatabaseManager {
                 maxLength: 100
               },
               createdAt: {
+                type: 'string',
+                maxLength: 100
+              },
+              updatedAt: {
+                type: 'string',
+                maxLength: 100
+              },
+              createdBy: {
+                type: 'string',
+                maxLength: 100
+              },
+              lastEditedBy: {
                 type: 'string',
                 maxLength: 100
               },
@@ -189,10 +206,15 @@ export class DatabaseManager {
       this.database$.next(this._database);
       // @ts-ignore
       globalThis.environment = DocumentObserver.setup(this.database$);
-      collections.blocks.postInsert((plainData, rxDocument) =>{
+      collections.blocks.postInsert(async (plainData, rxDocument) =>{
+        await this.updateHistory();
         return this.increaseIndexes(plainData.index);
       }, false);
-      collections.blocks.postRemove((plainData, rxDocument) =>{
+      collections.blocks.postCreate(async (plainData, rxDocument) => {
+        return this.updateHistory();
+      });
+      collections.blocks.postRemove(async (plainData, rxDocument) => {
+        await this.updateHistory();
         return this.decreaseIndexes(plainData.index);
       }, false);
       return collections.blocks.find({
@@ -531,7 +553,7 @@ export class DatabaseManager {
     };
   }
 
-  saveNotebookInHistory(notebook: { title: string }) {
+  updateHistory(notebook?: { title?: string }) {
     // @ts-ignore
     return firstValueFrom(
       this.database$.pipe(
@@ -543,14 +565,19 @@ export class DatabaseManager {
           },
           ifMatch: {
             $set: {
-              title: notebook.title,
               topic: this.topic,
-              createdAt: new Date().toString()
+              createdAt: new Date().toString(),
+              updatedAt: new Date().toString(),
+              lastEditedBy: this._uuid,
+              createdBy: this._uuid,
+              ...notebook
             }
           },
           ifNotMatch: {
             $set: {
-              title: notebook.title
+              updatedAt: new Date().toString(),
+              lastEditedBy: this._uuid,
+              ...notebook
             }
           }
         })))

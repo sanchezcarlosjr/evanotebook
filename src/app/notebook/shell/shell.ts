@@ -289,7 +289,7 @@ export class Shell {
 
   registerHistoryChanges(titleService: TitleSubjectService) {
     titleService.get$().subscribe((title) =>
-      this.databaseManager.saveNotebookInHistory({title}).then()
+      this.databaseManager.updateHistory({title}).then()
     );
     return this;
   }
