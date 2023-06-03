@@ -275,6 +275,18 @@ async function create_db() {
             type: 'string',
             maxLength: 100
           },
+          updatedAt: {
+            type: 'string',
+            maxLength: 100
+          },
+          createdBy: {
+            type: 'string',
+            maxLength: 100
+          },
+          lastEditedBy: {
+            type: 'string',
+            maxLength: 100
+          },
           title: {
             type: 'string',
             maxLength: 255
@@ -289,37 +301,68 @@ async function create_db() {
     },
     blocks: {
       schema: {
-        title: 'blocks', version: 0, primaryKey: 'id', type: 'object', properties: {
+        title: 'blocks',
+        version: 0,
+        primaryKey: 'id',
+        type: 'object',
+        properties: {
           id: {
-            type: 'string', maxLength: 100
-          }, lastEditedBy: {
             type: 'string',
-          }, topic: {
-            type: 'string', maxLength: 100, default: "EvaNotebook"
-          }, index: {
-            type: 'number', minimum: 0, maximum: 1000, multipleOf: 1
-          }, createdBy: {
+            maxLength: 100
+          },
+          topic: {
             type: 'string',
-          }, type: {
+            maxLength: 100,
+            default: "EvaNotebook"
+          },
+          lastEditedBy: {
+            type: 'string',
+          },
+          index: {
+            type: 'number',
+            minimum: 0,
+            maximum: 1000,
+            multipleOf: 1
+          },
+          createdBy: {
+            type: 'string',
+          },
+          type: {
             type: 'string'
-          }, data: {
+          },
+          data: {
             type: 'object'
-          }, tunes: {
+          },
+          tunes: {
             type: 'object'
-          }, crdts: getCRDTSchemaPart()
-        }, required: ['id', 'type', 'data', 'index', 'lastEditedBy', 'createdBy'], indexes: ['index'], crdt: {
+          },
+          crdts: getCRDTSchemaPart()
+        },
+        required: ['id', 'type', 'data', 'index', 'lastEditedBy', 'createdBy'],
+        indexes: ['index'],
+        crdt: {
           field: 'crdts'
         }
       }
-    }, view: {
+    },
+    view: {
       schema: {
-        title: 'view', version: 0, primaryKey: 'id', type: 'object', properties: {
+        title: 'view',
+        version: 0,
+        primaryKey: 'id',
+        type: 'object',
+        properties: {
           id: {
-            type: 'string', maxLength: 100
-          }, m: {
+            type: 'string',
+            maxLength: 100
+          },
+          m: {
             type: 'object'
-          }, crdts: getCRDTSchemaPart()
-        }, required: ['id'], crdt: {
+          },
+          crdts: getCRDTSchemaPart()
+        },
+        required: ['id'],
+        crdt: {
           field: 'crdts'
         }
       }
