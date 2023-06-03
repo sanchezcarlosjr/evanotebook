@@ -28,7 +28,12 @@ export class ShareDialogComponent {
   }
 
   get collaborativeURL() {
-    return `${location.origin}?ps=${url.read('p')}&t=${url.read('t')}&n=${url.read('n', "EvaNotebook")}`;
+    const collaborativeUrl = new URL(location.href);
+    collaborativeUrl.searchParams.delete("p");
+    collaborativeUrl.searchParams.delete("c");
+    collaborativeUrl.searchParams.delete("u");
+    collaborativeUrl.searchParams.set('ps', url.read('p'));
+    return collaborativeUrl.toString();
   }
 
   closeDialog() {
