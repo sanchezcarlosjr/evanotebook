@@ -91,11 +91,9 @@ export class MQTT implements Protocol {
   send(options: any) {
     this.mqtt?.unsafePublish(options.topic, options.message, options.options);
   }
-
   toJSON() {
     return undefined;
   }
-
   connect(options: IMqttServiceOptions & { topic: string }) {
     options = {
       protocol: 'wss',
@@ -122,3 +120,8 @@ export class MQTT implements Protocol {
     );
   }
 }
+
+// @ts-ignore
+globalThis.Mqtt = MqttService;
+// @ts-ignore
+globalThis.Websocket = WebSocket;

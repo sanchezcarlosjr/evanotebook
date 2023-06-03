@@ -64,25 +64,26 @@ export class DocumentObserver {
 
   // Consult https://github.com/lgandecki/modifyjs
   async set(p: string | symbol, newValue: any, operation: string = '$set') {
-    // @ts-ignore
-    this[p] = newValue;
-    await firstValueFrom(this.db.pipe(concatMap(d => d[this.collection].insertCRDT({
+    const result = await firstValueFrom(this.db.pipe(concatMap(d => d[this.collection].insertCRDT({
       selector: {
-        id: {$exists: false}
+        id: {$exists: true}
       },
       ifMatch: {
-        $set: {
-          id: this.documentId,
+        [operation]: {
           [p]: newValue
         }
       },
       ifNotMatch: {
-        [operation]: {
+        $set: {
+          id: this.documentId,
           [p]: newValue
         }
       }
     }))));
-    return newValue;
+    // @ts-ignore
+    this[p] = result._data[p];
+    // @ts-ignore
+    return result._data[p];
   }
 
   inc(p: string | symbol, newValue: any) {
@@ -120,6 +121,5 @@ export class DocumentObserver {
   rename(p: string | symbol, newValue: any) {
     return this.set(p, newValue, '$rename');
   }
-
 
 }
