@@ -1,4 +1,4 @@
-import {filter, ReplaySubject, shareReplay, Subject, tap} from 'rxjs';
+import {filter, ReplaySubject, Subject, tap} from 'rxjs';
 import {PROMISE_RESOLVE_VOID, randomCouchString} from 'rxdb/plugins/utils';
 import type {
   P2PConnectionHandler,
@@ -100,11 +100,7 @@ export function getConnectionHandlerPeerJS(
 
   return (options: SyncOptionsP2P<any>) => {
     const handler: P2PConnectionHandler = {
-      error$: globalError$.pipe(
-        tap(error =>
-          window.dispatchEvent(new CustomEvent('openSnackBar', {detail: {payload: {message: error.message, action: "Got it!"}}}))
-        )
-      ),
+      error$: globalError$,
       connect$: globalConnect$.pipe(
         tap(peer =>
           window.dispatchEvent(new CustomEvent('openSnackBar', {detail: {payload: {message: `Peer ${peer.id} has connected.`, action: "Got it!"}}}))
