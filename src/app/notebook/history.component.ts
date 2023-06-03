@@ -37,7 +37,6 @@ export class HistoryComponent implements OnInit {
   }
 
   getNotebookLocation(item: any) {
-    console.log(item);
     return `${location.origin}?p=${url.read('p')}&t=${item.topic}&n=${item.title}`
   }
 
