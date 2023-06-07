@@ -14,6 +14,7 @@ import {MatDialog} from "@angular/material/dialog";
 import {ShareDialogComponent} from "./share-dialog.component";
 import {HistoryComponent} from "./history.component";
 import {DatabaseManager} from "./shell/DatabaseManager";
+import {transformBulkEditorChanges} from "./transform-bulk-editor-changes";
 
 function readAsDataURL(file: File): Promise<string> {
   if (!file) {
@@ -58,11 +59,8 @@ export class NotebookComponent implements OnInit {
       // @ts-ignore
       logLevel: "ERROR",
       onChange(api: API, event: CustomEvent | CustomEvent[]) {
-        if (Array.isArray(event)) {
-           window.dispatchEvent(new CustomEvent('bulk-editor-changes', {detail: event}));
-         } else {
-          window.dispatchEvent(new CustomEvent('bulk-editor-changes', {detail: [event]}));
-         }
+        const bulkEditorChanges = transformBulkEditorChanges(Array.isArray(event) ? event : [event]);
+        window.dispatchEvent(new CustomEvent('bulk-editor-changes', {detail: bulkEditorChanges}))
       },
       tools: {
         header: {

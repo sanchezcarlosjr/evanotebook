@@ -166,21 +166,15 @@ export class Shell {
       }));
     });
     environment.addEventListener('bulk-editor-changes', async ({detail}: any) => {
-      const operations = detail.reduce((acc: Map<any, any>, event: CustomEvent) => {
-        if (!this.editor.blocks.getById(event.detail.target.id) && event.type !== 'block-removed') {
-          return acc;
-        }
-        event.detail.type = event.type;
-        acc.set(event.detail.target.id, event.detail);
-        return acc;
-      }, new Map());
-      for (const [_,operation] of operations) {
-        const savedData: SavedData = await operation.target.save();
+      const operations: CustomEvent[] = detail.filter((operation: CustomEvent) =>
+        this.editor.blocks.getById(operation.detail.target.id) || operation.type === 'block-removed');
+      for (const operation of operations) {
+        const savedData: SavedData = await operation.detail.target.save();
         const block = {
           id: savedData.id,
           type: savedData.tool,
           data: savedData.data,
-          index: operation.index
+          index: editor.blocks.getBlockIndex(savedData.id)
         };
         switch (operation.type) {
           case 'block-added': {
@@ -212,8 +206,11 @@ export class Shell {
               this.peerChangeBlock = false;
               return;
             }
-            await this.databaseManager.updateBlockIndexById(operation.target.id, operation.toIndex);
-            await this.databaseManager.updateBlockIndexById(this.editor.blocks.getBlockByIndex(operation.toIndex)?.id ?? "", operation.fromIndex);
+            const fromIndex = Math.min(operation.detail.fromIndex, operation.detail.toIndex);
+            const toIndex = Math.max(operation.detail.fromIndex, operation.detail.toIndex);
+            for(let i = fromIndex; i <= toIndex; i++) {
+              await this.databaseManager.updateBlockIndexById(this.editor.blocks.getBlockByIndex(i)?.id ?? "", i);
+            }
             break;
           }
         }

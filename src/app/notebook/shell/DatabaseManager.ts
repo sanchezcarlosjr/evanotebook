@@ -420,7 +420,7 @@ export class DatabaseManager {
     if (!this._database || !block?.updateCRDT) {
       return Promise.resolve();
     }
-``    // @ts-ignore
+    // @ts-ignore
     return block?.updateCRDT({
       ifMatch: {
         $set: {
@@ -553,7 +553,7 @@ export class DatabaseManager {
     };
   }
 
-  updateHistory(notebook?: { title?: string }) {
+  updateHistory(notebook: { title?: string } = {}) {
     // @ts-ignore
     return firstValueFrom(
       this.database$.pipe(
