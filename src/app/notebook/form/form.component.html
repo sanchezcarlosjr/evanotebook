@@ -1,5 +1,6 @@
 <jsonforms
   *ngIf="isValidForm"
+  #jsonforms
   [data]="data"
   [schema]="schema"
   [uischema]="uischema"
@@ -8,3 +9,4 @@
   (dataChange)="dataChange($event)"
   (errors)="onErrorChange($event)"
 ></jsonforms>
+<button *ngIf="isSubmitButtonAvailable" (click)="submit()" mat-raised-button color="primary">Save</button>

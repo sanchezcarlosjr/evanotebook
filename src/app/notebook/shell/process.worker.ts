@@ -1065,7 +1065,7 @@ class ProcessWorker {
       return acc;
     }, buildTree(transformer)));
     // Consult https://jsonforms.io/ to learn more about options.
-    environment.form = (options: { uischema: object, schema: object, data: any }) => observeResource('form', {
+    environment.form = (options: { uischema: object, schema: object, data: any, isSubmitButtonAvailable: boolean }) => observeResource('form', {
       event: 'form', payload: {
         threadId: self.name
       }
@@ -1076,7 +1076,7 @@ class ProcessWorker {
         if (event.data.type === "ready") {
           port.postMessage({type: "setOptions", options});
         }
-        if (event.data.type === "data") {
+        if (event.data.type === "data" && event.data.submit == options.isSubmitButtonAvailable) {
           observer.next(event.data.data);
         }
       };
