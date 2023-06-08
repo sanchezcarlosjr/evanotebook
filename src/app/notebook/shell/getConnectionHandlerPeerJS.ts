@@ -62,6 +62,7 @@ export function getConnectionHandlerPeerJS(
   const peer = new Peer(id, peerOptions);
   // @ts-ignore
   window.peer = peer;
+  window.peerGlobalMessage$ = globalMessage$;
 
   peer.on('open', function (id) {
     const peers = url.read('ps');
