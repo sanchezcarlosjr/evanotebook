@@ -17,14 +17,19 @@ import {PeerJSOption, Peer, DataConnection} from "peerjs";
 function setupConnection<T>(dataConnection: DataConnection&{id: string}, globalResponse$: Subject<any>, globalMessage$: Subject<any>, globalConnect$: Subject<any>, globalDisconnect$: Subject<any>, globalError$: Subject<any>) {
   dataConnection.id = dataConnection.peer;
   dataConnection.on('open', function () {
-    globalConnect$.next(dataConnection as DataConnection & { id: string });
+    // @ts-ignore
+    const metadata = JSON.parse(dataConnection.metadata?.toString() ?? "{}");
+    // @ts-ignore
+    if (!metadata?.ignore) {
+       globalConnect$.next(dataConnection as DataConnection & { id: string });
+    }
   });
   dataConnection.on('data', (messageOrResponse: any) => {
     try {
       messageOrResponse = JSON.parse(messageOrResponse.toString());
     } catch (e) {
     }
-    if (messageOrResponse?.message.result) {
+    if (messageOrResponse?.message?.result) {
       globalResponse$.next({
         peer: dataConnection as DataConnection & { id: string },
         // @ts-ignore
