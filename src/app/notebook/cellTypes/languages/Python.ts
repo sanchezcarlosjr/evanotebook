@@ -17,6 +17,8 @@ const pyodide = new Observable<{
     await micropip.install("numpy");
     await micropip.install("scikit-learn");
     await micropip.install("matplotlib");
+    // @ts-ignore
+    globalThis.pyodide = instance;
     subscriber.next(instance);
     subscriber.complete();
   });
@@ -53,6 +55,7 @@ ${this.mostRecentCode}`;
         this.stop();
       }).catch((e: any) => {
         this.rewrite(`<pre class="py-error wrap">${e.message}</pre>`);
+        this.stop();
       });
     });
     return true;

@@ -6,13 +6,15 @@ import {
 } from 'rxjs';
 import {BlockDocument, DatabaseManager} from "./DatabaseManager";
 import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
+import * as Rx from "rxjs";
 import {TitleSubjectService} from "../../title-subject.service";
 import * as url from "./url";
+import {MqttService} from 'ngx-mqtt';
+import {webSocket} from "rxjs/webSocket";
 
 enum JobStatus {
   created = 0, running = 1
 }
-
 
 function downloadFile(blobParts?: any, options?: any) {
   let blob = new Blob(blobParts, options);
@@ -242,6 +244,9 @@ export class Shell {
     }));
     environment.addEventListener('localStorage.setItem', (event: CustomEvent) => localStorage.setItem(event.detail.payload.key, event.detail.payload.value));
     environment.addEventListener('localStorage.removeItem', (event: CustomEvent) => localStorage.removeItem(event.detail.payload.key));
+    environment.Rx = Rx;
+    environment.Mqtt = MqttService;
+    environment.webSocket = webSocket;
   }
 
   fork(code: string, threadId: string) {
@@ -354,7 +359,7 @@ export class Shell {
     this.databaseManager.insert$()?.subscribe((block: any) => this.handleBlockInsert(block));
     this.databaseManager.remove$()?.subscribe((block: any) => this.handleBlockRemove(block));
     this.databaseManager.update$()?.subscribe((block: any) => this.handleBlockUpdate(block));
-    await this.databaseManager.replicateCollections().catch(console.log);
+    await this.databaseManager.waitForLeadership();
     if (isMode2) return;
     window.addEventListener('keydown', (event: KeyboardEvent) => this.handleKeyPress(event));
   }

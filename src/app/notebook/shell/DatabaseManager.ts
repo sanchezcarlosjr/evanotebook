@@ -247,6 +247,12 @@ export class DatabaseManager {
     return [];
   }
 
+  waitForLeadership() {
+    return this._database?.waitForLeadership().then(() => {
+      return this.replicateCollections();
+    }).then();
+  }
+
   async replicateCollections() {
     if (!this._database)
       return;

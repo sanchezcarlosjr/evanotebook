@@ -134,7 +134,7 @@ describe('EditorJS interaction', function() {
     cy.get('.ce-paragraph').eq(4).should('contain',"6");
   });
 
-  it.only('move up with button and retrieve the same content after reload', function() {
+  it('move up with button and retrieve the same content after reload', function() {
     cy.visit('http://localhost:4200');
     cy.get('.ce-header').click().type("Title"+"{enter}");
     cy.get('.ce-paragraph').type("1{enter}");
@@ -165,22 +165,24 @@ describe('EditorJS interaction', function() {
     cy.get('.ce-paragraph').eq(5).should('contain',"6");
   });
 
-  it('input content to EditorJS and retrieve the same content after reload', function() {
+  it.only('input content to EditorJS and retrieve the same content after reload', function() {
     cy.visit('http://localhost:4200/?ps=jddkzpqlyv&t=pqnszpmzlr');
-    cy.wait(5000);
-    cy.get('.ce-paragraph').eq(0).type("2");
-    cy.get('.ce-paragraph').eq(1).type("3");
-    cy.get('.ce-paragraph').eq(2).type("4");
-    cy.get('.ce-paragraph').eq(3).type("5");
-    cy.get('.ce-paragraph').eq(4).type("6");
-    cy.get('#checkpoint').should('contain', 'Saving');
     cy.wait(10000);
-    cy.reload();
-    cy.get('.ce-paragraph').eq(0).should("contain.text", "22");
-    cy.get('.ce-paragraph').eq(1).should("contain.text", "33");
-    cy.get('.ce-paragraph').eq(2).should("contain.text", "44");
-    cy.get('.ce-paragraph').eq(3).should("contain.text", "55");
-    cy.get('.ce-paragraph').eq(4).should("contain.text", "66");
+    for (let i = 0; i < 3; i++) {
+      cy.get('.ce-paragraph').eq(0).type("2");
+      cy.get('.ce-paragraph').eq(1).type("3");
+      cy.get('.ce-paragraph').eq(2).type("4");
+      cy.get('.ce-paragraph').eq(3).type("5");
+      cy.get('.ce-paragraph').eq(4).type("6");
+      cy.get('#checkpoint').should('contain', 'Saving');
+      cy.wait(15000);
+      cy.reload();
+      cy.get('.ce-paragraph').eq(0).should("contain.text", "22");
+      cy.get('.ce-paragraph').eq(1).should("contain.text", "33");
+      cy.get('.ce-paragraph').eq(2).should("contain.text", "44");
+      cy.get('.ce-paragraph').eq(3).should("contain.text", "55");
+      cy.get('.ce-paragraph').eq(4).should("contain.text", "66");
+    }
   });
 
 });
