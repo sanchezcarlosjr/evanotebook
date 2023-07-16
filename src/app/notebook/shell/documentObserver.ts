@@ -9,7 +9,7 @@ export class DocumentObserver {
   private tasks: Promise<any>[] = [];
   public readonly rpc = new Proxy({}, {
     get: (target, prop, receiver) =>
-      async (args: any) => this.call(prop.toString(), args)
+      async (...args: any) => this.call(prop as string, args)
   });
 
   constructor(
@@ -66,8 +66,8 @@ export class DocumentObserver {
   }
 
   async call(method:string, args?: any) {
-    if (args && 'toJs' in args && typeof args.toJs === 'function') {
-      args = args.toJs();
+    if (args && typeof args === 'object' && 'toJs' in args && typeof args.toJs === 'function') {
+      args = args?.toJs();
     }
     const document = DocumentObserver.setup(this.db, method, this.collection);
     const id = randomCouchString(10);
