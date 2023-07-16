@@ -63,7 +63,7 @@ export class DocumentObserver {
             response = await callback(...request.arguments);
           } catch (e) {
              // @ts-ignore
-            response = e.message;
+            response = e?.message || e?.toString() || e;
           }
           await document.set(request.id, response);
         }
