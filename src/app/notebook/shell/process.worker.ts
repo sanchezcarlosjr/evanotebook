@@ -799,6 +799,7 @@ class ProcessWorker {
     }).pipe(shareReplay(1));
     this.environmentObserver = new DocumentObserver("environment", environment.db);
     environment.environment = this.environmentObserver.createProxy();
+    environment.setupDocumentObserver = (document: string) => DocumentObserver.setup(environment.db, document);
     environment.hos = new HostOperatingSystem(environment);
     environment.hfs = new HostFilesystem(environment.hos);
     environment.exit = (message: string = "0") => {
@@ -807,6 +808,12 @@ class ProcessWorker {
     environment.P = P;
     environment.editor = new EditorJS(this.environment);
     environment.from = from;
+    environment.sum = (acc: any, value: any) => {
+      acc.push(value);
+      return acc;
+    }
+    environment.reduceWithSum = reduce(environment.sum , []);
+    environment.scanWithSum = scan(environment.sum, []);
     environment.Pattern = Pattern;
     environment.isMatching = isMatching;
     environment.match = match;
