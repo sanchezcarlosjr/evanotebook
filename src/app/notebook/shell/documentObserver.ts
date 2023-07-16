@@ -58,7 +58,13 @@ export class DocumentObserver {
       distinctUntilChanged((prev, curr) => prev.length === curr.length),
       concatMap(async queue => {
           const request = queue[queue.length-1];
-          const response = await callback(...request.arguments);
+          let response;
+          try {
+            response = await callback(...request.arguments);
+          } catch (e) {
+             // @ts-ignore
+            response = e.message;
+          }
           await document.set(request.id, response);
         }
       )
