@@ -359,7 +359,7 @@ export class Shell {
     this.databaseManager.insert$()?.subscribe((block: any) => this.handleBlockInsert(block));
     this.databaseManager.remove$()?.subscribe((block: any) => this.handleBlockRemove(block));
     this.databaseManager.update$()?.subscribe((block: any) => this.handleBlockUpdate(block));
-    await this.databaseManager.waitForLeadership();
+    this.databaseManager.replicateCollections().then();
     if (isMode2) return;
     window.addEventListener('keydown', (event: KeyboardEvent) => this.handleKeyPress(event));
   }

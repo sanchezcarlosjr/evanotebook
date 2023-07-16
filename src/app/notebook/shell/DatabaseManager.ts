@@ -1,4 +1,4 @@
-import {BehaviorSubject, filter, firstValueFrom, map, Observable, shareReplay, Subscriber, tap, switchMap} from "rxjs";
+import {BehaviorSubject, filter, firstValueFrom, map, Observable, shareReplay, Subscriber, switchMap} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDocument, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
@@ -248,16 +248,14 @@ export class DatabaseManager {
   }
 
   waitForLeadership() {
-    return this._database?.waitForLeadership().then(() => {
-      return this.replicateCollections();
-    }).then();
+    return this._database?.waitForLeadership();
   }
 
   async replicateCollections() {
     if (!this._database)
       return;
-    url.write("p", this._uuid);
     url.write("t", this.topic);
+    url.write("p", this._uuid);
     const handler = getConnectionHandlerPeerJS(this._uuid, {
       host: url.read("peerjshost", "0.peerjs.com"),
       port: parseInt(url.read("peerjsport", "443")),

@@ -76,9 +76,7 @@ export function getConnectionHandlerPeerJS(
       return;
     }
     peers.split(',').forEach((peerId: string) => {
-      const dataConnection = peer.connect(peerId, {
-        reliable: true
-      });
+      const dataConnection = peer.connect(peerId);
       // @ts-ignore
       setupConnection(dataConnection, globalResponse$, globalMessage$, globalConnect$, globalDisconnect$, globalError$);
     });

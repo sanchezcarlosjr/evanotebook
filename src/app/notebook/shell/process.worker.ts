@@ -93,23 +93,31 @@ import {
 } from "langchain/agents";
 import {ConversationChain, LLMChain} from "langchain/chains";
 import {BlockToolData, ToolConfig} from "@editorjs/editorjs/types/tools";
-import {randomCouchString} from "rxdb/plugins/utils";
+import {randomCouchString} from "rxdb";
 import {precompileJS} from "./precompile";
 import {DocumentObserver} from "./documentObserver";
+import SWIPL, {Query, SWIPLModule} from "swipl-wasm";
+import { create as createIPFSHttpClient } from 'ipfs-http-client';
+import { create as createIPFSCoreClient } from 'ipfs-core';
+import { createHelia } from 'helia';
+// @ts-ignore
+import workerpool from 'workerpool';
+// @ts-ignore
+import OrbitDB from 'orbit-db';
+
 import Indexed = Immutable.Seq.Indexed;
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
 
-// @ts-ignore
-globalThis.window = {
-  // @ts-ignore
-  async requestFileSystem() {}
-};
-
 function sendMessage(message: any) {
   self.postMessage(message);
 }
+// @ts-ignore
+globalThis.window = {
+  URL: globalThis.URL,
+  location: globalThis.location
+};
 
 class RequestError extends Error {
   constructor(message: string) {
@@ -683,16 +691,106 @@ interface GitHubCommit {
   GITHUB_TOKEN: string;
 }
 
+class FileHandle {
+  private encoder = new TextEncoder();
+  private textDecoder = new TextDecoder();
+  constructor(private accessHandle: FileSystemFileHandle, private filepath: string) {
+  }
+  async close() {
+    // @ts-ignore
+    this.accessHandle.flush();
+    // @ts-ignore
+    this.accessHandle.close();
+    return await Promise.resolve();
+  }
+  async get(options: {at: number} = { at: 0 }) {
+    const dataView = new DataView(new ArrayBuffer(this.size()));
+    // @ts-ignore
+    this.accessHandle.read(dataView, options);
+    return this.textDecoder.decode(dataView);
+  }
+  async upsert(data: string) {
+    // @ts-ignore
+    this.accessHandle.write(this.encoder.encode(data), {at: this.size()});
+    // @ts-ignore
+    this.accessHandle.flush();
+  }
+  async write(data: string) {
+    // @ts-ignore
+    this.accessHandle.write(this.encoder.encode(data));
+  }
+  async delete() {
+    // @ts-ignore
+    await this.fileHandle.remove();
+  }
+  get browserPath() {
+    // @ts-ignore
+    return `filesystem:${globalThis.currentUrl.origin}/temporary/${this.filepath}`;
+  }
+  size() {
+    // @ts-ignore
+    return this.accessHandle.getSize();
+  }
+}
+
+class OriginPrivateFileSystem {
+  async open(filepath: string) {
+    const root = await navigator.storage.getDirectory();
+    const fileHandle = await root.getFileHandle(filepath, {create: true});
+    // @ts-ignore
+    const accessHandle = await fileHandle.createSyncAccessHandle();
+    return new FileHandle(accessHandle, filepath);
+  }
+}
+
 
 class Exit implements Error {
   name: string = "Exit";
   constructor(public message: string) {}
 }
 
+class Prolog {
+  private swipl?: SWIPLModule;
+  async open(database?: string) {
+    const options = database ? {
+      arguments: ['-q', '-f', 'prolog.pl'],
+      // @ts-ignore
+      preRun: (module: SWIPLModule) => module.FS.writeFile('prolog.pl', database)
+    } : {
+      arguments: ['-q'],
+      // @ts-ignore
+      preRun: (module: SWIPLModule) => {}
+    };
+    // @ts-ignore
+    this.swipl = await SWIPL(options);
+    return this.swipl;
+  }
+  query(goal: string, options: Record<string, unknown>) {
+    const answers = this.swipl?.prolog.query(goal, options) as Query;
+
+    return new Observable(subscriber => {
+      let answer = null;
+      while((answer = (answers.next() as {value: any, done: boolean}).value)) {
+        subscriber.next(answer);
+      }
+      subscriber.complete();
+    })
+  }
+}
+
 class ProcessWorker {
   private environmentObserver: DocumentObserver;
 
   constructor(private environment: (typeof globalThis) & any, private localEcho: LocalEcho, private terminal: Terminal) {
+    environment.importDuckDB = dynamicImportDuckDB;
+    environment.connectNotebookDB = create_db;
+    environment.prolog = new Prolog();
+    environment.createIPFSHttpClient = createIPFSHttpClient;
+    environment.createIPFSCoreClient = createIPFSCoreClient;
+    environment.createHelia = createHelia;
+    environment.OrbitDB = OrbitDB;
+    environment.opfs = new OriginPrivateFileSystem();
+    environment.workerpool = workerpool;
     environment.db = new Observable((subscriber: Subscriber<any>) => {
       create_db().then(db => {
         subscriber.next(db);
