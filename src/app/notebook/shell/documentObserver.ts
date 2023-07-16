@@ -50,7 +50,7 @@ export class DocumentObserver {
   // TODO: This should be a decorator. https://github.com/tc39/proposal-decorators
   // TODO: We must implement Leader election, coordination, synchronization, loader balancer and self-stabilization algorithm as well as E2E encryption.
   // Scheduler.
-  async remoteProcedure(path: string = '', callback: (params: any[]) => any) {
+  async remoteProcedure(path: string = '', callback: (...params: any) => any) {
     const document = DocumentObserver.setup(this.db, path, this.collection);
     await document.set("queue", []);
     return (document.get('queue') as Observable<EventLoop>).pipe(
@@ -58,7 +58,7 @@ export class DocumentObserver {
       distinctUntilChanged((prev, curr) => prev.length === curr.length),
       concatMap(async queue => {
           const request = queue[queue.length-1];
-          const response = await callback(request.arguments);
+          const response = await callback(...request.arguments);
           await document.set(request.id, response);
         }
       )
