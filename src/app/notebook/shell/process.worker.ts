@@ -816,6 +816,7 @@ class ProcessWorker {
     environment.scanWithSum = scan(environment.sum, []);
     environment.Pattern = Pattern;
     environment.isMatching = isMatching;
+
     environment.match = match;
     environment.regex = (expr: RegExp) => P.when((str: string): str is never => expr.test(str));
     environment.Immutable = Immutable;

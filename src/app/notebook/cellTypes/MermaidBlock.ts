@@ -1,6 +1,6 @@
 import mermaid, { MermaidConfig } from "mermaid";
 import {EditorJsTool} from "./EditorJsTool";
-import {randomCouchString} from "rxdb/plugins/utils";
+import {randomCouchString} from "rxdb";
 import { EditorState } from '@codemirror/state';
 import {
   crosshairCursor,
@@ -11,13 +11,11 @@ import {
   lineNumbers,
   rectangularSelection
 } from '@codemirror/view';
-import {bracketMatching, foldGutter, foldKeymap, indentOnInput, language} from '@codemirror/language';
+import {bracketMatching, foldGutter, foldKeymap, indentOnInput} from '@codemirror/language';
 import {defaultKeymap, history, historyKeymap} from "@codemirror/commands";
-import {autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap} from "@codemirror/autocomplete";
+import {autocompletion, closeBrackets, closeBracketsKeymap} from "@codemirror/autocomplete";
 import {searchKeymap} from "@codemirror/search";
-import {linter, lintGutter, lintKeymap} from "@codemirror/lint";
 import {espresso} from "thememirror";
-import {esLint, javascript} from "@codemirror/lang-javascript";
 import {BlockAPI} from "@editorjs/editorjs";
 import {BehaviorSubject, filter, first} from "rxjs";
 

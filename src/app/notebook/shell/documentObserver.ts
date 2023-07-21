@@ -50,6 +50,7 @@ export class DocumentObserver {
   // TODO: This should be a decorator. https://github.com/tc39/proposal-decorators
   // TODO: We must implement Leader election, coordination, synchronization, loader balancer and self-stabilization algorithm as well as E2E encryption.
   // Scheduler.
+  // https://github.com/GoogleChromeLabs/comlink
   async remoteProcedure(path: string = '', callback: (...params: any) => any) {
     const document = DocumentObserver.setup(this.db, path, this.collection);
     await document.set("queue", []);

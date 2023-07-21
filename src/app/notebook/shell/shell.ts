@@ -32,6 +32,7 @@ export class Shell {
   private peerRemoveBlock = false;
   private peerChangeBlock = false;
   constructor(private editor: EditorJS, private environment: any, private databaseManager: DatabaseManager) {
+    environment.webWorkers = this.jobs;
     environment.addEventListener('terminal.clear', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('clear');
     });
