@@ -17,8 +17,9 @@ import {autocompletion, closeBrackets, closeBracketsKeymap} from "@codemirror/au
 import {searchKeymap} from "@codemirror/search";
 import {espresso} from "thememirror";
 import {BlockAPI} from "@editorjs/editorjs";
-import {BehaviorSubject, filter, first} from "rxjs";
-
+import {BehaviorSubject, filter,firstValueFrom,first,map} from "rxjs";
+import {svgToInlinedSvgDataUri,dataUriToImage,canvasToRasterBlob,download} from "export-svg";
+import { mermaid as mermaidlang, mindmapTags } from 'codemirror-lang-mermaid';
 
 function generateId(prefix: string) {
   return `${prefix}${randomCouchString(10)}`;
@@ -26,13 +27,31 @@ function generateId(prefix: string) {
 
 export class MermaidTool {
   private code: string;
-  private caption: string;
   private readOnly: boolean | undefined;
   private block: BlockAPI | undefined;
   private svgSubject = new BehaviorSubject<Element|undefined>(undefined);
+  private settings = [
+    {
+      name: 'Export as SVG',
+      call: async () => {
+        const [svg]: [string] = await this.export();
+        // @ts-ignore
+        window.downloadBlob(new Blob([svg],{ type: 'image/svg+xml' }), {filename: this.block.id+'.svg'});
+      }
+    },
+    {
+      name: 'Export as PNG',
+      call: async () => {
+        await this.exportPNG();
+      }
+    }
+  ]
 
   static config(config: MermaidConfig) {
     mermaid.initialize(config);
+    mermaid.run({
+      suppressErrors: true,
+    });
   }
 
   static get toolbox() {
@@ -48,7 +67,6 @@ export class MermaidTool {
 
   constructor({ data, readOnly, block }: EditorJsTool) {
     this.code = data.code;
-    this.caption = data.caption;
     this.readOnly = readOnly;
     this.block = block;
   }
@@ -58,6 +76,7 @@ export class MermaidTool {
     return mermaid.render(generateId('svg-'), code)
       .then((renderResult) => {
         preview.insertAdjacentHTML('afterbegin', renderResult.svg);
+        preview.classList.remove('py-error');
         return preview;
       })
       .catch((e) => {
@@ -75,71 +94,92 @@ export class MermaidTool {
     wrapper.classList.add('mermaid-wrapper');
     this.createEditor(wrapper);
     this.createPreview(wrapper);
-    this.createCaption(wrapper);
     return wrapper;
   }
 
-  private createCaption(wrapper: HTMLDivElement) {
-    const caption = document.createElement('div');
-    if (this.readOnly && this.caption) {
-      caption.innerText = this.caption;
-      this.svgSubject.pipe(
-        filter(svg => svg !== undefined),
-        first()
-        // @ts-ignore
-      ).subscribe((element: Element) => {
-          const aElement = document.createElement('a');
-          aElement.target = '_blank';
-          caption.innerText = '';
-          aElement.innerText = this.caption;
-          aElement.addEventListener('click', (event) => {
-            if (aElement.href) {
-              return;
-            }
-            const svg = element.children[0].cloneNode(true) as Element;
-            svg.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', 'http://www.w3.org/1999/xlink');
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css';
-            link.integrity = 'sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==';
-            link.crossOrigin = 'anonymous';
-            link.referrerPolicy = 'no-referrer';
-            svg.appendChild(link);
-            svg.setAttribute('style', '');
-            const styleElement = document.createElement('style');
-            styleElement.textContent = `
+  renderSettings() {
+    const wrapper = document.createElement('div');
+
+    this.settings.forEach(tune => {
+      let exporter = document.createElement('button');
+      exporter.classList.add('cdx-settings-button');
+      exporter.textContent = tune.name;
+      exporter.addEventListener('click', tune.call);
+      wrapper.appendChild(exporter);
+    })
+
+    return wrapper;
+  }
+
+  private export(): Promise<any> {
+    return firstValueFrom(this.svgSubject.pipe(
+      filter((svg: Element|undefined):boolean  => svg !== undefined),
+      // @ts-ignore
+      first(),
+      map((element: Element) => {
+        const svg = element.children[0].cloneNode(true) as Element;
+    svg.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    const link = document.createElement('link');
+    link.setAttribute('id', '0');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css';
+    link.integrity = 'sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==';
+    link.crossOrigin = 'anonymous';
+    link.referrerPolicy = 'no-referrer';
+    svg.appendChild(link);
+    svg.setAttribute('style', '');
+    const styleElement = document.createElement('style');
+    styleElement.setAttribute('id', '1');
+    styleElement.textContent = `
 @font-face {
-  font-family: "Fira Code Regular";
-  src: url(https://notebook.sanchezcarlosjr.com/assets/fonts/FiraCode-Regular.woff);
-  font-display: swap;
+font-family: "Fira Code Regular";
+src: url(https://notebook.sanchezcarlosjr.com/assets/fonts/FiraCode-Regular.woff);
+font-display: swap;
 }
 * :not(i) {
-  font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
-  letter-spacing: 0;
+font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
+letter-spacing: 0;
 }
-          `;
-            svg.appendChild(styleElement);
-            const serializer = new XMLSerializer();
-            const svgString = serializer.serializeToString(svg as SVGElement);
-            aElement.setAttribute('href', URL.createObjectURL(new Blob([svgString], { type: 'image/svg+xml' })));
-          });
-          caption.appendChild(aElement);
-      });
-      caption.classList.add('center');
-      wrapper.appendChild(caption);
-    }
-    if (!this.readOnly) {
-      caption.classList.add('cdx-input');
-      // @ts-ignore
-      caption.setAttribute('contenteditable', !this.readOnly);
-      // @ts-ignore
-      caption.dataset.placeholder = 'Caption';
-      caption.innerText = this.caption ? this.caption : '';
-      wrapper.appendChild(caption);
-      caption.addEventListener('change', () => {
-        this.block?.dispatchChange();
-      });
-    }
+  `;
+    svg.appendChild(styleElement);
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svg as SVGElement);
+    return [svgString, svg];
+      })
+    ))
+  }
+
+  private async exportPNG() {
+    const [_,svg] = await this.export();
+    svg.getElementById('0').remove();
+    svg.getElementById('1').remove();
+    const options = {quality: 1};
+    const dataUri = await svgToInlinedSvgDataUri(svg, options);
+    const img = await dataUriToImage(dataUri);
+    const blob = await canvasToRasterBlob(this.imageToCanvas(img, options), options);
+    download(this.block?.id+'.png', blob);
+  }
+  
+  imageToCanvas(img: HTMLImageElement , options: {quality: number}) {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", options);
+    const pixelRatio = 1;
+    // @ts-ignore
+    canvas.width = img.width * pixelRatio;
+    // @ts-ignore
+    canvas.height = img.height * pixelRatio;
+    // @ts-ignore
+    context.fillStyle = 'white';
+    // @ts-ignore
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    // @ts-ignore
+    canvas.style.width = `${canvas.width}px`;
+    // @ts-ignore
+    canvas.style.height = `${canvas.height}px`;
+    // context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    // @ts-ignore
+    context?.drawImage(img, 0, 0)
+    return canvas;
   }
 
   private createPreview(wrapper: HTMLDivElement) {
@@ -195,6 +235,7 @@ export class MermaidTool {
           bracketMatching(),
           closeBrackets(),
           autocompletion(),
+          mermaidlang(),
           rectangularSelection(),
           crosshairCursor(),
           keymap.of([
@@ -222,8 +263,7 @@ export class MermaidTool {
 
   save(element: HTMLElement) {
     return {
-      code: this.code,
-      caption: element.children[2]?.textContent ?? ""
+      code: this.code
     }
   }
 }

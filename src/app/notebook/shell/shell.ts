@@ -18,6 +18,10 @@ enum JobStatus {
 
 function downloadFile(blobParts?: any, options?: any) {
   let blob = new Blob(blobParts, options);
+  downloadBlob(blob);
+}
+
+function downloadBlob(blob: Blob, options?: any) {
   let url = window.URL.createObjectURL(blob);
   let link = document.createElement("a");
   link.download = options.filename;
@@ -26,6 +30,7 @@ function downloadFile(blobParts?: any, options?: any) {
   window.URL.revokeObjectURL(url);
 }
 
+
 export class Shell {
   private jobs = new Map<string, { worker: Worker, code: string, status: number, data: {}, subscription: Subscription; }>();
   private peerAddBlock = false;
@@ -33,6 +38,7 @@ export class Shell {
   private peerChangeBlock = false;
   constructor(private editor: EditorJS, private environment: any, private databaseManager: DatabaseManager) {
     environment.webWorkers = this.jobs;
+    environment.downloadBlob = downloadBlob;
     environment.addEventListener('terminal.clear', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('clear');
     });

@@ -1,2 +1,8 @@
+4.2.0 - Mermaid
+* chore(design): Hide error messages
+* feat: install mermaidlang
+* feat: download diagramas as svg and png
+
+
 4.1.0
 * Update EditorJS, MermaidJS, ngx-mqtt, and RXDB packages

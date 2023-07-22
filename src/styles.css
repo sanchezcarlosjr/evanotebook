@@ -834,3 +834,8 @@ py-config {
 .golden-text {
   color: gold;
 }
+
+/* Mermaid */
+[aria-roledescription="error"] {
+  display: none;
+}
