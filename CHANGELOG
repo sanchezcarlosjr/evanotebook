@@ -1,3 +1,6 @@
+4.5.0 - Table
+Serialize objects
+
 4.4.0 - SQL
 Manage IndexDB with SQL queries. TODO: We have got to manage RXDB with SQL queries.
 
