@@ -1,7 +1,8 @@
 import {map, startWith, Subscriber,tap} from "rxjs";
 import {IMqttServiceOptions, MqttService} from 'ngx-mqtt';
 import {webSocket, WebSocketSubject} from "rxjs/webSocket";
-import { GearApi,getProgramMetadata,GearKeyring } from '@gear-js/api';
+import { GearApi,getProgramMetadata,GearKeyring,CreateType } from '@gear-js/api';
+
 
 export interface Protocol {
   connect: (options: any) => any;
@@ -132,3 +133,5 @@ globalThis.GearApi = GearApi;
 globalThis.getProgramMetadata = getProgramMetadata;
 // @ts-ignore
 globalThis.GearKeyring = GearKeyring;
+// @ts-ignore
+globalThis.CreateType = CreateType;
