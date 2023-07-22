@@ -40,6 +40,10 @@ export class TableComponent implements OnInit, AfterViewInit {
     }
   }
 
+  serialize(x: object) {
+    return JSON.stringify(x);
+  }
+
   ngAfterViewInit() {
     this.dataSource.sort = this.sort;
     this.dataSource.paginator = this.paginator;

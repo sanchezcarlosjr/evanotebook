@@ -797,7 +797,7 @@ class ProcessWorker {
         subscriber.complete();
       }).catch(subscriber.error)
     }).pipe(shareReplay(1));
-    environment.connectNotebookDB = async () => firstValueFrom(environment.db);
+    environment.notebookDBConnection = firstValueFrom(environment.db);
     this.environmentObserver = new DocumentObserver("environment", environment.db);
     environment.environment = this.environmentObserver.createProxy();
     environment.setupDocumentObserver = (document: string) => DocumentObserver.setup(environment.db, document);
