@@ -784,7 +784,6 @@ class ProcessWorker {
 
   constructor(private environment: (typeof globalThis) & any, private localEcho: LocalEcho, private terminal: Terminal) {
     environment.importDuckDB = dynamicImportDuckDB;
-    environment.connectNotebookDB = create_db;
     environment.prolog = new Prolog();
     environment.createIPFSHttpClient = createIPFSHttpClient;
     environment.createIPFSCoreClient = createIPFSCoreClient;
@@ -798,6 +797,7 @@ class ProcessWorker {
         subscriber.complete();
       }).catch(subscriber.error)
     }).pipe(shareReplay(1));
+    environment.connectNotebookDB = async () => firstValueFrom(environment.db);
     this.environmentObserver = new DocumentObserver("environment", environment.db);
     environment.environment = this.environmentObserver.createProxy();
     environment.setupDocumentObserver = (document: string) => DocumentObserver.setup(environment.db, document);
