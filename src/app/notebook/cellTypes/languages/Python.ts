@@ -2,7 +2,7 @@ import {Language} from "./language";
 import {Observable, shareReplay} from "rxjs";
 import {Extension} from "@codemirror/state";
 import {python} from "@codemirror/lang-python";
-import {stringToHTML} from "../stringToHTML";
+
 
 const pyodide = new Observable<{
   runPython: (code: string) => any
@@ -59,14 +59,6 @@ ${this.mostRecentCode}`;
       });
     });
     return true;
-  }
-
-  write(input: string) {
-    this.cell.children[1].appendChild(stringToHTML(input));
-  }
-
-  rewrite(input: string) {
-    this.cell.children[1].appendChild(stringToHTML(input));
   }
 
   override getExtensions(): Extension[] {

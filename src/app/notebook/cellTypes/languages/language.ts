@@ -16,6 +16,7 @@ import {autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap} fr
 import {searchKeymap} from "@codemirror/search";
 import {espresso} from "thememirror";
 import {lintGutter} from "@codemirror/lint";
+import {stringToHTML} from "../stringToHTML";
 
 export abstract class Language {
   protected doc$: Subject<string> = new Subject();
@@ -34,6 +35,12 @@ export abstract class Language {
     if (!this.editorJsTool?.readOnly) {
       this.cell?.children[0].classList.remove('progress');
     }
+  }
+  write(input: string) {
+    this.cell.children[1].appendChild(stringToHTML(input));
+  }
+  rewrite(input: string) {
+    this.cell.children[1].appendChild(stringToHTML(input));
   }
   dispatchShellStop() {
     window.dispatchEvent(new CustomEvent('shell.Stop', {

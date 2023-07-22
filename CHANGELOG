@@ -1,3 +1,7 @@
+4.4.0 - SQL
+Manage IndexDB with SQL queries. TODO: We have got to manage RXDB with SQL queries.
+
+
 4.3.0 - Gears Protocol
 * chore: Install Gears libraries
 

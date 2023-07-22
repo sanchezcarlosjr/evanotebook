@@ -104,21 +104,7 @@ import { createHelia } from 'helia';
 import workerpool from 'workerpool';
 // @ts-ignore
 import OrbitDB from 'orbit-db';
-// @ts-ignore
-import { gluesql } from 'gluesql';
 
-async function main() {
-    const db = await gluesql();
-    await db.loadIndexedDB();
-
-    const result = await db.query(`
-      CREATE TABLE Foo (id INTEGER) ENGINE = memory;
-      INSERT INTO Foo (1, 'glue'), (2, 'sql');
-      SELECT * FROM Foo;
-    `);
-
-    console.log(result);
-   }
 
 import Indexed = Immutable.Seq.Indexed;
 
@@ -485,13 +471,6 @@ class MatTree {
     this.level--;
     return entries;
   }
-}
-
-// @ts-ignore
-globalThis.importGluesql = async () => {
-  const db = await gluesql();
-  await db.loadIndexedDB();
-  return db;
 }
 
 async function buildChart(config: ConfigurationChart) {

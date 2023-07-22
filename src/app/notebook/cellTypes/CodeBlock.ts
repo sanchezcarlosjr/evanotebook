@@ -6,6 +6,20 @@ import {match} from "ts-pattern";
 import {Python} from "./languages/Python";
 import {stringToHTML} from "./stringToHTML";
 import {Html} from "./languages/Html";
+import { Sql } from "./languages/Sql";
+
+
+// @ts-ignore
+globalThis.createTable = async (parent: HTMLElement, detail?: {type: string, displayedColumns: string[], dataSource: object[]}) => {
+  const channel = new MessageChannel();
+  const frameElement = document.createElement("nk-table");
+  // @ts-ignore
+  frameElement.port  = channel.port1;
+  parent?.children[1].appendChild(frameElement);
+  frameElement.classList.add('w100');
+  channel.port2.postMessage(detail);
+  return channel.port2;
+}
 
 export class CodeBlock extends InteractiveBlock {
   private cell: HTMLDivElement;
@@ -28,6 +42,7 @@ export class CodeBlock extends InteractiveBlock {
     )
       .with("python", () => new Python(this.code, this.editorJsTool, this.cell))
       .with("html", () => new Html(this.code, this.editorJsTool, this.cell))
+      .with("sql", () => new Sql(this.code, this.editorJsTool, this.cell))
       .otherwise(
       () => new JavaScript(this.code, this.editorJsTool,this.cell)
     );
@@ -152,20 +167,16 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   createTable() {
-    const frameElement = document.createElement("nk-table");
-    frameElement.classList.add('w100');
-    const channel = new MessageChannel();
+    // @ts-ignore
+    const port2 = globalThis.createTable(this.cell);
     window.dispatchEvent(new CustomEvent('shell.TableMessageChannel', {
       bubbles: true, detail: {
         payload: {
-          port: channel.port2,
+          port: port2,
           threadId: this.editorJsTool.block?.id
         }
       }
     }));
-    // @ts-ignore
-    frameElement.port  = channel.port1;
-    this.cell?.children[1].appendChild(frameElement);
   }
 
   captureStream(constraints?: MediaStreamConstraints | undefined) {
@@ -259,7 +270,7 @@ export class CodeBlock extends InteractiveBlock {
     const wrapper = super.renderSettings();
     let languagesSelect = document.createElement("select");
     languagesSelect.classList.add("small");
-    for (const language of ["javascript", "python", "html"]) {
+    for (const language of ["javascript", "python", "html", 'sql']) {
       const option = document.createElement("option");
       option.value = language;
       option.innerText = language;

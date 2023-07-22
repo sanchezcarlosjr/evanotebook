@@ -24,7 +24,7 @@ export class TableComponent implements OnInit, AfterViewInit {
     }
     // @ts-ignore
     this.port.onmessage = (event: MessageEvent) => {
-      if (event.data.type === 'render') {
+      if (event.data?.type === 'render') {
         this.displayedColumns = event.data.displayedColumns;
         this.dataSource.data = event.data.dataSource;
         this.dataSource._updateChangeSubscription();

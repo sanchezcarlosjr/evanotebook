@@ -12,7 +12,7 @@ export class Html extends Language {
     super.dispatchShellStop();
     return true;
   }
-  rewrite(input: string) {
+  override rewrite(input: string) {
     this.cell.children[1].innerHTML = input;
     this.execHtml(this.cell.children[1] as HTMLElement);
   }
