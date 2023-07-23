@@ -4683,7 +4683,7 @@
     rxjs "^7.8.1"
     tslib "^2.5.3"
 
-"@polkadot/util-crypto@12.3.2", "@polkadot/util-crypto@^12.3.1":
+"@polkadot/util-crypto@12.3.2", "@polkadot/util-crypto@^12.3.1", "@polkadot/util-crypto@^12.3.2":
   version "12.3.2"
   resolved "https://registry.yarnpkg.com/@polkadot/util-crypto/-/util-crypto-12.3.2.tgz#42d810886904e06fa6e5db254c15f6ef80f4ab72"
   integrity sha512-pTpx+YxolY0BDT4RcGmgeKbHHD/dI6Ll9xRsqmVdIjpcVVY20uDNTyXs81ZNtfKgyod1y9JQkfNv2Dz9iEpTkQ==

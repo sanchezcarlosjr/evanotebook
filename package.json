@@ -64,6 +64,7 @@
     "@polkadot/api": "^10.9.1",
     "@polkadot/types": "^10.9.1",
     "@polkadot/util": "^12.3.2",
+    "@polkadot/util-crypto": "^12.3.2",
     "@sotaproject/strikethrough": "1.0.1",
     "@types/babel__generator": "7.6.4",
     "@types/lodash": "4.14.192",
