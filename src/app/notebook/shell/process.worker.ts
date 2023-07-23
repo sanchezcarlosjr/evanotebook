@@ -107,6 +107,7 @@ import OrbitDB from 'orbit-db';
 
 
 import Indexed = Immutable.Seq.Indexed;
+import { exec } from './exec';
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -1257,8 +1258,7 @@ class ProcessWorker {
 
   async exec(code: string) {
     try {
-      const esmCodeUrl = URL.createObjectURL(new Blob([precompileJS(code)], {type: "text/javascript"}));
-      return await (new Function(`return import("${esmCodeUrl}").then(x => x.default)`))();
+      return exec(code);
     } catch (error) {
       if ((error as Error)?.message.includes("import")) {
         return eval(code);

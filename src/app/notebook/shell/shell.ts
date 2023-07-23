@@ -9,8 +9,6 @@ import {SavedData} from "@editorjs/editorjs/types/data-formats/block-data";
 import * as Rx from "rxjs";
 import {TitleSubjectService} from "../../title-subject.service";
 import * as url from "./url";
-import {MqttService} from 'ngx-mqtt';
-import {webSocket} from "rxjs/webSocket";
 
 enum JobStatus {
   created = 0, running = 1
@@ -252,8 +250,6 @@ export class Shell {
     environment.addEventListener('localStorage.setItem', (event: CustomEvent) => localStorage.setItem(event.detail.payload.key, event.detail.payload.value));
     environment.addEventListener('localStorage.removeItem', (event: CustomEvent) => localStorage.removeItem(event.detail.payload.key));
     environment.Rx = Rx;
-    environment.Mqtt = MqttService;
-    environment.webSocket = webSocket;
   }
 
   fork(code: string, threadId: string) {
