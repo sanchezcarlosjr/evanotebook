@@ -23,7 +23,7 @@ const gluesqlInstance$ = new Observable<Gluesql>(subscriber => {
 }).pipe(shareReplay(1));
 
 // @ts-ignore
-globalThis.gluesqlConnection = firstValueFrom(gluesqlInstance$);
+globalThis.gluesqlConnection = () => firstValueFrom(gluesqlInstance$);
 
 export class Sql extends Language {
   get name() {
