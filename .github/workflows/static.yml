@@ -36,9 +36,9 @@ jobs:
         with:
           node-version: '18.10.0'
       - name: Install dependencies
-        run: npm i --force
+        run: yarn --force
       - name: Build
-        run: npm run prerender
+        run: yarn prerender
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact

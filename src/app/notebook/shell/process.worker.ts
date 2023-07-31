@@ -107,6 +107,7 @@ import OrbitDB from 'orbit-db';
 
 
 import Indexed = Immutable.Seq.Indexed;
+import { exec } from './exec';
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -494,6 +495,7 @@ async function buildTable() {
   return new Table(payload);
 }
 
+
 async function buildTree(transformer: MatTreeTransformer) {
   const payload = await requestResource('tree', {
     event: 'tree', payload: {
@@ -784,7 +786,6 @@ class ProcessWorker {
 
   constructor(private environment: (typeof globalThis) & any, private localEcho: LocalEcho, private terminal: Terminal) {
     environment.importDuckDB = dynamicImportDuckDB;
-    environment.connectNotebookDB = create_db;
     environment.prolog = new Prolog();
     environment.createIPFSHttpClient = createIPFSHttpClient;
     environment.createIPFSCoreClient = createIPFSCoreClient;
@@ -798,6 +799,7 @@ class ProcessWorker {
         subscriber.complete();
       }).catch(subscriber.error)
     }).pipe(shareReplay(1));
+    environment.notebookDBConnection = () => firstValueFrom(environment.db);
     this.environmentObserver = new DocumentObserver("environment", environment.db);
     environment.environment = this.environmentObserver.createProxy();
     environment.setupDocumentObserver = (document: string) => DocumentObserver.setup(environment.db, document);
@@ -1256,8 +1258,7 @@ class ProcessWorker {
 
   async exec(code: string) {
     try {
-      const esmCodeUrl = URL.createObjectURL(new Blob([precompileJS(code)], {type: "text/javascript"}));
-      return await (new Function(`return import("${esmCodeUrl}").then(x => x.default)`))();
+      return exec(code);
     } catch (error) {
       if ((error as Error)?.message.includes("import")) {
         return eval(code);

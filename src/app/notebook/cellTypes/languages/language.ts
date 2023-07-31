@@ -24,12 +24,15 @@ export abstract class Language {
   constructor(protected code: string, protected editorJsTool: EditorJsTool | undefined = undefined, protected cell: HTMLElement) {
   }
   dispatchShellRun(): boolean {
+    this.reset();
+    return true;
+  }
+  reset(){
     if (!this.editorJsTool?.readOnly) {
       this.clear();
       this.dispatchShellStop();
       this.cell?.children[0].classList.add('progress');
     }
-    return true;
   }
   stop() {
     if (!this.editorJsTool?.readOnly) {

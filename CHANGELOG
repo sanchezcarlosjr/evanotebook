@@ -1,3 +1,10 @@
+4.6.0 - JavaScript in Main Thread
+Use JavaScript in Main Thread
+Connect to libp2p
+
+4.5.0 - Table
+Serialize objects
+
 4.4.0 - SQL
 Manage IndexDB with SQL queries. TODO: We have got to manage RXDB with SQL queries.
 

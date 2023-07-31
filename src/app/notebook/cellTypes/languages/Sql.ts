@@ -1,7 +1,7 @@
 import {Language} from "./language";
 import {Extension} from "@codemirror/state";
 import {sql} from "@codemirror/lang-sql";
-import { Observable, shareReplay } from "rxjs";
+import { Observable, firstValueFrom, shareReplay } from "rxjs";
 // @ts-ignore
 import { gluesql } from 'gluesql';
 
@@ -9,7 +9,9 @@ interface Gluesql {
   loadIndexedDB: () => void; 
   query: (x: string) => Promise<string>;
 }
-
+/*
+  TODO: Connect GlueSQL to RXDB, Dexie. However, they manage its version control.
+*/
 const gluesqlInstance$ = new Observable<Gluesql>(subscriber => {
   gluesql("/assets/gluesql/gluesql_js_bg.wasm").then(async (db: Gluesql) => {
     await db.loadIndexedDB();
@@ -19,6 +21,9 @@ const gluesqlInstance$ = new Observable<Gluesql>(subscriber => {
     subscriber.complete();
   });
 }).pipe(shareReplay(1));
+
+// @ts-ignore
+globalThis.gluesqlConnection = () => firstValueFrom(gluesqlInstance$);
 
 export class Sql extends Language {
   get name() {

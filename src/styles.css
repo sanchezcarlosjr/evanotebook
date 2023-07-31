@@ -418,6 +418,8 @@ h6 {
   overflow-x: hidden;
   overflow-y: hidden;
   word-wrap: anywhere;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
   flex-wrap: wrap;
   white-space: pre-wrap;       /* Since CSS 2.1 */
   white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -561,6 +563,8 @@ h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11 {
   padding: 0.2em;
   background-color: #ffe9e8;
   color: #9d041c;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 /* py-config - not a component */
