@@ -59,7 +59,7 @@ export class GearProtocol implements Protocol {
     options = Object.assign(options, {providerAddress: 'wss://testnet.vara.rs'});
     this.gearApi = await GearApi.create(options);
     this.meta = getProgramMetadata("0x" + options.metadataPlainText);
-    return new GearProtocol();
+    return this;
   }
 
   connect() {
@@ -105,7 +105,7 @@ export class GearProtocol implements Protocol {
     const unsub = await this.gearApi?.query.system.events((events) => {
       events.forEach(({event}) => {
         // @ts-ignore
-        if (gearApi.events?.gear?.UserMessageSent?.is(event)) {
+        if (this.gearApi.events?.gear?.UserMessageSent?.is(event)) {
           const {
             data: {
               // @ts-ignore
