@@ -11,6 +11,7 @@
 npm-debug.log
 yarn-error.log
 
+
 # IDEs and editors
 .idea/
 .project
@@ -45,3 +46,4 @@ src/env/env.prod.ts
 .firebaserc
 firebase-debug.log
 .firebase
+environment.test.ts

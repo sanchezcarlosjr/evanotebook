@@ -793,6 +793,7 @@ class ProcessWorker {
     environment.OrbitDB = OrbitDB;
     environment.opfs = new OriginPrivateFileSystem();
     environment.workerpool = workerpool;
+    environment.sleep = (ms: number) => new Promise(resolve => setTimeout(  resolve, ms));
     environment.db = new Observable((subscriber: Subscriber<any>) => {
       create_db().then(db => {
         subscriber.next(db);

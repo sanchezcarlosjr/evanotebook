@@ -4,6 +4,7 @@ import {
   finalize,
   first,
   firstValueFrom,
+  from,
   map,
   Observable,
   startWith,
@@ -37,15 +38,20 @@ import { pushable } from "it-pushable"
 import { pipe } from "it-pipe"
 import { multiaddr, protocols } from "@multiformats/multiaddr"
 import { fromString, toString } from "uint8arrays";
+import { AddressOrPair, SignerOptions } from "@polkadot/api/types";
+import { IEvent } from "@polkadot/types/types";
 
 export interface Protocol {
   connect: (options: any) => any;
   send: (options: any) => any;
 }
 
-interface GearMessageProtocol extends IMessageSendOptions {
-  providerAddress: string;
-  keyrings: any[];
+type GearMessageProtocol = Partial<IMessageSendOptions> & {
+  providerAddress?: string;
+  destination: string;
+  payload: any;
+  keyrings: (AddressOrPair|Partial<SignerOptions> | undefined)[];
+  gasLimit?: any;
 }
 
 interface GearProtocolOptions extends GearApiOptions {
@@ -55,6 +61,12 @@ interface GearProtocolOptions extends GearApiOptions {
 export class GearProtocol implements Protocol {
   private gearApi?: GearApi;
   private meta?: ProgramMetadata;
+  private initializationPromise: Promise<GearProtocol>;
+
+  constructor(options: GearProtocolOptions = {}) {
+    this.initializationPromise  = this.init(options);
+  }
+
   async init(options:  GearProtocolOptions = {}) {
     options = Object.assign(options, {providerAddress: 'wss://testnet.vara.rs'});
     this.gearApi = await GearApi.create(options);
@@ -64,19 +76,19 @@ export class GearProtocol implements Protocol {
 
   connect() {
     let unsub: (() => any) | null = null;
-    return new Observable<{ k: string, v: any }>((subscriber: Subscriber<any>) => {
-      this.gearApi?.query.system.events((events) => subscriber.next(events));
+    return new Observable<any[]>((subscriber: Subscriber<any>) => {
+      this.initializationPromise.then(protocol => protocol.gearApi?.query.system.events((events) => subscriber.next(events)));
     }).pipe(finalize(() => unsub && unsub()));
   }
 
   async send(message: GearMessageProtocol) {
+    await this.initializationPromise;
     message = Object.assign(message, {
-      keyrings: [],
       // You should choose something wisely. Find out how https://wiki.gear-tech.io/docs/api/calculate-gas
-      gasLimit: 508_337_712*2,
+      gasLimit: 508_337_712*2, 
       value: 0
     });
-    const gearEvents = await this.listenGearSystemEvents(message);
+    const gearEvents = this.listenUserMessageEvents(message.destination);
     const messageEvents = this.signAndSend(message);
     return firstValueFrom(gearEvents.pipe(
       concatMap(gearEvent => messageEvents.pipe(filter(({k}) => k === gearEvent.k), map(_ => gearEvent.v))),
@@ -84,7 +96,7 @@ export class GearProtocol implements Protocol {
     ));
   }
   private signAndSend(message: GearMessageProtocol) {
-    let extrinsic = this.gearApi?.message.send(message, this.meta);
+    let extrinsic = this.gearApi?.message.send(message as IMessageSendOptions, this.meta);
     const messageEvents = new Subject<{ k: string }>();
     // @ts-ignore
     extrinsic?.signAndSend(...message.keyrings, ({events, status}) => {
@@ -100,26 +112,30 @@ export class GearProtocol implements Protocol {
     return messageEvents;
   }
 
-  private async listenGearSystemEvents(message: GearMessageProtocol) {
-    const gearEvents = new Subject<{ k: string, v: any }>();
-    const unsub = await this.gearApi?.query.system.events((events) => {
-      events.forEach(({event}) => {
-        // @ts-ignore
-        if (this.gearApi.events?.gear?.UserMessageSent?.is(event)) {
-          const {
-            data: {
+  listenUserMessageEvents(destination: string) {
+    return this.connect().pipe(
+      map(events => 
+         events.map(({event}: {event: IEvent<any, any>}) => {
+          // @ts-ignore
+          if (this.gearApi.events?.gear?.UserMessageSent?.is(event)) {
+            const {
+              data: {
+                // @ts-ignore
+                message: {source, details}
+              }
+            } = event;
+            if (source.eq(destination)) {
               // @ts-ignore
-              message: {source, details}
+              return {k: details.toHex(), v: this.meta.createType(0, event?.data?.toHuman()?.message?.payload)};
             }
-          } = event;
-          if (source.eq(message.destination)) {
-            // @ts-ignore
-            gearEvents.next({k: details.toHex(), v: this.meta.createType(0, event?.data?.toHuman()?.message?.payload)});
+            return null;
           }
-        }
-      })
-    });
-    return gearEvents.pipe(finalize(() => unsub ? unsub(): 0));
+          return null;
+        })
+      ),
+      concatMap(x => from(x)),
+      filter(x => x !== null)
+    ) as Observable<{k: string, v: any}>;
   }
 }
 
