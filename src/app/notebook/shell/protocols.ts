@@ -1,12 +1,112 @@
-import {map, startWith, Subscriber,tap} from "rxjs";
+import {
+  concatMap,
+  filter,
+  finalize,
+  first,
+  firstValueFrom,
+  map,
+  Observable,
+  startWith,
+  Subject,
+  Subscriber,
+  tap
+} from "rxjs";
 import {IMqttServiceOptions, MqttService} from 'ngx-mqtt';
 import {webSocket, WebSocketSubject} from "rxjs/webSocket";
-import { GearApi,getProgramMetadata,GearKeyring,CreateType } from '@gear-js/api';
+import {
+  GearApi,
+  getProgramMetadata,
+  GearKeyring,
+  CreateType,
+  IMessageSendOptions,
+  GearApiOptions,
+  ProgramMetadata
+} from '@gear-js/api';
 
 
 export interface Protocol {
   connect: (options: any) => any;
   send: (options: any) => any;
+}
+
+interface GearMessageProtocol extends IMessageSendOptions {
+  providerAddress: string;
+  keyrings: any[];
+}
+
+interface GearProtocolOptions extends GearApiOptions {
+  metadataPlainText?: string
+}
+
+export class GearProtocol implements Protocol {
+  private gearApi?: GearApi;
+  private meta?: ProgramMetadata;
+  async init(options:  GearProtocolOptions = {}) {
+    options = Object.assign(options, {providerAddress: 'wss://testnet.vara.rs'});
+    this.gearApi = await GearApi.create(options);
+    this.meta = getProgramMetadata("0x" + options.metadataPlainText);
+    return new GearProtocol();
+  }
+
+  connect() {
+    let unsub: (() => any) | null = null;
+    return new Observable<{ k: string, v: any }>((subscriber: Subscriber<any>) => {
+      this.gearApi?.query.system.events((events) => subscriber.next(events));
+    }).pipe(finalize(() => unsub && unsub()));
+  }
+
+  async send(message: GearMessageProtocol) {
+    message = Object.assign(message, {
+      keyrings: [],
+      // You should choose something wisely. Find out how https://wiki.gear-tech.io/docs/api/calculate-gas
+      gasLimit: 508_337_712*2,
+      value: 0
+    });
+    const gearEvents = await this.listenGearSystemEvents(message);
+    const messageEvents = this.signAndSend(message);
+    return firstValueFrom(gearEvents.pipe(
+      concatMap(gearEvent => messageEvents.pipe(filter(({k}) => k === gearEvent.k), map(_ => gearEvent.v))),
+      first()
+    ));
+  }
+  private signAndSend(message: GearMessageProtocol) {
+    let extrinsic = this.gearApi?.message.send(message, this.meta);
+    const messageEvents = new Subject<{ k: string }>();
+    // @ts-ignore
+    extrinsic?.signAndSend(...message.keyrings, ({events, status}) => {
+      // @ts-ignore
+      if (status?.Finalized)
+        return;
+      // @ts-ignore
+      const queuedMessages = events.filter(({event}) => event.method === "MessageQueued").map(({event}) => event?.data?.id?.toHex());
+      if (queuedMessages.length === 0)
+        return;
+      messageEvents.next({k: queuedMessages[0] + '0001'});
+    });
+    return messageEvents;
+  }
+
+  private async listenGearSystemEvents(message: GearMessageProtocol) {
+    const gearEvents = new Subject<{ k: string, v: any }>();
+    const unsub = await this.gearApi?.query.system.events((events) => {
+      events.forEach(({event}) => {
+        // @ts-ignore
+        if (gearApi.events?.gear?.UserMessageSent?.is(event)) {
+          const {
+            data: {
+              // @ts-ignore
+              message: {source, details}
+            }
+          } = event;
+          if (source.eq(message.destination)) {
+            // @ts-ignore
+            gearEvents.next({k: details.toHex(), v: this.meta.createType(0, event?.data?.toHuman()?.message?.payload)});
+          }
+        }
+      })
+    });
+    return gearEvents.pipe(finalize(() => unsub ? unsub(): 0));
+  }
 }
 
 export class WebSocket implements Protocol {
@@ -135,3 +235,5 @@ globalThis.getProgramMetadata = getProgramMetadata;
 globalThis.GearKeyring = GearKeyring;
 // @ts-ignore
 globalThis.CreateType = CreateType;
+// @ts-ignore
+globalThis.GearProtocol = GearProtocol;
