@@ -46,7 +46,7 @@ def display(f):
     return "<div></div>"
 ${this.mostRecentCode}`;
       instance.runPythonAsync(code).then((output: any) => {
-        if (output) {
+        if (output !== undefined) {
            this.write(output); 
         }
         this.stop();
