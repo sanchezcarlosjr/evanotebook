@@ -1,46 +1,48 @@
 {
-  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
-  "index": "/index.html",
-  "assetGroups": [
-    {
-      "name": "app",
-      "installMode": "prefetch",
-      "resources": {
-        "files": [
-          "/favicon.ico",
-          "/index.html",
-          "/manifest.webmanifest",
-          "/*.css",
-          "/*.js",
-          "/*.json",
-          "/*.xml",
-          "/*.csv",
-          "/*.tsv",
-        ]
-      }
-    },
-    {
-      "name": "assets",
-      "installMode": "lazy",
-      "updateMode": "prefetch",
-      "resources": {
-        "files": [
-          "/assets/**",
-          "/*.(svg|cur|jpg|jpeg|png|apng|webp|wasm|avif|gif|otf|ttf|tflite|task|woff|woff2|pdf|sav|tiff|txt|zip|whl)"
-        ]
-      }
-    }
-  ],
-   "dataGroups": [
-    {
-      "name": "pypi-api",
-      "urls": ["https://pypi.org/pypi/*"],
-      "cacheConfig": {
-        "strategy": "performance",
-        "maxSize": 100,
-        "maxAge": "2d",
-        "timeout": "10s"
-      }
-    }
-  ]
+    "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+    "index": "/index.html",
+    "assetGroups": [
+        {
+            "name": "app",
+            "installMode": "prefetch",
+            "resources": {
+                "files": [
+                    "/favicon.ico",
+                    "/index.html",
+                    "/manifest.webmanifest",
+                    "/*.css",
+                    "/*.js",
+                    "/*.json",
+                    "/*.xml",
+                    "/*.csv",
+                    "/*.tsv"
+                ]
+            }
+        },
+        {
+            "name": "assets",
+            "installMode": "lazy",
+            "updateMode": "prefetch",
+            "resources": {
+                "files": [
+                    "/assets/**",
+                    "/*.(svg|cur|jpg|jpeg|png|apng|webp|wasm|avif|gif|otf|ttf|tflite|task|woff|woff2|pdf|sav|tiff|txt|zip|whl)"
+                ]
+            }
+        }
+    ],
+    "dataGroups": [
+        {
+            "name": "pypi-api",
+            "urls": [
+                "https://pypi.org/pypi/*"
+            ],
+            "cacheConfig": {
+                "strategy": "performance",
+                "maxSize": 100,
+                "maxAge": "2d",
+                "timeout": "10s"
+            }
+        }
+    ]
 }
