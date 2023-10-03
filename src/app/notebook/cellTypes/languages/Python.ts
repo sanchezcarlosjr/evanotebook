@@ -13,10 +13,6 @@ const pyodide = new Observable<{
   loadPyodide().then(async (instance) => {
     await instance.loadPackage("micropip");
     const micropip = instance.pyimport("micropip");
-    await micropip.install("pandas");
-    await micropip.install("numpy");
-    await micropip.install("scikit-learn");
-    await micropip.install("matplotlib");
     // @ts-ignore
     globalThis.pyodide = instance;
     subscriber.next(instance);
