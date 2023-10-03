@@ -12,7 +12,6 @@ const pyodide = new Observable<{
   // @ts-ignore
   loadPyodide().then(async (instance) => {
     await instance.loadPackage("micropip");
-    const micropip = instance.pyimport("micropip");
     // @ts-ignore
     globalThis.pyodide = instance;
     subscriber.next(instance);
