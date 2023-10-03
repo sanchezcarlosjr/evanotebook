@@ -14,7 +14,8 @@
           "/*.js",
           "/*.json",
           "/*.xml",
-          "/*.csv"
+          "/*.csv",
+          "/*.tsv",
         ]
       }
     },
@@ -25,8 +26,20 @@
       "resources": {
         "files": [
           "/assets/**",
-          "/*.(svg|cur|jpg|jpeg|png|apng|webp|wasm|avif|gif|otf|ttf|tflite|task|woff|woff2|pdf|sav|tiff|txt)"
+          "/*.(svg|cur|jpg|jpeg|png|apng|webp|wasm|avif|gif|otf|ttf|tflite|task|woff|woff2|pdf|sav|tiff|txt|zip|whl)"
         ]
+      }
+    }
+  ],
+   "dataGroups": [
+    {
+      "name": "pypi-api",
+      "urls": ["https://pypi.org/pypi/*"],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxSize": 100,
+        "maxAge": "2d",
+        "timeout": "10s"
       }
     }
   ]
