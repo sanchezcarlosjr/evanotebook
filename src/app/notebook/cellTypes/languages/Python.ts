@@ -46,8 +46,10 @@ def display(f):
     f.canvas.show()
     return "<div></div>"
 ${this.mostRecentCode}`;
-      instance.runPythonAsync(code).then((output: string) => {
-        this.write(output);
+      instance.runPythonAsync(code).then((output: any) => {
+        if (output) {
+           this.write(output); 
+        }
         this.stop();
       }).catch((e: any) => {
         this.rewrite(`<pre class="py-error wrap">${e.message}</pre>`);
