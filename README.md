@@ -1,7 +1,8 @@
 # EvaNotebook
-A P2P Browser-Based Computational Notebook for Real Systems with IA. 
+EvaNotebook is a computational notebook specifically designed to operate solely within a browser environment, without the need for a client-server architecture. Its
+design lends itself to the development of prototypes, experimental processes, and system scenarios with a main emphasis on multilingual programming for event-driven
+architectures. It achieves this with the assistance of a decentralized database and incorporates various application protocols, including WebRTC, WebSockets, and MQTT,  providing a higher level of abstraction.
 
-We're excited to present EvaNotebook, an open-source platform designed to accelerate your AI development journey. Built for web developers and AI enthusiasts alike, this powerful notebook makes it easy to create and collaborate on projects in real time, directly from your browser.
 
 [![EvaNotebook](http://img.youtube.com/vi/KkJgWNAVNdo/0.jpg)](http://www.youtube.com/watch?v=KkJgWNAVNdo "EvaNotebook")
 

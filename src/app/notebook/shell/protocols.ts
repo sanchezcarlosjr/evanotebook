@@ -24,19 +24,19 @@ import {
   ProgramMetadata
 } from '@gear-js/api';
 import { createLibp2p, Libp2p as Libp2pType } from 'new-libp2p';
-import { noise } from '@chainsafe/libp2p-noise'
-import { yamux } from '@chainsafe/libp2p-yamux'
-import { bootstrap } from '@libp2p/bootstrap'
-import { kadDHT } from '@libp2p/kad-dht'
-import { mplex } from '@libp2p/mplex'
-import { webRTCDirect, webRTC } from '@libp2p/webrtc'
-import { webSockets } from '@libp2p/websockets'
-import { webTransport } from '@libp2p/webtransport'
-import { circuitRelayTransport } from 'new-libp2p/circuit-relay'
-import { identifyService } from 'new-libp2p/identify'
-import { pushable } from "it-pushable"
-import { pipe } from "it-pipe"
-import { multiaddr, protocols } from "@multiformats/multiaddr"
+import { noise } from '@chainsafe/libp2p-noise';
+import { yamux } from '@chainsafe/libp2p-yamux';
+import { bootstrap } from '@libp2p/bootstrap';
+import { kadDHT } from '@libp2p/kad-dht';
+import { mplex } from '@libp2p/mplex';
+import { webRTCDirect, webRTC } from '@libp2p/webrtc';
+import { webSockets } from '@libp2p/websockets';
+import { webTransport } from '@libp2p/webtransport';
+import { circuitRelayTransport } from 'new-libp2p/circuit-relay';
+import { identifyService } from 'new-libp2p/identify';
+import { pushable } from "it-pushable";
+import { pipe } from "it-pipe";
+import { multiaddr, protocols } from "@multiformats/multiaddr";
 import { fromString, toString } from "uint8arrays";
 import { AddressOrPair, SignerOptions } from "@polkadot/api/types";
 import { IEvent } from "@polkadot/types/types";
@@ -85,7 +85,7 @@ export class GearProtocol implements Protocol {
     await this.initializationPromise;
     message = Object.assign(message, {
       // You should choose something wisely. Find out how https://wiki.gear-tech.io/docs/api/calculate-gas
-      gasLimit: 508_337_712*2, 
+      gasLimit: 508_337_712*2,
       value: 0
     });
     const gearEvents = this.listenUserMessageEvents(message.destination);
@@ -114,7 +114,7 @@ export class GearProtocol implements Protocol {
 
   listenUserMessageEvents(destination: string) {
     return this.connect().pipe(
-      map(events => 
+      map(events =>
          events.map(({event}: {event: IEvent<any, any>}) => {
           // @ts-ignore
           if (this.gearApi.events?.gear?.UserMessageSent?.is(event)) {

@@ -1,7 +1,7 @@
 import mermaid, { MermaidConfig } from "mermaid";
 import {EditorJsTool} from "./EditorJsTool";
 import {randomCouchString} from "rxdb";
-import { EditorState } from '@codemirror/state';
+import {EditorState, Transaction} from '@codemirror/state';
 import {
   crosshairCursor,
   dropCursor,
@@ -20,6 +20,16 @@ import {BlockAPI} from "@editorjs/editorjs";
 import {BehaviorSubject, filter,firstValueFrom,first,map} from "rxjs";
 import {svgToInlinedSvgDataUri,dataUriToImage,canvasToRasterBlob,download} from "export-svg";
 import { mermaid as mermaidlang, mindmapTags } from 'codemirror-lang-mermaid';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+
+const myHighlightStyle = HighlightStyle.define([
+  { tag: mindmapTags.diagramName, color: '#9650c8' },
+  { tag: mindmapTags.lineText1, color: '#ce9178' },
+  { tag: mindmapTags.lineText2, color: 'green' },
+  { tag: mindmapTags.lineText3, color: 'red' },
+  { tag: mindmapTags.lineText4, color: 'magenta' },
+  { tag: mindmapTags.lineText5, color: '#569cd6' },
+]);
 
 function generateId(prefix: string) {
   return `${prefix}${randomCouchString(10)}`;
@@ -27,6 +37,7 @@ function generateId(prefix: string) {
 
 export class MermaidTool {
   private code: string;
+  private editor?: EditorView;
   private readOnly: boolean | undefined;
   private block: BlockAPI | undefined;
   private svgSubject = new BehaviorSubject<Element|undefined>(undefined);
@@ -44,8 +55,68 @@ export class MermaidTool {
       call: async () => {
         await this.exportPNG();
       }
+    },
+    {
+      name: 'Sequence diagram example',
+      call: async () => {
+        this.code = `sequenceDiagram
+    Alice->>+John: Hello John, how are you?
+    Alice->>+John: John, can you hear me?
+    John-->>-Alice: Hi Alice, I can hear you!
+    John-->>-Alice: I feel great!`;
+        this.updateEditor();
+      }
+    },
+    {
+      name: 'Flow diagram example',
+      call: async () => {
+        this.code = `flowchart TD
+    A[Christmas] -->|Get money| B(Go shopping)
+    B --> C{Let me think}
+    C -->|One| D[Laptop]
+    C -->|Two| E[iPhone]
+    C -->|Three| F[fa:fa-car Car]`;
+        this.updateEditor();
+      }
+    },
+    {
+      name: 'Class diagram example',
+      call: async () => {
+        this.code = `classDiagram
+    Animal <|-- Duck
+    Animal <|-- Fish
+    Animal <|-- Zebra
+    Animal : +int age
+    Animal : +String gender
+    Animal: +isMammal()
+    Animal: +mate()
+    class Duck{
+      +String beakColor
+      +swim()
+      +quack()
     }
-  ]
+    class Fish{
+      -int sizeInFeet
+      -canEat()
+    }
+    class Zebra{
+      +bool is_wild
+      +run()
+    }`;
+        this.updateEditor();
+      }
+    }
+  ];
+
+
+  private updateEditor() {
+    if (this.editor) {
+      const transaction = this.editor.state.update({
+        changes: {from: 0, to: this.editor.state.doc.length, insert: this.code}
+      });
+      this.editor.dispatch(transaction);
+    }
+  }
 
   static config(config: MermaidConfig) {
     mermaid.initialize(config);
@@ -159,7 +230,7 @@ letter-spacing: 0;
     const blob = await canvasToRasterBlob(this.imageToCanvas(img, options), options);
     download(this.block?.id+'.png', blob);
   }
-  
+
   imageToCanvas(img: HTMLImageElement , options: {quality: number}) {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d", options);
@@ -211,7 +282,7 @@ letter-spacing: 0;
       return;
     }
     wrapper.appendChild(document.createElement('div'));
-    new EditorView({
+    this.editor = new EditorView({
       parent: wrapper.children[0],
       state: EditorState.create({
         doc:  this.code ? this.code : '',
@@ -235,7 +306,6 @@ letter-spacing: 0;
           bracketMatching(),
           closeBrackets(),
           autocompletion(),
-          mermaidlang(),
           rectangularSelection(),
           crosshairCursor(),
           keymap.of([
@@ -256,6 +326,8 @@ letter-spacing: 0;
               outline: "none"
             }
           }),
+          mermaidlang(),
+          syntaxHighlighting(myHighlightStyle),
         ]
       })
     })

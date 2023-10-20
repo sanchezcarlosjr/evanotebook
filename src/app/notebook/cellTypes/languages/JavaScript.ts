@@ -41,6 +41,7 @@ export class JavaScript extends Language {
     return [
       javascript(),
       lintGutter(),
+      // @ts-ignore
       linter(esLint(new eslint.Linter(), config))
     ]
   }
