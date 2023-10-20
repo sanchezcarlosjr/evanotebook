@@ -1,7 +1,7 @@
-import { MathfieldElement } from 'mathlive';
 import {InteractiveBlock} from "./InteractiveBlock";
 import {ComputeEngine} from "@cortex-js/compute-engine";
 import {EditorJsTool} from "./EditorJsTool";
+import {MathfieldElement} from "mathlive";
 MathfieldElement.fontsDirectory = "/assets/fonts/";
 MathfieldElement.soundsDirectory = "/assets/sounds/";
 

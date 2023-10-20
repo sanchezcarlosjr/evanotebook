@@ -19,17 +19,6 @@ import {espresso} from "thememirror";
 import {BlockAPI} from "@editorjs/editorjs";
 import {BehaviorSubject, filter, firstValueFrom, first, map} from "rxjs";
 import {svgToInlinedSvgDataUri, dataUriToImage, canvasToRasterBlob, download} from "export-svg";
-import {mermaid as mermaidlang, mindmapTags} from 'codemirror-lang-mermaid';
-import {HighlightStyle, syntaxHighlighting} from '@codemirror/language';
-
-const myHighlightStyle = HighlightStyle.define([
-  {tag: mindmapTags.diagramName, color: '#9650c8'},
-  {tag: mindmapTags.lineText1, color: '#ce9178'},
-  {tag: mindmapTags.lineText2, color: 'green'},
-  {tag: mindmapTags.lineText3, color: 'red'},
-  {tag: mindmapTags.lineText4, color: 'magenta'},
-  {tag: mindmapTags.lineText5, color: '#569cd6'},
-]);
 
 function generateId(prefix: string) {
   return `${prefix}${randomCouchString(10)}`;

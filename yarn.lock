@@ -1811,14 +1811,6 @@
     complex.js "^2.1.1"
     decimal.js "^10.4.0"
 
-"@cortex-js/compute-engine@0.12.3":
-  version "0.12.3"
-  resolved "https://registry.yarnpkg.com/@cortex-js/compute-engine/-/compute-engine-0.12.3.tgz#c046b6e233926cd20f3c305b4855dda364e506fe"
-  integrity sha512-LuiSWMSlgsLFcRWm5ifR8ZeE9HXWOrJ+hE6F211eVI+S+w9SQQvZhhCdUCBusyspW0+29R8lksJPH4qFFr3Xag==
-  dependencies:
-    complex.js "^2.1.1"
-    decimal.js "^10.4.0"
-
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
@@ -12508,12 +12500,10 @@ mathjs@11.11.2:
     tiny-emitter "^2.1.0"
     typed-function "^4.1.1"
 
-mathlive@0.95.5:
-  version "0.95.5"
-  resolved "https://registry.yarnpkg.com/mathlive/-/mathlive-0.95.5.tgz#86b3fcd4100906dcebec2c8c3e6258e950c0e780"
-  integrity sha512-FAAyx0m7hcYNIZKdmQ3/x+vk1lwSmQU30aGYRN2c5+Zz4H0z+B8+0h9fZgUN7SRvc1MmoeaOrO2iGvC2/RYDEg==
-  dependencies:
-    "@cortex-js/compute-engine" "0.12.3"
+mathlive@0.90.6:
+  version "0.90.6"
+  resolved "https://registry.yarnpkg.com/mathlive/-/mathlive-0.90.6.tgz#1579b47d47b683413111b631a0b0640be56fa42d"
+  integrity sha512-B17Cl9/S6aLLBz5OSo3WZ+rKe+kAgFFGJcl7+gqKx2MC8kPPRMRADYXk6NgR2ge0XGbp/t0CNQF1Rg49SVwuew==
 
 md5.js@^1.3.4:
   version "1.3.5"
