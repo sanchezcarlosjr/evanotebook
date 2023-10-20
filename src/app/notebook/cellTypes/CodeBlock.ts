@@ -38,13 +38,14 @@ export class CodeBlock extends InteractiveBlock {
   }
 
   private languageFactory(language: string): Language {
-    return match(language).with(
-      "javascript", () => new JavaScript(this.code, this.editorJsTool, this.cell)
-    )
+    return match(language)
+      .with("javascript", () => new JavaScriptMainThread(this.code, this.editorJsTool, this.cell))
       .with("python", () => new Python(this.code, this.editorJsTool, this.cell))
       .with("html", () => new Html(this.code, this.editorJsTool, this.cell))
       .with("sql", () => new Sql(this.code, this.editorJsTool, this.cell))
-      .with("javascript main thread", () => new JavaScriptMainThread(this.code, this.editorJsTool, this.cell))
+      .with(
+        "javascript webworker", () => new JavaScript(this.code, this.editorJsTool, this.cell)
+      )
       .otherwise(
       () => new JavaScript(this.code, this.editorJsTool,this.cell)
     );
@@ -284,6 +285,7 @@ export class CodeBlock extends InteractiveBlock {
     languagesSelect.classList.add('w100');
     languagesSelect.addEventListener('change', (event) => {
       this.language.destroyEditor();
+      this.clear();
       // @ts-ignore
       this.language = this.languageFactory(event.target?.value);
       this.loadLanguage();

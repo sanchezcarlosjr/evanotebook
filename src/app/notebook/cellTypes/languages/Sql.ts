@@ -4,9 +4,10 @@ import {sql} from "@codemirror/lang-sql";
 import { Observable, firstValueFrom, shareReplay } from "rxjs";
 // @ts-ignore
 import { gluesql } from 'gluesql';
+import { autocompletion, startCompletion, CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 
 interface Gluesql {
-  loadIndexedDB: () => void; 
+  loadIndexedDB: () => void;
   query: (x: string) => Promise<string>;
 }
 /*
@@ -14,7 +15,7 @@ interface Gluesql {
 */
 const gluesqlInstance$ = new Observable<Gluesql>(subscriber => {
   gluesql("/assets/gluesql/gluesql_js_bg.wasm").then(async (db: Gluesql) => {
-    await db.loadIndexedDB();
+    db.loadIndexedDB();
     return db;
   }).then((db: Gluesql) => {
     subscriber.next(db);
@@ -24,6 +25,22 @@ const gluesqlInstance$ = new Observable<Gluesql>(subscriber => {
 
 // @ts-ignore
 globalThis.gluesqlConnection = () => firstValueFrom(gluesqlInstance$);
+function sqlAutocompleter(context: CompletionContext): CompletionResult | null {
+  let word = context.matchBefore(/\w*/)
+  if (!word || word.from == word.to && !context.explicit)
+    return null
+  return {
+    from: word.from,
+    options: [
+      {label: "CREATE", type: "create", apply: `CREATE TABLE table (
+    PersonID int,
+    LastName TEXT
+);`, detail: "create table"},
+      {label: "SELECT", type: "select", apply: "select * from table;", detail: "select table"},
+      {label: "INSERT", type: "insert", apply: `INSERT INTO table (column1, column2, column3) VALUES (value1, value2, value3);`, detail: "The INSERT INTO statement is used to insert new records in a table."}
+    ]
+  }
+}
 
 export class Sql extends Language {
   get name() {
@@ -34,11 +51,10 @@ export class Sql extends Language {
     super.dispatchShellRun();
     gluesqlInstance$.subscribe(instance => {
       instance.query(this.mostRecentCode).then((output: any) => {
-        console.log(output);
         if (output[output.length-1].rows) {
           // @ts-ignore
           globalThis.createTable(this.cell, {
-            type: 'render', 
+            type: 'render',
             displayedColumns: Object.keys(output[output.length-1].rows[0]),
             dataSource: output[output.length-1].rows
           });
@@ -53,8 +69,8 @@ export class Sql extends Language {
     });
     return true;
   }
-  
+
   override getExtensions(): Extension[] {
-    return [sql()];
+    return [sql(), autocompletion({ override: [sqlAutocompleter] })];
   }
 }
