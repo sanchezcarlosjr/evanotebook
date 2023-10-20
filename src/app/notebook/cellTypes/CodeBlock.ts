@@ -273,7 +273,7 @@ export class CodeBlock extends InteractiveBlock {
     const wrapper = super.renderSettings();
     let languagesSelect = document.createElement("select");
     languagesSelect.classList.add("small");
-    for (const language of ["javascript", "python", "html", 'sql', 'javascript main thread']) {
+    for (const language of ["javascript", "python", "html", 'sql', 'javascript webworker']) {
       const option = document.createElement("option");
       option.value = language;
       option.innerText = language;
