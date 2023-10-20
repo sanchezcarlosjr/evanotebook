@@ -1,4 +1,4 @@
-import mermaid, { MermaidConfig } from "mermaid";
+import mermaid, {MermaidConfig} from "mermaid";
 import {EditorJsTool} from "./EditorJsTool";
 import {randomCouchString} from "rxdb";
 import {EditorState, Transaction} from '@codemirror/state';
@@ -17,18 +17,18 @@ import {autocompletion, closeBrackets, closeBracketsKeymap} from "@codemirror/au
 import {searchKeymap} from "@codemirror/search";
 import {espresso} from "thememirror";
 import {BlockAPI} from "@editorjs/editorjs";
-import {BehaviorSubject, filter,firstValueFrom,first,map} from "rxjs";
-import {svgToInlinedSvgDataUri,dataUriToImage,canvasToRasterBlob,download} from "export-svg";
-import { mermaid as mermaidlang, mindmapTags } from 'codemirror-lang-mermaid';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import {BehaviorSubject, filter, firstValueFrom, first, map} from "rxjs";
+import {svgToInlinedSvgDataUri, dataUriToImage, canvasToRasterBlob, download} from "export-svg";
+import {mermaid as mermaidlang, mindmapTags} from 'codemirror-lang-mermaid';
+import {HighlightStyle, syntaxHighlighting} from '@codemirror/language';
 
 const myHighlightStyle = HighlightStyle.define([
-  { tag: mindmapTags.diagramName, color: '#9650c8' },
-  { tag: mindmapTags.lineText1, color: '#ce9178' },
-  { tag: mindmapTags.lineText2, color: 'green' },
-  { tag: mindmapTags.lineText3, color: 'red' },
-  { tag: mindmapTags.lineText4, color: 'magenta' },
-  { tag: mindmapTags.lineText5, color: '#569cd6' },
+  {tag: mindmapTags.diagramName, color: '#9650c8'},
+  {tag: mindmapTags.lineText1, color: '#ce9178'},
+  {tag: mindmapTags.lineText2, color: 'green'},
+  {tag: mindmapTags.lineText3, color: 'red'},
+  {tag: mindmapTags.lineText4, color: 'magenta'},
+  {tag: mindmapTags.lineText5, color: '#569cd6'},
 ]);
 
 function generateId(prefix: string) {
@@ -40,14 +40,14 @@ export class MermaidTool {
   private editor?: EditorView;
   private readOnly: boolean | undefined;
   private block: BlockAPI | undefined;
-  private svgSubject = new BehaviorSubject<Element|undefined>(undefined);
+  private svgSubject = new BehaviorSubject<Element | undefined>(undefined);
   private settings = [
     {
       name: 'Export as SVG',
       call: async () => {
         const [svg]: [string] = await this.export();
         // @ts-ignore
-        window.downloadBlob(new Blob([svg],{ type: 'image/svg+xml' }), {filename: this.block.id+'.svg'});
+        window.downloadBlob(new Blob([svg], {type: 'image/svg+xml'}), {filename: this.block.id + '.svg'});
       }
     },
     {
@@ -105,24 +105,114 @@ export class MermaidTool {
     }`;
         this.updateEditor();
       }
+    },
+    {
+      name: 'State diagram example',
+      call: async () => {
+        this.code = `stateDiagram-v2
+    [*] --> Still
+    Still --> [*]
+    Still --> Moving
+    Moving --> Still
+    Moving --> Crash
+    Crash --> [*]`;
+        this.updateEditor();
+      }
+    },
+    {
+      name: 'Entity relationship diagram example',
+      call: async () => {
+        this.code = `erDiagram
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : has
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER ||--o{ INVOICE : "liable for"
+    DELIVERY-ADDRESS ||--o{ ORDER : receives
+    INVOICE ||--|{ ORDER : covers
+    ORDER ||--|{ ORDER-ITEM : includes
+    PRODUCT-CATEGORY ||--|{ PRODUCT : contains
+    PRODUCT ||--o{ ORDER-ITEM : "ordered in"`;
+        this.updateEditor();
+      }
+    },
+    {
+      name: 'Gantt diagram example',
+      call: async () => {
+        this.code = `gantt
+    title A Gantt Diagram
+    dateFormat  YYYY-MM-DD
+    section Section
+    A task           :a1, 2014-01-01, 30d
+    Another task     :after a1  , 20d
+    section Another
+    Task in sec      :2014-01-12  , 12d
+    another task      : 24d`;
+        this.updateEditor();
+      }
+    },
+    {
+      name: 'User Journey diagram example',
+      call: async () => {
+        this.code = `journey
+    title My working day
+    section Go to work
+      Make tea: 5: Me
+      Go upstairs: 3: Me
+      Do work: 1: Me, Cat
+    section Go home
+      Go downstairs: 5: Me
+      Sit down: 3: Me`;
+        this.updateEditor();
+      }
+    },
+    {
+      name: 'Mindmap diagram example',
+      call: async () => {
+        this.code = `mindmap
+  root((mindmap))
+    Origins
+      Long history
+      ::icon(fa fa-book)
+      Popularisation
+        British popular psychology author Tony Buzan
+    Research
+      On effectivness<br/>and features
+      On Automatic creation
+        Uses
+            Creative techniques
+            Strategic planning
+            Argument mapping
+    Tools
+      Pen and paper
+      Mermaid`;
+        this.updateEditor();
+      }
+    },
+    {
+      name: 'QuadrantChart diagram example',
+      call: async () => {
+        this.code = `quadrantChart
+    title Reach and engagement of campaigns
+    x-axis Low Reach --> High Reach
+    y-axis Low Engagement --> High Engagement
+    quadrant-1 We should expand
+    quadrant-2 Need to promote
+    quadrant-3 Re-evaluate
+    quadrant-4 May be improved
+    Campaign A: [0.3, 0.6]
+    Campaign B: [0.45, 0.23]
+    Campaign C: [0.57, 0.69]
+    Campaign D: [0.78, 0.34]
+    Campaign E: [0.40, 0.34]
+    Campaign F: [0.35, 0.78]`;
+        this.updateEditor();
+      }
     }
   ];
 
-
-  private updateEditor() {
-    if (this.editor) {
-      const transaction = this.editor.state.update({
-        changes: {from: 0, to: this.editor.state.doc.length, insert: this.code}
-      });
-      this.editor.dispatch(transaction);
-    }
-  }
-
-  static config(config: MermaidConfig) {
-    mermaid.initialize(config);
-    mermaid.run({
-      suppressErrors: true,
-    });
+  constructor({data, readOnly, block}: EditorJsTool) {
+    this.code = data.code;
+    this.readOnly = readOnly;
+    this.block = block;
   }
 
   static get toolbox() {
@@ -136,10 +226,11 @@ export class MermaidTool {
     return true;
   }
 
-  constructor({ data, readOnly, block }: EditorJsTool) {
-    this.code = data.code;
-    this.readOnly = readOnly;
-    this.block = block;
+  static config(config: MermaidConfig) {
+    mermaid.initialize(config);
+    mermaid.run({
+      suppressErrors: true,
+    });
   }
 
   parse(code: string, preview: Element) {
@@ -182,56 +273,7 @@ export class MermaidTool {
     return wrapper;
   }
 
-  private export(): Promise<any> {
-    return firstValueFrom(this.svgSubject.pipe(
-      filter((svg: Element|undefined):boolean  => svg !== undefined),
-      // @ts-ignore
-      first(),
-      map((element: Element) => {
-        const svg = element.children[0].cloneNode(true) as Element;
-    svg.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', 'http://www.w3.org/1999/xlink');
-    const link = document.createElement('link');
-    link.setAttribute('id', '0');
-    link.rel = 'stylesheet';
-    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css';
-    link.integrity = 'sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==';
-    link.crossOrigin = 'anonymous';
-    link.referrerPolicy = 'no-referrer';
-    svg.appendChild(link);
-    svg.setAttribute('style', '');
-    const styleElement = document.createElement('style');
-    styleElement.setAttribute('id', '1');
-    styleElement.textContent = `
-@font-face {
-font-family: "Fira Code Regular";
-src: url(https://notebook.sanchezcarlosjr.com/assets/fonts/FiraCode-Regular.woff);
-font-display: swap;
-}
-* :not(i) {
-font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
-letter-spacing: 0;
-}
-  `;
-    svg.appendChild(styleElement);
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svg as SVGElement);
-    return [svgString, svg];
-      })
-    ))
-  }
-
-  private async exportPNG() {
-    const [_,svg] = await this.export();
-    svg.getElementById('0').remove();
-    svg.getElementById('1').remove();
-    const options = {quality: 1};
-    const dataUri = await svgToInlinedSvgDataUri(svg, options);
-    const img = await dataUriToImage(dataUri);
-    const blob = await canvasToRasterBlob(this.imageToCanvas(img, options), options);
-    download(this.block?.id+'.png', blob);
-  }
-
-  imageToCanvas(img: HTMLImageElement , options: {quality: number}) {
+  imageToCanvas(img: HTMLImageElement, options: { quality: number }) {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d", options);
     const pixelRatio = 1;
@@ -253,26 +295,6 @@ letter-spacing: 0;
     return canvas;
   }
 
-  private createPreview(wrapper: HTMLDivElement) {
-    const preview = document.createElement('div');
-    preview.classList.add('cdx-block', 'center');
-    wrapper.appendChild(preview);
-    if (this.code) {
-      setTimeout(() => this.parse(this.code, preview).then(svg => this.svgSubject.next(svg)), 0);
-    }
-  }
-
-  private stopPropagation(wrapper: HTMLDivElement) {
-    wrapper.addEventListener('keydown', (event) => {
-      if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
-        event.stopPropagation();
-      }
-    });
-    wrapper.addEventListener('paste', (event) => {
-      event.stopPropagation();
-    });
-  }
-
   validate(savedData: any) {
     return savedData.code.trim() !== '';
   }
@@ -285,7 +307,7 @@ letter-spacing: 0;
     this.editor = new EditorView({
       parent: wrapper.children[0],
       state: EditorState.create({
-        doc:  this.code ? this.code : '',
+        doc: this.code ? this.code : '',
         extensions: [
           EditorView.lineWrapping,
           lineNumbers(),
@@ -325,9 +347,7 @@ letter-spacing: 0;
             "&.cm-focused": {
               outline: "none"
             }
-          }),
-          mermaidlang(),
-          syntaxHighlighting(myHighlightStyle),
+          })
         ]
       })
     })
@@ -337,5 +357,83 @@ letter-spacing: 0;
     return {
       code: this.code
     }
+  }
+
+  private updateEditor() {
+    if (this.editor) {
+      const transaction = this.editor.state.update({
+        changes: {from: 0, to: this.editor.state.doc.length, insert: this.code}
+      });
+      this.editor.dispatch(transaction);
+    }
+  }
+
+  private export(): Promise<any> {
+    return firstValueFrom(this.svgSubject.pipe(
+      filter((svg: Element | undefined): boolean => svg !== undefined),
+      // @ts-ignore
+      first(),
+      map((element: Element) => {
+        const svg = element.children[0].cloneNode(true) as Element;
+        svg.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', 'http://www.w3.org/1999/xlink');
+        const link = document.createElement('link');
+        link.setAttribute('id', '0');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css';
+        link.integrity = 'sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==';
+        link.crossOrigin = 'anonymous';
+        link.referrerPolicy = 'no-referrer';
+        svg.appendChild(link);
+        svg.setAttribute('style', '');
+        const styleElement = document.createElement('style');
+        styleElement.setAttribute('id', '1');
+        styleElement.textContent = `
+@font-face {
+font-family: "Fira Code Regular";
+src: url(https://notebook.sanchezcarlosjr.com/assets/fonts/FiraCode-Regular.woff);
+font-display: swap;
+}
+* :not(i) {
+font-family: "Fira Code Regular",apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif !important;
+letter-spacing: 0;
+}
+  `;
+        svg.appendChild(styleElement);
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svg as SVGElement);
+        return [svgString, svg];
+      })
+    ))
+  }
+
+  private async exportPNG() {
+    const [_, svg] = await this.export();
+    svg.getElementById('0').remove();
+    svg.getElementById('1').remove();
+    const options = {quality: 1};
+    const dataUri = await svgToInlinedSvgDataUri(svg, options);
+    const img = await dataUriToImage(dataUri);
+    const blob = await canvasToRasterBlob(this.imageToCanvas(img, options), options);
+    download(this.block?.id + '.png', blob);
+  }
+
+  private createPreview(wrapper: HTMLDivElement) {
+    const preview = document.createElement('div');
+    preview.classList.add('cdx-block', 'center');
+    wrapper.appendChild(preview);
+    if (this.code) {
+      setTimeout(() => this.parse(this.code, preview).then(svg => this.svgSubject.next(svg)), 0);
+    }
+  }
+
+  private stopPropagation(wrapper: HTMLDivElement) {
+    wrapper.addEventListener('keydown', (event) => {
+      if (event.key === "Enter" || event.ctrlKey && event.key === "v" || event.key === "Backspace") {
+        event.stopPropagation();
+      }
+    });
+    wrapper.addEventListener('paste', (event) => {
+      event.stopPropagation();
+    });
   }
 }
