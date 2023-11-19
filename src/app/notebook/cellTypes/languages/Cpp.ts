@@ -19,6 +19,8 @@ function autocompleteCpp(context: CompletionContext): CompletionResult | null {
       return 0;
       }`, detail: "function"},
       {label: "int", type: "variable", apply: "int x=0;",detail:  "create a int variable"},
+      {label: "for", type: "loop", apply: `for(int i=0; i<n;i++) {
+      }`,detail:  "create a for i=0;i<n;i++"},
       {label: "hello world", type: "text", apply: `#include <stdio.h>
 int main() {
    printf("Hello World");

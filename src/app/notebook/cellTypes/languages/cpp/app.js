@@ -59,7 +59,7 @@ export class App {
       if (writeStack) {
         msg = msg + `\n${exn.stack}`
       }
-      msg += '\x1b[0m\n'
+      msg += ''
       this.memfs.hostWrite(msg)
 
       // Propagate error.
