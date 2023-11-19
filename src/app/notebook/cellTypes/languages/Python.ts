@@ -12,7 +12,6 @@ function jsonStringifyToObjectReplacer(key: string, value: any) {
     return value.toObject();
   }
   if (value && value.toJs) {
-    console.log(value.toString());
     return value.toString();
   }
   if (value && value.toJSON) {
