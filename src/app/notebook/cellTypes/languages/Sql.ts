@@ -5,6 +5,7 @@ import { Observable, firstValueFrom, shareReplay } from "rxjs";
 // @ts-ignore
 import { gluesql } from 'gluesql';
 import { autocompletion, startCompletion, CompletionContext, CompletionResult } from "@codemirror/autocomplete";
+import {stringify} from "../stringToHTML";
 
 interface Gluesql {
   loadIndexedDB: () => void;
@@ -59,7 +60,7 @@ export class Sql extends Language {
             dataSource: output[output.length-1].rows
           });
         } else {
-          this.write(JSON.stringify(output[output.length-1]));
+          this.write(stringify(output[output.length-1]));
         }
         this.stop();
       }).catch((e: any) => {
