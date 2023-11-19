@@ -1,6 +1,7 @@
 import { exec } from "../../shell/exec";
 import { JavaScript } from "./JavaScript";
 import '../../shell/protocols';
+import {stringify} from "../stringToHTML";
 
 export class JavaScriptMainThread extends JavaScript {
     override dispatchShellRun() {

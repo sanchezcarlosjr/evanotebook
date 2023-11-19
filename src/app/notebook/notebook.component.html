@@ -1,4 +1,4 @@
-<mat-toolbar *ngIf="!isMode2">
+<mat-toolbar *ngIf="!hideMainToolbar">
   <button mat-button [matMenuTriggerFor]="fileMenu">File</button>
   <mat-menu #fileMenu="matMenu">
     <input mat-menu-item [(ngModel)]="name" (ngModelChange)="updateName($event)" id="doc-name" class="doc-name" maxlength="259" autocomplete="off" aria-label="Notebook name" data-form-type="name"  data-lpignore="true">
@@ -16,6 +16,7 @@
   <mat-menu #runtimeMenu="matMenu">
     <button mat-menu-item (click)="runAll()">Run all (Ctrl+F9)</button>
     <button mat-menu-item (click)="stopAll()">Stop all</button>
+    <button mat-menu-item (click)="modeZen()">Active mode zen</button>
   </mat-menu>
   <button mat-button [matMenuTriggerFor]="helpMenu">Help</button>
   <mat-menu #helpMenu="matMenu">

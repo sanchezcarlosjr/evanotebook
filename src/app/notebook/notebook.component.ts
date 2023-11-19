@@ -41,6 +41,7 @@ export class NotebookComponent implements OnInit {
   isMode2: boolean = true;
   loading: boolean = true;
   name: string = "";
+  hideMainToolbar = false;
   constructor(
     private injector: Injector,
     private _snackBar: MatSnackBar,
@@ -52,6 +53,7 @@ export class NotebookComponent implements OnInit {
   async ngOnInit() {
     const EditorJS = await import("@editorjs/editorjs");
     this.isMode2 = url.read("m") === "2";
+    this.hideMainToolbar = this.isMode2;
     const editor = new EditorJS.default({
       holder: 'editor-js',
       autofocus: true,
@@ -271,5 +273,9 @@ export class NotebookComponent implements OnInit {
 
   openRecent() {
     this.dialog.open(HistoryComponent);
+  }
+
+  modeZen() {
+    this.hideMainToolbar = true;
   }
 }

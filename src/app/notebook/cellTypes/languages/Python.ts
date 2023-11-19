@@ -2,23 +2,7 @@ import {Language} from "./language";
 import {Observable, shareReplay} from "rxjs";
 import {Extension} from "@codemirror/state";
 import {python} from "@codemirror/lang-python";
-
-/**
- * @param {string} key
- * @param {any} value
- */
-function jsonStringifyToObjectReplacer(key: string, value: any) {
-  if (value && value.toObject) {
-    return value.toObject();
-  }
-  if (value && value.toJs) {
-    return value.toString();
-  }
-  if (value && value.toJSON) {
-    return value.toJSON();
-  }
-  return value;
-}
+import {jsonStringifyToObjectReplacer, stringify} from "../stringToHTML";
 
 
 const pyodide = new Observable<{
@@ -79,7 +63,7 @@ ${this.mostRecentCode}`;
        await instance.runPythonAsync(code)
          .then((output: any) => {
            if (output !== undefined) {
-             this.write(JSON.stringify(output, jsonStringifyToObjectReplacer));
+             this.write(stringify(JSON.stringify(output, jsonStringifyToObjectReplacer)));
            }
            this.stop();
          }).catch((e: any) => {
