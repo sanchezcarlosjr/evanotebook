@@ -21,6 +21,8 @@ function autocompleteCpp(context: CompletionContext): CompletionResult | null {
       {label: "int", type: "variable", apply: "int x=0;",detail:  "create a int variable"},
       {label: "for", type: "loop", apply: `for(int i=0; i<n;i++) {
       }`,detail:  "create a for i=0;i<n;i++"},
+      {label: "while", type: "loop", apply: `while() {
+      }`,detail:  "create a while"},
       {label: "hello world", type: "text", apply: `#include <stdio.h>
 int main() {
    printf("Hello World");

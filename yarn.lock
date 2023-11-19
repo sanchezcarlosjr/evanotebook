@@ -1916,10 +1916,10 @@
   dependencies:
     "@codexteam/icons" "^0.0.5"
 
-"@editorjs/editorjs@2.29.0-rc.4":
-  version "2.29.0-rc.4"
-  resolved "https://registry.yarnpkg.com/@editorjs/editorjs/-/editorjs-2.29.0-rc.4.tgz#0c28700a995c2f294cc89778687508d5e5c82429"
-  integrity sha512-lgjE7j7L5wUm+gTWEo6XedjFiSs/W0i7gqE7uHRKTdHhCch9UVqFTadurcg82dKbvVjgG1EW1j1chbmuICcTGQ==
+"@editorjs/editorjs@2.29.0-rc.6":
+  version "2.29.0-rc.6"
+  resolved "https://registry.yarnpkg.com/@editorjs/editorjs/-/editorjs-2.29.0-rc.6.tgz#55183e2c45e8b56791f0bb088b28e47501c3a4d9"
+  integrity sha512-T+6yOtiMWow0QR9IYIpvY9xkQcCTQq3dZNSzZ+cLD4gPaSQLw/+CLenFS+cUe2jaA5hfhGUsjymccc3Gm2VkLA==
 
 "@editorjs/embed@2.6.0":
   version "2.6.0"
