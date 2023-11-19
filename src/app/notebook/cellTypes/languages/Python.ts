@@ -3,15 +3,52 @@ import {Observable, shareReplay} from "rxjs";
 import {Extension} from "@codemirror/state";
 import {python} from "@codemirror/lang-python";
 
+/**
+ * @param {string} key
+ * @param {any} value
+ */
+function jsonStringifyToObjectReplacer(key: string, value: any) {
+  if (value && value.toObject) {
+    return value.toObject();
+  }
+  if (value && value.toJs) {
+    console.log(value.toString());
+    return value.toString();
+  }
+  if (value && value.toJSON) {
+    return value.toJSON();
+  }
+  return value;
+}
+
 
 const pyodide = new Observable<{
   runPython: (code: string) => any
   setStdout(options: { batched: (input: string) => void }): void;
   runPythonAsync(s: string): Promise<any>;
+  loadPackagesFromImports(code: string): Promise<void>;
 }>(subscriber => {
   // @ts-ignore
   loadPyodide().then(async (instance) => {
     await instance.loadPackage("micropip");
+    await instance.loadPackage('pyodide-http');
+    await instance.runPythonAsync(`
+from js import document
+
+def create_root_element(self):
+        return document.getElementById(BLOCK_ID).children[1]
+
+def display(f):
+        f.canvas.create_root_element = create_root_element.__get__(create_root_element, f.canvas.__class__)
+        f.canvas.show()
+        return "<div></div>"
+import micropip
+
+await micropip.install('requests')
+
+import pyodide_http
+pyodide_http.patch_all()
+`)
     // @ts-ignore
     globalThis.pyodide = instance;
     subscriber.next(instance);
@@ -37,23 +74,20 @@ export class Python extends Language {
         }
       });
       const code = `BLOCK_ID = "${this.editorJsTool?.block?.id}"
-from js import document
-def create_root_element(self):
-    return document.getElementById(BLOCK_ID).children[1]
-def display(f):
-    f.canvas.create_root_element = create_root_element.__get__(create_root_element, f.canvas.__class__)
-    f.canvas.show()
-    return "<div></div>"
 ${this.mostRecentCode}`;
-      instance.runPythonAsync(code).then((output: any) => {
-        if (output !== undefined) {
-           this.write(output); 
-        }
-        this.stop();
-      }).catch((e: any) => {
-        this.rewrite(`<pre class="py-error wrap">${e.message}</pre>`);
-        this.stop();
-      });
+      (async () => {
+       await instance.loadPackagesFromImports(code);
+       await instance.runPythonAsync(code)
+         .then((output: any) => {
+           if (output !== undefined) {
+             this.write(JSON.stringify(output, jsonStringifyToObjectReplacer));
+           }
+           this.stop();
+         }).catch((e: any) => {
+         this.rewrite(`<pre class="py-error wrap">${e.message}</pre>`);
+         this.stop();
+       });
+     })().then()
     });
     return true;
   }

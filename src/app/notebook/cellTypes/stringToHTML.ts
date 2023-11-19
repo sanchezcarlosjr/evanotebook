@@ -6,6 +6,6 @@
  */
 export function stringToHTML(str: string): ChildNode {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(str, 'text/html');
+  const doc = parser.parseFromString(str.replace(/[\u00A0-\u9999<>&]/g, i => '&#'+i.charCodeAt(0)+';'), 'text/html');
   return doc.body.firstChild as  ChildNode;
 }
