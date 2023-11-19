@@ -81,3 +81,8 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 
 ## Acknowledgements
 "Archivo:Edit icon (the Noun Project 30184).svg - Wikipedia, la enciclopedia libre." 15 Mar. 2023, es.m.wikipedia.org/wiki/Archivo:Edit_icon_%28the_Noun_Project_30184%29.svg.
+Based on these projects.
+https://github.com/alangpierce/sucrase
+https://github.com/binji/wasm-clang
+https://babeljs.io/docs/en/babel-standalone
+https://infinitexyy.github.io/playcode/
