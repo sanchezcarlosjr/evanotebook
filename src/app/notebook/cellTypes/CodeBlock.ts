@@ -24,6 +24,7 @@ globalThis.createTable = async (parent: HTMLElement, detail?: {type: string, dis
 }
 
 export class CodeBlock extends InteractiveBlock {
+  static lastSelectedLanguage = 'javascript';
   private cell: HTMLDivElement;
   private input: HTMLInputElement | null = null;
   private language: Language;
@@ -36,7 +37,7 @@ export class CodeBlock extends InteractiveBlock {
     this.code = editorJsTool.data.code ?? "";
     this.outputCell = editorJsTool.data.output ?? "";
     this.cell = document.createElement('div');
-    this.language = this.languageFactory((editorJsTool.data.language === undefined) ? editorJsTool.config.language : editorJsTool.data.language);
+    this.language = this.languageFactory((editorJsTool.data.language === undefined) ? CodeBlock.lastSelectedLanguage : editorJsTool.data.language);
   }
 
   private languageFactory(language: string): Language {
@@ -291,6 +292,7 @@ export class CodeBlock extends InteractiveBlock {
       this.clear();
       // @ts-ignore
       this.language = this.languageFactory(event.target?.value);
+      CodeBlock.lastSelectedLanguage = this.language.name;
       this.loadLanguage();
     });
     wrapper.appendChild(languagesSelect);
