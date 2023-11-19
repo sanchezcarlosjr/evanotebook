@@ -1,5 +1,4 @@
 import {Language} from "./language";
-import {Observable, shareReplay} from "rxjs";
 import {Extension} from "@codemirror/state";
 import {cpp} from "@codemirror/lang-cpp";
 import {autocompletion, CompletionContext, CompletionResult} from "@codemirror/autocomplete"
@@ -39,8 +38,8 @@ export class Cpp extends Language {
       hostWrite: (output: string) => this.write(output),
       hostRead: () => prompt()
     });
-    this.clear();
-    api.compileLinkRun(this.mostRecentCode).then(console.log).catch(console.error);
+    super.dispatchShellRun();
+    api.compileLinkRun(this.mostRecentCode).then(console.log).catch(console.error).finally(() => super.stop());
     return true;
   }
 
