@@ -90,7 +90,7 @@
     "langchain": "0.0.72",
     "mathjs": "11.11.2",
     "mathlive": "0.90.6",
-    "mermaid": "10.5.1",
+    "mermaid": "10.6.1",
     "new-libp2p": "npm:libp2p@0.45.9",
     "new-libp2p-gossipsub": "npm:@chainsafe/libp2p-gossipsub@9.1.0",
     "ngx-mqtt": "16.1.0",
