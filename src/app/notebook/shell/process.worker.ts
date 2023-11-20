@@ -47,8 +47,17 @@ import {fromFetch} from "rxjs/fetch";
 import {isMatching, match, P, Pattern} from 'ts-pattern';
 import * as protocols from './protocols';
 import * as _ from 'lodash';
-import { OpenAI } from "langchain/llms/openai";
-import {MessagesPlaceholder, PromptTemplate} from "langchain/prompts";
+import {OpenAI} from "langchain/llms/openai";
+import {
+  ChatPromptTemplate,
+  FewShotPromptTemplate,
+  HumanMessagePromptTemplate,
+  LengthBasedExampleSelector,
+  MessagesPlaceholder,
+  PromptTemplate,
+  SemanticSimilarityExampleSelector,
+  SystemMessagePromptTemplate
+} from "langchain/prompts";
 import {ComputeEngine} from "@cortex-js/compute-engine";
 import {addRxPlugin, createRxDatabase} from "rxdb";
 import {getRxStorageDexie} from "rxdb/plugins/storage-dexie";
@@ -56,58 +65,44 @@ import {getCRDTSchemaPart, RxDBcrdtPlugin} from "rxdb/plugins/crdt";
 import {enforceOptions} from 'broadcast-channel';
 import {RxDBLeaderElectionPlugin} from 'rxdb/plugins/leader-election';
 import * as duckdb from '@duckdb/duckdb-wasm';
-import ajv from 'ajv';
 import {AsyncDuckDB, AsyncDuckDBConnection} from '@duckdb/duckdb-wasm';
+import ajv from 'ajv';
 import * as arrow from "apache-arrow";
-import {RxDatabase} from "rxdb/dist/types/types";
-import {OutputData} from "@editorjs/editorjs";
-import { JsonSpec } from "langchain/tools";
-import { JsonToolkit, createJsonAgent } from "langchain/agents";
-import {AgentExecutor, ChatAgent, initializeAgentExecutorWithOptions} from "langchain/agents";
+import {JsonSpec, SerpAPI, ZapierNLAWrapper} from "langchain/tools";
 import {
-  StructuredOutputParser,
-  OutputFixingParser,
+  AgentExecutor,
+  ChatAgent,
+  createJsonAgent,
+  initializeAgentExecutorWithOptions,
+  JsonToolkit,
+  ZapierToolKit
+} from "langchain/agents";
+import {
   CombiningOutputParser,
   CommaSeparatedListOutputParser,
-  RegexParser
+  OutputFixingParser,
+  RegexParser,
+  StructuredOutputParser
 } from "langchain/output_parsers";
-import { SerpAPI } from "langchain/tools";
-import {
-  SystemMessagePromptTemplate,
-  HumanMessagePromptTemplate,
-  ChatPromptTemplate,
-  LengthBasedExampleSelector,
-  FewShotPromptTemplate,
-  SemanticSimilarityExampleSelector
-} from "langchain/prompts";
-import { Calculator } from "langchain/tools/calculator";
-import { ChatOpenAI } from "langchain/chat_models/openai";
-import { HumanChatMessage, SystemChatMessage, AIChatMessage } from "langchain/schema";
-import {BlockAPI} from "@editorjs/editorjs/types/api/block";
-import { BufferMemory } from "langchain/memory";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-import { ZapierNLAWrapper } from "langchain/tools";
-import {
-  ZapierToolKit,
-} from "langchain/agents";
+import {Calculator} from "langchain/tools/calculator";
+import {ChatOpenAI} from "langchain/chat_models/openai";
+import {AIChatMessage, HumanChatMessage, SystemChatMessage} from "langchain/schema";
+import {BufferMemory} from "langchain/memory";
+import {MemoryVectorStore} from "langchain/vectorstores/memory";
+import {OpenAIEmbeddings} from "langchain/embeddings/openai";
 import {ConversationChain, LLMChain} from "langchain/chains";
-import {BlockToolData, ToolConfig} from "@editorjs/editorjs/types/tools";
-import {randomCouchString} from "rxdb";
-import {precompileJS} from "./precompile";
 import {DocumentObserver} from "./documentObserver";
 import SWIPL, {Query, SWIPLModule} from "swipl-wasm";
-import { create as createIPFSHttpClient } from 'ipfs-http-client';
-import { create as createIPFSCoreClient } from 'ipfs-core';
-import { createHelia } from 'helia';
+import {create as createIPFSHttpClient} from 'ipfs-http-client';
+import {create as createIPFSCoreClient} from 'ipfs-core';
+import {createHelia} from 'helia';
 // @ts-ignore
 import workerpool from 'workerpool';
 // @ts-ignore
 import OrbitDB from 'orbit-db';
-
-
+import {exec} from './exec';
+import {EditorJS} from "./editorJS";
 import Indexed = Immutable.Seq.Indexed;
-import { exec } from './exec';
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBcrdtPlugin);
@@ -505,116 +500,6 @@ async function buildTree(transformer: MatTreeTransformer) {
   return new MatTree(payload, transformer);
 }
 
-class Blocks {
-  constructor(private environment: { db: Observable<RxDatabase>, currentUrl: URL }) {
-  }
-
-  get get$() {
-    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].find({
-      selector: {
-        topic: {
-          $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
-        }
-      },
-      sort: [{index: 'asc'}]
-    }).$));
-  }
-
-  getById(id: string): Observable<BlockAPI | null> {
-    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].findOne(id).$));
-  }
-
-  getByIndex(index: number): Observable<BlockAPI | null> {
-    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].findOne({
-      selector: {
-        index: {
-          $eq: index
-        },
-        topic: {
-          $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
-        }
-      }
-    }).$));
-  }
-
-  insert(type?: string, data?: BlockToolData, config?: ToolConfig, index?: number, needToFocus?: boolean, replace?: boolean, id?: string) {
-    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
-      ifMatch: {
-        $set: {
-          type,
-          data,
-          config,
-          index,
-          createdBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
-          updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
-          id: id ?? randomCouchString(7),
-          topic: this.environment.currentUrl.searchParams.get("t") ?? ""
-        }
-      }
-    })));
-  };
-
-  upsert(id?: string, data?: BlockToolData, type?: string, index?: number, config?: ToolConfig, needToFocus?: boolean, replace?: boolean) {
-    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
-      selector: {
-        id: {$exists: true}
-      },
-      ifMatch: {
-        $set: {
-          id,
-          data,
-          updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker"
-        }
-      },
-      ifNotMatch: {
-        $set: {
-          type,
-          data,
-          config,
-          index,
-          createdBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
-          updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
-          id: id ?? randomCouchString(7),
-          topic: this.environment.currentUrl.searchParams.get("t") ?? ""
-        }
-      }
-    })));
-  }
-
-  update(id: string, data: BlockToolData) {
-    return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
-      selector: {
-        id: {$exists: true}
-      },
-      ifMatch: {
-        $set: {
-          id,
-          data,
-          updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker"
-        }
-      }
-    })));
-  }
-
-  delete(id: string) {
-    return this.environment.db.pipe(
-      switchMap((db: RxDatabase) => db["blocks"].findOne(id).exec()),
-      switchMap(document => document?.updateCRDT({
-        selector: {
-          id: {$exists: true}
-        },
-        ifMatch: {
-          $set: {
-            id,
-            updatedBy: (this.environment.currentUrl.searchParams.get("p") ?? "") + "worker",
-            _deleted: true
-          }
-        }
-      }))
-    );
-  }
-}
-
 class HostOperatingSystem {
   constructor(private environment: any) {}
   exec(command: string) {
@@ -658,31 +543,6 @@ class HostFilesystem {
   }
   read(path: string) {
     return this.host.exec(`cat ${path}`);
-  }
-}
-
-class EditorJS {
-  public static version: "2.26.5";
-  public readonly blocks = new Blocks(this.environment);
-
-  constructor(private environment: { db: Observable<RxDatabase>, currentUrl: URL }) {
-  }
-
-  get isReady(): Promise<boolean> {
-    return new Promise((resolve) => resolve(true));
-  }
-
-  save(): Promise<OutputData> {
-    return firstValueFrom(this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].find({
-      selector: {
-        topic: {
-          $eq: this.environment.currentUrl.searchParams.get("t") ?? ""
-        }
-      }
-    })
-      .exec()), map(blocks => ({
-      version: EditorJS.version, blocks
-    }))));
   }
 }
 
@@ -1273,6 +1133,8 @@ class ProcessWorker {
       href: payload.href
     };
     this.environment.currentUrl = new URL(payload.href);
+    this.environment.topic = this.environment.currentUrl.searchParams.get("t");
+    this.environment.peer = this.environment.currentUrl.searchParams.get("p");
     return this.environmentObserver.init();
   }
 }

@@ -30,7 +30,7 @@ export class CodeBlock extends InteractiveBlock {
   private language: Language;
   private readonly outputCell: string;
   private code: string;
-  private languages = ["javascript", "python", "html", 'sql', 'javascript webworker', "cpp"];
+  private languages = [{value: "javascript main thread", name: "javascript"}, {value: "python", name: "python"}, {value: "html", name: "html"}, {value: "sql", name: "sql"}, {value: "javascript", name: "javascript web worker"}, {value: "cpp", name: "cpp"}];
 
   constructor(private editorJsTool: EditorJsTool) {
     super(editorJsTool);
@@ -42,13 +42,13 @@ export class CodeBlock extends InteractiveBlock {
 
   private languageFactory(language: string): Language {
     return match(language)
-      .with("javascript", () => new JavaScriptMainThread(this.code, this.editorJsTool, this.cell))
+      .with("javascript main thread", () => new JavaScriptMainThread(this.code, this.editorJsTool, this.cell))
       .with("python", () => new Python(this.code, this.editorJsTool, this.cell))
       .with("html", () => new Html(this.code, this.editorJsTool, this.cell))
       .with("sql", () => new Sql(this.code, this.editorJsTool, this.cell))
       .with("cpp", () => new Cpp(this.code, this.editorJsTool, this.cell))
       .with(
-        "javascript webworker", () => new JavaScript(this.code, this.editorJsTool, this.cell)
+        "javascript", () => new JavaScript(this.code, this.editorJsTool, this.cell)
       )
       .otherwise(
       () => new JavaScript(this.code, this.editorJsTool,this.cell)
@@ -279,9 +279,9 @@ export class CodeBlock extends InteractiveBlock {
     languagesSelect.classList.add("small");
     for (const language of this.languages) {
       const option = document.createElement("option");
-      option.value = language;
-      option.innerText = language;
-      if(language === this.language.name) {
+      option.value = language.value;
+      option.innerText = language.name;
+      if(language.value === this.language.name) {
         option.selected = true;
       }
       languagesSelect.appendChild(option);

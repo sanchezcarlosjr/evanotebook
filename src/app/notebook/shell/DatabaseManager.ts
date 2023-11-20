@@ -1,4 +1,14 @@
-import {BehaviorSubject, filter, firstValueFrom, map, Observable, shareReplay, Subscriber, switchMap} from "rxjs";
+import {
+  BehaviorSubject,
+  filter,
+  first,
+  firstValueFrom,
+  map,
+  Observable,
+  shareReplay,
+  Subscriber,
+  switchMap
+} from "rxjs";
 import {OutputData} from "@editorjs/editorjs";
 import {addRxPlugin, createRxDatabase, RxCollection, RxDatabaseBase, RxDocument, RxDumpDatabaseAny} from 'rxdb';
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
@@ -16,6 +26,7 @@ import {enforceOptions} from "broadcast-channel";
 import {randomCouchString} from "rxdb/plugins/utils";
 import {DocumentObserver} from "./documentObserver";
 import {Injectable} from "@angular/core";
+import {EditorJS} from "./editorJS";
 
 addRxPlugin(RxDBLeaderElectionPlugin);
 
@@ -206,7 +217,9 @@ export class DatabaseManager {
       this.database$.next(this._database);
       // @ts-ignore
       globalThis.environment = DocumentObserver.setup(this.database$);
-      collections.blocks.postInsert(async (plainData, rxDocument) =>{
+      // @ts-ignore
+      globalThis.editor = new EditorJS({topic: this.topic, peer: this._uuid, db: this.database$});
+      collections.blocks.postInsert(async (plainData, rxDocument) => {
         await this.updateHistory();
         return this.increaseIndexes(plainData.index);
       }, false);
@@ -335,6 +348,11 @@ export class DatabaseManager {
 
   exportDatabase() {
     return this._database?.exportJSON();
+  }
+
+  async exportCurrentNotebook() {
+    // @ts-ignore
+    return
   }
 
   importDatabase(json: RxDumpDatabaseAny<RxCollection>) {
@@ -499,7 +517,7 @@ export class DatabaseManager {
     // @ts-ignore
     return block?.updateCRDT({
       selector: {
-        index: { $ne: index }
+        index: {$ne: index}
       },
       ifMatch: {
         $set: {

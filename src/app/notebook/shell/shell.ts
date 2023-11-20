@@ -16,7 +16,7 @@ enum JobStatus {
 
 function downloadFile(blobParts?: any, options?: any) {
   let blob = new Blob(blobParts, options);
-  downloadBlob(blob);
+  downloadBlob(blob, options);
 }
 
 function downloadBlob(blob: Blob, options?: any) {
@@ -71,8 +71,9 @@ export class Shell {
       this.databaseManager.removeAllBlocks().then();
     });
     environment.addEventListener('shell.ExportNotebook', (event: CustomEvent) => {
-      this.databaseManager.exportDatabase()?.then((data) => {
-          downloadFile([JSON.stringify(data)], {type: 'application/json', filename: 'database.json'});
+      // @ts-ignore
+      globalThis.editor.save()?.then((data) => {
+          downloadFile([JSON.stringify(data)], {type: 'application/json', filename: `${url.read('n', 'EvaNotebook')}.json`});
           event.detail?.port?.postMessage({
             event: event.detail?.payload?.event, payload: data
           });
