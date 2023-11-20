@@ -1,0 +1,23 @@
+.chatbot-toggle {
+  position: fixed;
+  bottom: 1em;
+  right: 1.5em;
+  width: 4em;
+  height: 4em;
+  background-color: #f1f1f1;
+  border-radius: 20em;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 3;
+  cursor: pointer;
+}
+
+.chatbot {
+  border: 0;
+  position: fixed;
+  bottom: 4em;
+  right: 2em;
+  width: 30em;
+  height: 42em;
+  z-index: 2;
+}

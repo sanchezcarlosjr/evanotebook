@@ -1,5 +1,5 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {CommonModule, NgOptimizedImage} from '@angular/common';
 
 import {NotebookRoutingModule} from './notebook-routing.module';
 import {NotebookComponent} from './notebook.component';
@@ -26,6 +26,7 @@ import { ShareDialogComponent } from './share-dialog.component';
 import {MatDialogModule} from "@angular/material/dialog";
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import {HistoryComponent} from "./history.component";
+import { AssistantComponent } from './assistant/assistant.component';
 
 @NgModule({
   declarations: [
@@ -35,30 +36,32 @@ import {HistoryComponent} from "./history.component";
     TreeComponent,
     ShareDialogComponent,
     HistoryComponent,
-    CodeComponent
+    CodeComponent,
+    AssistantComponent
   ],
-    imports: [
-        CommonModule,
-        NotebookRoutingModule,
-        JsonFormsModule,
-        JsonFormsAngularMaterialModule,
-        MatAutocompleteModule,
-        MatButtonModule,
-        MatToolbarModule,
-        MatMenuModule,
-        MatButtonModule,
-        MatSnackBarModule,
-        FormsModule,
-        MatDialogModule,
-        MatTableModule,
-        MatSortModule,
-        MatPaginatorModule,
-        MatTreeModule,
-        ClipboardModule,
-        MatCardModule,
-        MatRippleModule,
-        MatRadioModule
-    ]
+  imports: [
+    CommonModule,
+    NotebookRoutingModule,
+    JsonFormsModule,
+    JsonFormsAngularMaterialModule,
+    MatAutocompleteModule,
+    MatButtonModule,
+    MatToolbarModule,
+    MatMenuModule,
+    MatButtonModule,
+    MatSnackBarModule,
+    FormsModule,
+    MatDialogModule,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatTreeModule,
+    ClipboardModule,
+    MatCardModule,
+    MatRippleModule,
+    MatRadioModule,
+    NgOptimizedImage
+  ]
 })
 export class NotebookModule {
 }
