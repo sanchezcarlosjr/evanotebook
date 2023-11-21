@@ -262,10 +262,7 @@ export class NotebookComponent implements OnInit {
     this.titleService.setTitle(name);
   }
 
-  removeUrlProviders() {
-    url.remove("c");
-    url.remove("u");
-  }
+
 
   shareNotebook() {
     this.dialog.open(ShareDialogComponent);

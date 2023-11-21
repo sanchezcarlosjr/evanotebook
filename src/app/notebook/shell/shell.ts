@@ -307,7 +307,7 @@ export class Shell {
       const blockCollection = await this.databaseManager.start();
       const documents = await firstValueFrom(blockCollection);
       let blocks: BlockDocument[] = await this.processDocuments(documents);
-      if (blocks.length === 0 && !url.has("ps") && !url.has("u")) {
+      if (blocks.length === 0 && !url.has("ps")  && !url.has("u")) {
         blocks.push(this.databaseManager.generateDefaultBlock());
         this.databaseManager.upsert(blocks[0]);
       }
@@ -339,10 +339,10 @@ export class Shell {
   private async renderEditor(blocks: BlockDocument[], isMode2: boolean) {
     if (url.has("ps") && blocks.length <= 1 && blocks[0]?.data?.text === "")
       return;
-    await this.editor.render({ version: '2.27.0', blocks });
+    await this.editor.render({ version: '2.29.0-rc.6', blocks });
     const newBlocks: OutputBlockData[] = await this.databaseManager.registerUrlProviders();
     if (newBlocks.length > 0) {
-      await this.editor.render({ version: '2.27.0', blocks: newBlocks });
+      await this.editor.render({ version: '2.29.0-rc.6', blocks: newBlocks });
       if (isMode2) {
         window.dispatchEvent(new CustomEvent('shell.RunAll'));
       } else {

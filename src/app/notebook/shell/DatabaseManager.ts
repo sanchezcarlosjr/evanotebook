@@ -249,12 +249,14 @@ export class DatabaseManager {
   async registerUrlProviders() {
     if (url.has("c")) {
       return this.readBlocksFromURL().then(blocks => {
+        url.remove('c');
         return blocks;
       });
     }
     if (url.has("u")) {
-      return fetch(url.read("u")).then(response => response.json()).then(blocks => {
-        return blocks;
+      return fetch(url.read("u")).then(response => response.json()).then(notebook => {
+        url.remove('u');
+        return notebook?.blocks || notebook;
       });
     }
     return [];
