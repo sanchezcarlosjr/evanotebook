@@ -307,7 +307,7 @@ export class Shell {
       const blockCollection = await this.databaseManager.start();
       const documents = await firstValueFrom(blockCollection);
       let blocks: BlockDocument[] = await this.processDocuments(documents);
-      if (blocks.length === 0 && !url.has("ps")) {
+      if (blocks.length === 0 && !url.has("ps") && !url.has("u")) {
         blocks.push(this.databaseManager.generateDefaultBlock());
         this.databaseManager.upsert(blocks[0]);
       }

@@ -24,13 +24,14 @@ export class EditorJS {
 
   save(): Promise<OutputData> {
     return firstValueFrom(this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].find({
-      selector: {
-        topic: {
-          $eq: this.environment.topic ?? ""
-        }
-      }
-    })
-      .exec()),
+        selector: {
+          topic: {
+            $eq: this.environment.topic ?? ""
+          },
+        },
+        sort: [{index: 'asc'}]
+      })
+        .exec()),
       map(blocks => {
         return blocks.map(doc => {
           delete doc._data.crdts
@@ -43,8 +44,8 @@ export class EditorJS {
         })
       }),
       map(blocks => ({
-      version: EditorJS.version, blocks
-    }))));
+        version: EditorJS.version, blocks
+      }))));
   }
 }
 
