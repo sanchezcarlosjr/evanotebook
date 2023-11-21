@@ -81,7 +81,9 @@ export class Shell {
       );
     });
     environment.addEventListener('shell.ImportNotebook', async (event: CustomEvent) => {
-      await this.databaseManager.importDatabase(JSON.parse(await event.detail.file.text()));
+      const notebook = JSON.parse(await event.detail.file.text());
+      await this.databaseManager.bulkInsertBlocks(notebook.blocks);
+      location.href = `${location.origin}?t=${notebook.blocks[0].topic}`;
     });
     environment.addEventListener('shell.DownloadFile', (event: CustomEvent) => {
       downloadFile(event.detail.payload.blobParts, event.detail.payload.options);
