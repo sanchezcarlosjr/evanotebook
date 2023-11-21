@@ -1,4 +1,4 @@
-import {NgModule} from '@angular/core';
+import {CUSTOM_ELEMENTS_SCHEMA, NgModule} from '@angular/core';
 import {CommonModule, NgOptimizedImage} from '@angular/common';
 
 import {NotebookRoutingModule} from './notebook-routing.module';
@@ -61,7 +61,8 @@ import { AssistantComponent } from './assistant/assistant.component';
     MatRippleModule,
     MatRadioModule,
     NgOptimizedImage
-  ]
+  ],
+  schemas: [ CUSTOM_ELEMENTS_SCHEMA ]
 })
 export class NotebookModule {
 }

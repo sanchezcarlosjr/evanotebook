@@ -15,9 +15,9 @@
 .chatbot {
   border: 0;
   position: fixed;
-  bottom: 4em;
+  bottom: 7em;
   right: 2em;
-  width: 30em;
-  height: 42em;
+  width: 32em;
+  height: 43em;
   z-index: 2;
 }
