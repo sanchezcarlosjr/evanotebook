@@ -1,6 +1,5 @@
 import {Component, OnInit} from "@angular/core";
 import {MatDialog} from "@angular/material/dialog";
-import { Clipboard } from '@angular/cdk/clipboard';
 import * as url from "./shell/url";
 import {DatabaseManager} from "./shell/DatabaseManager";
 
@@ -33,11 +32,13 @@ export class HistoryComponent implements OnInit {
           dataSource
         })
     );
-    this.channel.port2.onmessage = (event: MessageEvent) => window.open(this.getNotebookLocation(event.data.row), "_blank");
+    this.channel.port2.onmessage = (event: MessageEvent) => window.open(
+      this.getNotebookLocation(event.data.row), "_blank"
+    );
   }
 
   getNotebookLocation(item: any) {
-    return `${location.origin}?p=${url.read('p')}&t=${item.topic}&n=${item.title}`
+    return `${location.origin}?t=${item.topic}&p=${url.read('p')}&n=${item.title}`
   }
 
 }

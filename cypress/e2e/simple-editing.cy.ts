@@ -1,6 +1,7 @@
 // Due to instabilities, this seems to occasionally fail.
 
 describe('EditorJS interaction', function() {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   beforeEach(() => cy.clearIndexedDB());
   it('should input content to EditorJS and retrieve the same content after reload', function() {
@@ -11,7 +12,7 @@ describe('EditorJS interaction', function() {
     cy.wait(500);
     cy.reload();
     cy.get('.ce-header').should('contain', "Title");
-    cy.get('.ce-paragraph').each(($el, index, $list) => {
+    cy.get('.ce-paragraph').each(($el, index) => {
       cy.wrap($el).should('contain', index+1);
     });
   });

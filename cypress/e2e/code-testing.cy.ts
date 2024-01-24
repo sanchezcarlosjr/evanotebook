@@ -1,4 +1,5 @@
 describe('EditorJS Code Testing', function() {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   beforeEach(() => cy.clearIndexedDB());
 

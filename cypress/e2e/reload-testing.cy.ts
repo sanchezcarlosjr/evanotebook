@@ -1,4 +1,5 @@
 describe('EditorJS Reload', function() {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   beforeEach(() => cy.clearIndexedDB());
   it('should input content to EditorJS and retrieve the same content after reload', function() {
