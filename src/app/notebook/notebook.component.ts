@@ -1,7 +1,6 @@
 import {Component, Injector, OnInit} from '@angular/core';
 import * as url from "./shell/url";
 import { createCustomElement } from '@angular/elements';
-import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
 import {TableComponent} from "./table/table.component";
@@ -175,7 +174,6 @@ export class NotebookComponent implements OnInit {
           new lib.Shell(editor as any, window, this.database).start(this.isMode2)
       ).then(shell => shell.registerHistoryChanges(this.titleService)).then(
         () => {
-          customElements.define('nk-form', createCustomElement(FormComponent, {injector: this.injector}));
           customElements.define('nk-table', createCustomElement(TableComponent, {injector: this.injector}));
           customElements.define('nk-tree', createCustomElement(TreeComponent, {injector: this.injector}));
           customElements.define('nk-toolbar', createCustomElement(MatToolbar, {injector: this.injector}));
