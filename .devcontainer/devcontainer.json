@@ -10,7 +10,8 @@
 	},
 
   "postCreateCommand": "yarn install",
-  "postStartCommand": "yarn start"
+  "postStartCommand": "yarn start",
+  "postAttachCommand": "npx cypress run"
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},

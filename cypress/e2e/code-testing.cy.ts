@@ -7,6 +7,7 @@ describe('EditorJS Code Testing', function() {
     cy.get('.ce-header').click().get('.ce-toolbar__plus').click().get('[data-item-name="code"]').click();
     cy.get('.editor').type("'Hello World!'{shift}{enter}");
     cy.get('#checkpoint').should('contain', 'Saving');
+    cy.wait(20000);
     cy.get('.output').should('contain', "'Hello World!'");
   });
 
