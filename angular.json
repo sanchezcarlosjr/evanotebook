@@ -40,8 +40,7 @@
               "src/styles.css",
               "@fortawesome/fontawesome-free/css/all.css"
             ],
-            "scripts": [
-            ],
+            "scripts": [],
             "webWorkerTsConfig": "tsconfig.worker.json",
             "serviceWorker": true,
             "ngswConfigPath": "ngsw-config.json"
@@ -176,11 +175,23 @@
             }
           },
           "defaultConfiguration": "production"
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
+          }
         }
       }
     }
   },
   "cli": {
-    "analytics": "89c55234-ecdc-4cac-9a79-3ddd844d8529"
+    "analytics": "89c55234-ecdc-4cac-9a79-3ddd844d8529",
+    "schematicCollections": [
+      "@angular-eslint/schematics"
+    ]
   }
 }

@@ -23,7 +23,7 @@ export class DocumentObserver {
     return Promise.allSettled(this.tasks);
   }
 
-  static setup(db: Observable<RxDatabase>, documentId: string = 'environment', collection: string = 'view') {
+  static setup(db: Observable<RxDatabase>, documentId = 'environment', collection = 'view') {
     return new DocumentObserver(documentId, db, collection).createProxy();
   }
 
@@ -39,7 +39,7 @@ export class DocumentObserver {
     );
   }
 
-  get(path: string = '') {
+  get(path = '') {
     return this.db.pipe(
       concatMap((d: RxDatabase) => d[this.collection].findOne(this.documentId).exec()),
       filter(x => !!x),
@@ -51,7 +51,7 @@ export class DocumentObserver {
   // TODO: We must implement Leader election, coordination, synchronization, loader balancer and self-stabilization algorithm as well as E2E encryption.
   // Scheduler.
   // https://github.com/GoogleChromeLabs/comlink
-  async remoteProcedure(path: string = '', callback: (...params: any) => any) {
+  async remoteProcedure(path = '', callback: (...params: any) => any) {
     const document = DocumentObserver.setup(this.db, path, this.collection);
     await document.set("queue", []);
     return (document.get('queue') as Observable<EventLoop>).pipe(
@@ -100,7 +100,7 @@ export class DocumentObserver {
   }
 
   // Consult https://github.com/lgandecki/modifyjs
-  async set(p: string | symbol, newValue: any, operation: string = '$set') {
+  async set(p: string | symbol, newValue: any, operation = '$set') {
     const result = await firstValueFrom(this.db.pipe(concatMap(d => d[this.collection].insertCRDT({
       selector: {
         id: {$exists: true}
@@ -123,7 +123,7 @@ export class DocumentObserver {
     return result._data[p];
   }
 
-  inc(p: string | symbol, newValue: number = 1) {
+  inc(p: string | symbol, newValue = 1) {
     return this.set(p, newValue, '$inc');
   }
 

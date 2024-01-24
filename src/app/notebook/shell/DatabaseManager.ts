@@ -336,7 +336,7 @@ export class DatabaseManager {
     ));
   }
 
-  writeCollectionURL(collection: any, key: string = "c") {
+  writeCollectionURL(collection: any, key = "c") {
     this.compress(JSON.stringify(collection)).subscribe((base64: string) => url.write(key, base64));
   }
 

@@ -75,10 +75,17 @@ export class GearProtocol implements Protocol {
   }
 
   connect() {
-    let unsub: (() => any) | null = null;
-    return new Observable<any[]>((subscriber: Subscriber<any>) => {
-      this.initializationPromise.then(protocol => protocol.gearApi?.query.system.events((events) => subscriber.next(events)));
-    }).pipe(finalize(() => unsub && unsub()));
+    const unsub: (() => any) | null = null;
+    return new Observable<any[]>(
+      (subscriber: Subscriber<any>) => {
+        this.initializationPromise.then(protocol => protocol.gearApi?.query.system.events((events) => subscriber.next(events)));
+      }).pipe(
+      finalize(() => {
+        if (unsub) {
+          // unsub();
+        }
+      })
+    );
   }
 
   async send(message: GearMessageProtocol) {
@@ -96,7 +103,7 @@ export class GearProtocol implements Protocol {
     ));
   }
   private signAndSend(message: GearMessageProtocol) {
-    let extrinsic = this.gearApi?.message.send(message as IMessageSendOptions, this.meta);
+    const extrinsic = this.gearApi?.message.send(message as IMessageSendOptions, this.meta);
     const messageEvents = new Subject<{ k: string }>();
     // @ts-ignore
     extrinsic?.signAndSend(...message.keyrings, ({events, status}) => {

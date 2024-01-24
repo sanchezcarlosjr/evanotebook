@@ -30,7 +30,7 @@ export class FormComponent implements OnInit {
       )
     }
   ];
-  readonly: boolean = false;
+  readonly = false;
   state: any = {};
   ngOnInit(): void {
     if(!this.port) {

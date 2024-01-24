@@ -15,13 +15,13 @@ enum JobStatus {
 }
 
 function downloadFile(blobParts?: any, options?: any) {
-  let blob = new Blob(blobParts, options);
+  const blob = new Blob(blobParts, options);
   downloadBlob(blob, options);
 }
 
 function downloadBlob(blob: Blob, options?: any) {
-  let url = window.URL.createObjectURL(blob);
-  let link = document.createElement("a");
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
   link.download = options.filename;
   link.href = url;
   link.click();
@@ -306,7 +306,7 @@ export class Shell {
     try {
       const blockCollection = await this.databaseManager.start();
       const documents = await firstValueFrom(blockCollection);
-      let blocks: BlockDocument[] = await this.processDocuments(documents);
+      const blocks: BlockDocument[] = await this.processDocuments(documents);
       if (blocks.length === 0 && !url.has("ps")  && !url.has("u")) {
         blocks.push(this.databaseManager.generateDefaultBlock());
         this.databaseManager.upsert(blocks[0]);
@@ -319,7 +319,7 @@ export class Shell {
   }
 
   private async processDocuments(documents: any[]) {
-    let blocks: BlockDocument[] = [];
+    const blocks: BlockDocument[] = [];
     if (documents.length > 0) {
       for (const [index, block] of documents.entries()) {
         if (block && block?.index !== index) {

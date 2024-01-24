@@ -275,7 +275,7 @@ export class CodeBlock extends InteractiveBlock {
 
   override renderSettings() {
     const wrapper = super.renderSettings();
-    let languagesSelect = document.createElement("select");
+    const languagesSelect = document.createElement("select");
     languagesSelect.classList.add("small");
     for (const language of this.languages) {
       const option = document.createElement("option");

@@ -27,7 +27,7 @@ const gluesqlInstance$ = new Observable<Gluesql>(subscriber => {
 // @ts-ignore
 globalThis.gluesqlConnection = () => firstValueFrom(gluesqlInstance$);
 function sqlAutocompleter(context: CompletionContext): CompletionResult | null {
-  let word = context.matchBefore(/\w*/)
+  const word = context.matchBefore(/\w*/)
   if (!word || word.from == word.to && !context.explicit)
     return null
   return {

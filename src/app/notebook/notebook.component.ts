@@ -38,9 +38,9 @@ function readAsDataURL(file: File): Promise<string> {
 })
 export class NotebookComponent implements OnInit {
   isSaving = false;
-  isMode2: boolean = true;
-  loading: boolean = true;
-  name: string = "";
+  isMode2 = true;
+  loading = true;
+  name = "";
   hideMainToolbar = false;
   constructor(
     private injector: Injector,

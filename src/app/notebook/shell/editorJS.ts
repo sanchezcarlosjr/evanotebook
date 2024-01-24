@@ -96,7 +96,7 @@ class Blocks {
         }
       }
     })));
-  };
+  }
 
   upsert(id?: string, data?: BlockToolData, type?: string, index?: number, config?: ToolConfig, needToFocus?: boolean, replace?: boolean) {
     return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({
