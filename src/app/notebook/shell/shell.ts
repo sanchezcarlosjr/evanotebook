@@ -1,4 +1,4 @@
-import EditorJS, {BlockAPI, OutputBlockData} from "@editorjs/editorjs";
+import EditorJS, {OutputBlockData} from "@editorjs/editorjs";
 import {
   firstValueFrom,
   Observable,
@@ -80,11 +80,6 @@ export class Shell {
         }
       );
     });
-    environment.addEventListener('shell.ImportNotebook', async (event: CustomEvent) => {
-      const notebook = JSON.parse(await event.detail.file.text());
-      await this.databaseManager.bulkInsertBlocks(notebook.blocks);
-      location.href = `${location.origin}?t=${notebook.blocks[0].topic}`;
-    });
     environment.addEventListener('shell.DownloadFile', (event: CustomEvent) => {
       downloadFile(event.detail.payload.blobParts, event.detail.payload.options);
     });
@@ -160,8 +155,7 @@ export class Shell {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('rewrite', event.detail.payload.text);
     });
     environment.addEventListener('speak', (event: CustomEvent) => window.speechSynthesis.speak(new SpeechSynthesisUtterance(event.detail.payload.toString())));
-    environment.addEventListener('localecho.printWide', (event: CustomEvent) => {
-    });
+    environment.addEventListener('localecho.printWide', (event: CustomEvent) => {return;});
     environment.addEventListener('prompt', (event: CustomEvent) =>
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('prompt', event.detail.payload.options));
     environment.addEventListener('file', (event: CustomEvent) => this.editor.blocks.getById(event.detail.payload.threadId)?.call('inputFile', event.detail.payload));

@@ -14,6 +14,7 @@ import {ShareDialogComponent} from "./share-dialog.component";
 import {HistoryComponent} from "./history.component";
 import {DatabaseManager} from "./shell/DatabaseManager";
 import {transformBulkEditorChanges} from "./transform-bulk-editor-changes";
+import { OpenComponent } from './open/open.component';
 
 function readAsDataURL(file: File): Promise<string> {
   if (!file) {
@@ -169,7 +170,7 @@ export class NotebookComponent implements OnInit {
     this.titleService.setTitle(url.read("n", "EvaNotebook"));
     this.name = this.titleService.getTitle();
     editor.isReady
-      .then(_ => import("./shell/shell")
+      .then(() => import("./shell/shell")
         .then(lib =>
           new lib.Shell(editor as any, window, this.database).start(this.isMode2)
       ).then(shell => shell.registerHistoryChanges(this.titleService)).then(
@@ -217,8 +218,7 @@ export class NotebookComponent implements OnInit {
         const GLOBAL_GATEWAY = url.read("gg") ?? LOCAL_GATEWAY;
         resourceUrl = `${GLOBAL_GATEWAY}${response.Hash}?filename=${response.Name || response.name || file.name}`;
       }
-    } catch (e) {
-    }
+    } catch (e) {return;}
     resourceUrl = resourceUrl || await readAsDataURL(file);
     return {
       success: 1,
@@ -250,20 +250,17 @@ export class NotebookComponent implements OnInit {
     window.dispatchEvent(new CustomEvent('shell.SaveInUrl'));
   }
 
-  importNotebook(event: Event) {
-    // @ts-ignore
-    window.dispatchEvent(new CustomEvent('shell.ImportNotebook', {detail: {file: event.target.files.item(0)}}));
-  }
-
   updateName(name: string) {
     url.write("n", name);
     this.titleService.setTitle(name);
   }
 
-
-
   shareNotebook() {
     this.dialog.open(ShareDialogComponent);
+  }
+
+  openFile() {
+    this.dialog.open(OpenComponent);
   }
 
   openRecent() {

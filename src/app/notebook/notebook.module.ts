@@ -23,6 +23,7 @@ import {MatDialogModule} from "@angular/material/dialog";
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import {HistoryComponent} from "./history.component";
 import { AssistantComponent } from './assistant/assistant.component';
+import { OpenComponent } from './open/open.component';
 
 @NgModule({
   declarations: [
@@ -31,7 +32,8 @@ import { AssistantComponent } from './assistant/assistant.component';
     TreeComponent,
     ShareDialogComponent,
     HistoryComponent,
-    AssistantComponent
+    AssistantComponent,
+    OpenComponent
   ],
   imports: [
     CommonModule,

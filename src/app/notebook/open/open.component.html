@@ -1,0 +1,11 @@
+<h1 mat-dialog-title>Open Notebook</h1>
+<div mat-dialog-content>
+  <button mat-menu-item (click)="triggerFileInput()">
+    Open
+    <input id="notebook-file" class="input-files" type="file" accept="application/json"
+      (change)="importNotebook($event)" hidden>
+  </button>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="closeDialog()">Close</button>
+</div>
