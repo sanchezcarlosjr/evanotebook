@@ -15,6 +15,7 @@ import {HistoryComponent} from "./history.component";
 import {DatabaseManager} from "./shell/DatabaseManager";
 import {transformBulkEditorChanges} from "./transform-bulk-editor-changes";
 import { OpenComponent } from './open/open.component';
+import { ExportComponent } from './export/export.component';
 
 function readAsDataURL(file: File): Promise<string> {
   if (!file) {
@@ -243,7 +244,7 @@ export class NotebookComponent implements OnInit {
   }
 
   exportNotebook() {
-    window.dispatchEvent(new CustomEvent('shell.ExportNotebook'));
+    this.dialog.open(ExportComponent);
   }
 
   saveInUrl() {

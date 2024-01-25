@@ -34,6 +34,7 @@ export class Shell {
   private peerAddBlock = false;
   private peerRemoveBlock = false;
   private peerChangeBlock = false;
+  // environment is generally window
   constructor(private editor: EditorJS, private environment: any, private databaseManager: DatabaseManager) {
     environment.webWorkers = this.jobs;
     environment.downloadBlob = downloadBlob;
@@ -70,16 +71,6 @@ export class Shell {
       window.dispatchEvent(new CustomEvent('shell.StopAll'));
       this.databaseManager.removeAllBlocks().then();
     });
-    environment.addEventListener('shell.ExportNotebook', (event: CustomEvent) => {
-      // @ts-ignore
-      globalThis.editor.save()?.then((data) => {
-          downloadFile([JSON.stringify(data)], {type: 'application/json', filename: `${url.read('n', 'EvaNotebook')}.json`});
-          event.detail?.port?.postMessage({
-            event: event.detail?.payload?.event, payload: data
-          });
-        }
-      );
-    });
     environment.addEventListener('shell.DownloadFile', (event: CustomEvent) => {
       downloadFile(event.detail.payload.blobParts, event.detail.payload.options);
     });
@@ -105,19 +96,15 @@ export class Shell {
         block?.call('dispatchShellStop');
       }
     });
-    //@ts-ignore
     environment.addEventListener('localecho.println', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('println', event.detail.payload.text);
     });
-    //@ts-ignore
     environment.addEventListener('shell.RequestCanvas', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('transferControlToOffscreen');
     });
-    //@ts-ignore
     environment.addEventListener('shell.RequestCaptureStream', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('captureStream');
     });
-    //@ts-ignore
     environment.addEventListener('shell.transferStreamToOffscreen', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'transferStreamToOffscreen', payload: {
@@ -125,11 +112,9 @@ export class Shell {
         }
       }, [event.detail.payload.message]);
     });
-    //@ts-ignore
     environment.addEventListener('table', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTable');
     });
-    //@ts-ignore
     environment.addEventListener('tree', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTree');
     });
@@ -385,12 +370,10 @@ export class Shell {
     this.editor.blocks.update(block.id, block.data);
   }
 
-  private handleKeyPress(event: KeyboardEvent) {
+  private async handleKeyPress(event: KeyboardEvent) {
     if (event.ctrlKey && event.key === 's') {
       event.preventDefault();
       this.databaseManager.saveInUrl();
     }
   }
-
-
 }

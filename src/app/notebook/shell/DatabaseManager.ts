@@ -1,7 +1,6 @@
 import {
   BehaviorSubject,
   filter,
-  first,
   firstValueFrom,
   map,
   Observable,
@@ -352,9 +351,28 @@ export class DatabaseManager {
     return this._database?.exportJSON();
   }
 
-  async exportCurrentNotebook() {
-    // @ts-ignore
-    return
+  async exportNotebook(peer: string) {
+    const data = await this._database?.exportJSON();
+    let toExport: Array<BlockDocument> = [];
+    data?.collections[1].docs.forEach((element) => {
+      if (element.createdBy === peer) {
+        toExport.push(element)
+      }
+    })
+    toExport.sort((element1, element2) => (element1.index ?? 0) - (element2.index ?? 0));
+    toExport = toExport.map((value) => {
+      const propertiesToDelete = [
+        'crdts', '_deleted', '_meta', "_rev", "_attachments"
+      ];
+      const anyValue = value as any;
+      propertiesToDelete.forEach(property => {
+        if (property in value) {
+          delete anyValue[property];
+        }
+      });
+      return anyValue;
+    });
+    return {"blocks": toExport};
   }
 
   importDatabase(json: RxDumpDatabaseAny<RxCollection>) {

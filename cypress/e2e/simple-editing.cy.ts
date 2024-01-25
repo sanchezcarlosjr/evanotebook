@@ -1,5 +1,5 @@
-// Due to instabilities, this seems to occasionally fail.
-
+// Tests fail sporadically. Better class stability and consistent loading timeframes should be built into notebook.
+// For now, run enough times till you can see every test pass at least once.
 describe('EditorJS interaction', function() {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore

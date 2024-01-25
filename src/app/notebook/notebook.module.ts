@@ -24,6 +24,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import {HistoryComponent} from "./history.component";
 import { AssistantComponent } from './assistant/assistant.component';
 import { OpenComponent } from './open/open.component';
+import { ExportComponent } from './export/export.component';
 
 @NgModule({
   declarations: [
@@ -33,7 +34,8 @@ import { OpenComponent } from './open/open.component';
     ShareDialogComponent,
     HistoryComponent,
     AssistantComponent,
-    OpenComponent
+    OpenComponent,
+    ExportComponent
   ],
   imports: [
     CommonModule,

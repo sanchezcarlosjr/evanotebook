@@ -34,14 +34,19 @@ export class EditorJS {
         .exec()),
       map(blocks => {
         return blocks.map(doc => {
-          delete doc._data.crdts
-          delete doc._data._deleted
-          delete doc._data._deleted
-          delete doc._data._attachments
-          delete doc._data._rev
-          delete doc._data._meta
-          return doc._data
-        })
+          if (doc._data) {
+            const propertiesToDelete = [
+              'crdts', '_deleted', '_attachments', '_rev', '_meta'
+            ];
+            propertiesToDelete.forEach(property => {
+              if (property in doc._data) {
+                delete doc._data[property];
+              }
+            });
+            return doc._data;
+          }
+          return doc;
+        });
       }),
       map(blocks => ({
         version: EditorJS.version, blocks

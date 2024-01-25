@@ -37,6 +37,7 @@ export class HistoryComponent implements OnInit {
     );
   }
 
+  // t stands for topic, p stands peer, n stands for titles
   getNotebookLocation(item: any) {
     return `${location.origin}?t=${item.topic}&p=${url.read('p')}&n=${item.title}`
   }
