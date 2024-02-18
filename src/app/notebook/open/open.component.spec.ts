@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CodeComponent } from './code.component';
+import { OpenComponent } from './open.component';
 
-describe('CodeComponent', () => {
-  let component: CodeComponent;
-  let fixture: ComponentFixture<CodeComponent>;
+describe('OpenComponent', () => {
+  let component: OpenComponent;
+  let fixture: ComponentFixture<OpenComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CodeComponent ]
+      declarations: [ OpenComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CodeComponent);
+    fixture = TestBed.createComponent(OpenComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

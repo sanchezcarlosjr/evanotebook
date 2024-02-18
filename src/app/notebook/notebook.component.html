@@ -1,13 +1,12 @@
 <mat-toolbar *ngIf="!hideMainToolbar">
   <button mat-button [matMenuTriggerFor]="fileMenu">File</button>
   <mat-menu #fileMenu="matMenu">
-    <input mat-menu-item [(ngModel)]="name" (ngModelChange)="updateName($event)" id="doc-name" class="doc-name" maxlength="259" autocomplete="off" aria-label="Notebook name" data-form-type="name"  data-lpignore="true">
+    <input mat-menu-item [(ngModel)]="name" (ngModelChange)="updateName($event)" id="doc-name" class="doc-name"
+      maxlength="259" autocomplete="off" aria-label="Notebook name" data-form-type="name" data-lpignore="true">
     <button mat-menu-item (click)="createNewNotebook()">New Notebook</button>
     <button mat-menu-item (click)="exportNotebook()">Export Notebook</button>
-    <button mat-menu-item onclick="document.getElementById('notebook-file').click()">
-      Open <input id="notebook-file" class="input-files" type="file" accept="application/json" (change)="importNotebook($event)">
-    </button>
-    <button mat-menu-item  (click)="openRecent()" >Open recent</button>
+    <button mat-menu-item (click)="openFile()">Open File</button>
+    <button mat-menu-item (click)="openRecent()">Open recent</button>
     <button mat-menu-item (click)="saveInUrl()">Save in URL</button>
     <button mat-menu-item (click)="shareNotebook()">Share notebook</button>
   </mat-menu>
@@ -20,13 +19,15 @@
   <button mat-button [matMenuTriggerFor]="helpMenu">Help</button>
   <mat-menu #helpMenu="matMenu">
     <a mat-menu-item target="_blank" href="https://github.com/sanchezcarlosjr/evanotebook/issues/1">Examples</a>
-    <a mat-menu-item target="_blank" href="/?u=https://raw.githubusercontent.com/sanchezcarlosjr/computer-vision-and-graphics/main/assets/evanotebooks/notebook-documentation.json&n=Documentation">Documentation</a>
+    <a mat-menu-item target="_blank"
+      href="/?u=https://raw.githubusercontent.com/sanchezcarlosjr/computer-vision-and-graphics/main/assets/evanotebooks/notebook-documentation.json&n=Documentation">Documentation</a>
     <button mat-menu-item [matMenuTriggerFor]="mirrorMenu">Mirrors</button>
     <mat-menu #mirrorMenu="matMenu">
       <a mat-menu-item target="_blank" href="https://ipfsnotebook.sanchezcarlosjr.com/">IPFS Branch</a>
       <a mat-menu-item target="_blank" href="https://notebook.sanchezcarlosjr.com/">GitHub Page</a>
       <a mat-menu-item target="_blank" href="https://isolatenotebook.sanchezcarlosjr.com/">Isolate notebook</a>
-      <a mat-menu-item target="_blank" href="https://ipfs.io/ipfs/QmaRppiCKrF6tVjBHejYvcD9PpCYZ36pTDt6haZTaSjhm2">CID</a>
+      <a mat-menu-item target="_blank"
+        href="https://ipfs.io/ipfs/QmaRppiCKrF6tVjBHejYvcD9PpCYZ36pTDt6haZTaSjhm2">CID</a>
       <a mat-menu-item target="_blank" href="https://billowing-dawn-4565.on.fleek.co/">Fleek</a>
       <a mat-menu-item target="_blank" href="https://n.sanchezcarlosjr.com/">Firebase 1</a>
       <a mat-menu-item target="_blank" href="https://evanotebook.web.app/">Firebase 2</a>
@@ -36,11 +37,14 @@
     </mat-menu>
     <a mat-menu-item target="_blank" href="/assets/privacy_policy.txt?ngsw-bypass=true">Privacy policy</a>
     <a mat-menu-item target="_blank" href="/assets/terms_of_service.txt?ngsw-bypass=true">Terms of service</a>
-    <a mat-menu-item target="_blank" href="https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b">About</a>
+    <a mat-menu-item target="_blank"
+      href="https://carlos-eduardo-sanchez-torres.sanchezcarlosjr.com/Assisting-dementia-patients-with-the-Embodied-Voice-Assistant-Eva-Simulator-9aade1ebef9948acafba73d834b19d0b">About</a>
   </mat-menu>
-  <span id="checkpoint" *ngIf="isSaving" class="saving" >Saving...</span>
+  <span id="checkpoint" *ngIf="isSaving" class="saving">Saving...</span>
 </mat-toolbar>
 
-<section id="editor-js"><p *ngIf="loading">Loading...</p></section>
+<section id="editor-js">
+  <p *ngIf="loading">Loading...</p>
+</section>
 
 <app-assistant></app-assistant>

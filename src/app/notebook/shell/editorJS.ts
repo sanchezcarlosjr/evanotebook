@@ -15,8 +15,7 @@ export class EditorJS {
   public static version: "2.26.5";
   public readonly blocks = new Blocks(this.environment);
 
-  constructor(private environment: Environment) {
-  }
+  constructor(private environment: Environment) {}
 
   get isReady(): Promise<boolean> {
     return new Promise((resolve) => resolve(true));
@@ -34,14 +33,19 @@ export class EditorJS {
         .exec()),
       map(blocks => {
         return blocks.map(doc => {
-          delete doc._data.crdts
-          delete doc._data._deleted
-          delete doc._data._deleted
-          delete doc._data._attachments
-          delete doc._data._rev
-          delete doc._data._meta
-          return doc._data
-        })
+          if (doc._data) {
+            const propertiesToDelete = [
+              'crdts', '_deleted', '_attachments', '_rev', '_meta'
+            ];
+            propertiesToDelete.forEach(property => {
+              if (property in doc._data) {
+                delete doc._data[property];
+              }
+            });
+            return doc._data;
+          }
+          return doc;
+        });
       }),
       map(blocks => ({
         version: EditorJS.version, blocks
@@ -96,7 +100,7 @@ class Blocks {
         }
       }
     })));
-  };
+  }
 
   upsert(id?: string, data?: BlockToolData, type?: string, index?: number, config?: ToolConfig, needToFocus?: boolean, replace?: boolean) {
     return this.environment.db.pipe(switchMap((db: RxDatabase) => db["blocks"].insertCRDT({

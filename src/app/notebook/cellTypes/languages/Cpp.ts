@@ -4,7 +4,7 @@ import {cpp} from "@codemirror/lang-cpp";
 import {autocompletion, CompletionContext, CompletionResult} from "@codemirror/autocomplete"
 import {API} from './cpp/api';
 function autocompleteCpp(context: CompletionContext): CompletionResult | null {
-  let word = context.matchBefore(/\w*/)
+  const word = context.matchBefore(/\w*/)
   if (!word || word.from == word.to && !context.explicit)
     return null
   return {

@@ -24,7 +24,7 @@ export abstract class InteractiveBlock implements BlockTool {
     const wrapper = document.createElement('div');
     wrapper.classList.add('ce-popover__items');
     this.shellOptions.forEach(tune => {
-      let button = document.createElement('div');
+      const button = document.createElement('div');
       button.classList.add('cdx-settings-button');
       button.innerHTML = tune.cmd;
       wrapper.appendChild(button);

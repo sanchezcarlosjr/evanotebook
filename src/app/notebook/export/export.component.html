@@ -1,0 +1,9 @@
+<h1 mat-dialog-title>Open Notebook</h1>
+<div mat-dialog-content>
+  <button mat-menu-item (click)="export()">Export All</button>
+  <button mat-menu-item (click)="exportNotebook()">Export Current Notebook</button>
+  <button mat-menu-item (click)="destroy()">Delete All Data (caution)</button>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="closeDialog()">Close</button>
+</div>

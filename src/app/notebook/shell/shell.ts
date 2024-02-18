@@ -1,4 +1,4 @@
-import EditorJS, {BlockAPI, OutputBlockData} from "@editorjs/editorjs";
+import EditorJS, {OutputBlockData} from "@editorjs/editorjs";
 import {
   firstValueFrom,
   Observable,
@@ -15,13 +15,13 @@ enum JobStatus {
 }
 
 function downloadFile(blobParts?: any, options?: any) {
-  let blob = new Blob(blobParts, options);
+  const blob = new Blob(blobParts, options);
   downloadBlob(blob, options);
 }
 
 function downloadBlob(blob: Blob, options?: any) {
-  let url = window.URL.createObjectURL(blob);
-  let link = document.createElement("a");
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
   link.download = options.filename;
   link.href = url;
   link.click();
@@ -34,6 +34,7 @@ export class Shell {
   private peerAddBlock = false;
   private peerRemoveBlock = false;
   private peerChangeBlock = false;
+  // environment is generally window
   constructor(private editor: EditorJS, private environment: any, private databaseManager: DatabaseManager) {
     environment.webWorkers = this.jobs;
     environment.downloadBlob = downloadBlob;
@@ -70,21 +71,6 @@ export class Shell {
       window.dispatchEvent(new CustomEvent('shell.StopAll'));
       this.databaseManager.removeAllBlocks().then();
     });
-    environment.addEventListener('shell.ExportNotebook', (event: CustomEvent) => {
-      // @ts-ignore
-      globalThis.editor.save()?.then((data) => {
-          downloadFile([JSON.stringify(data)], {type: 'application/json', filename: `${url.read('n', 'EvaNotebook')}.json`});
-          event.detail?.port?.postMessage({
-            event: event.detail?.payload?.event, payload: data
-          });
-        }
-      );
-    });
-    environment.addEventListener('shell.ImportNotebook', async (event: CustomEvent) => {
-      const notebook = JSON.parse(await event.detail.file.text());
-      await this.databaseManager.bulkInsertBlocks(notebook.blocks);
-      location.href = `${location.origin}?t=${notebook.blocks[0].topic}`;
-    });
     environment.addEventListener('shell.DownloadFile', (event: CustomEvent) => {
       downloadFile(event.detail.payload.blobParts, event.detail.payload.options);
     });
@@ -110,19 +96,15 @@ export class Shell {
         block?.call('dispatchShellStop');
       }
     });
-    //@ts-ignore
     environment.addEventListener('localecho.println', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('println', event.detail.payload.text);
     });
-    //@ts-ignore
     environment.addEventListener('shell.RequestCanvas', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('transferControlToOffscreen');
     });
-    //@ts-ignore
     environment.addEventListener('shell.RequestCaptureStream', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('captureStream');
     });
-    //@ts-ignore
     environment.addEventListener('shell.transferStreamToOffscreen', (event: CustomEvent) => {
       this.jobs.get(event.detail.payload.threadId)?.worker?.postMessage({
         event: 'transferStreamToOffscreen', payload: {
@@ -130,11 +112,9 @@ export class Shell {
         }
       }, [event.detail.payload.message]);
     });
-    //@ts-ignore
     environment.addEventListener('table', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTable');
     });
-    //@ts-ignore
     environment.addEventListener('tree', (event: CustomEvent) => {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('createTree');
     });
@@ -160,8 +140,7 @@ export class Shell {
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('rewrite', event.detail.payload.text);
     });
     environment.addEventListener('speak', (event: CustomEvent) => window.speechSynthesis.speak(new SpeechSynthesisUtterance(event.detail.payload.toString())));
-    environment.addEventListener('localecho.printWide', (event: CustomEvent) => {
-    });
+    environment.addEventListener('localecho.printWide', (event: CustomEvent) => {return;});
     environment.addEventListener('prompt', (event: CustomEvent) =>
       this.editor.blocks.getById(event.detail.payload.threadId)?.call('prompt', event.detail.payload.options));
     environment.addEventListener('file', (event: CustomEvent) => this.editor.blocks.getById(event.detail.payload.threadId)?.call('inputFile', event.detail.payload));
@@ -306,7 +285,7 @@ export class Shell {
     try {
       const blockCollection = await this.databaseManager.start();
       const documents = await firstValueFrom(blockCollection);
-      let blocks: BlockDocument[] = await this.processDocuments(documents);
+      const blocks: BlockDocument[] = await this.processDocuments(documents);
       if (blocks.length === 0 && !url.has("ps")  && !url.has("u")) {
         blocks.push(this.databaseManager.generateDefaultBlock());
         this.databaseManager.upsert(blocks[0]);
@@ -319,7 +298,7 @@ export class Shell {
   }
 
   private async processDocuments(documents: any[]) {
-    let blocks: BlockDocument[] = [];
+    const blocks: BlockDocument[] = [];
     if (documents.length > 0) {
       for (const [index, block] of documents.entries()) {
         if (block && block?.index !== index) {
@@ -391,12 +370,10 @@ export class Shell {
     this.editor.blocks.update(block.id, block.data);
   }
 
-  private handleKeyPress(event: KeyboardEvent) {
+  private async handleKeyPress(event: KeyboardEvent) {
     if (event.ctrlKey && event.key === 's') {
       event.preventDefault();
       this.databaseManager.saveInUrl();
     }
   }
-
-
 }

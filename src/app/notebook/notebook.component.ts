@@ -1,7 +1,6 @@
 import {Component, Injector, OnInit} from '@angular/core';
 import * as url from "./shell/url";
 import { createCustomElement } from '@angular/elements';
-import {FormComponent} from "./form/form.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {API} from "@editorjs/editorjs";
 import {TableComponent} from "./table/table.component";
@@ -15,6 +14,8 @@ import {ShareDialogComponent} from "./share-dialog.component";
 import {HistoryComponent} from "./history.component";
 import {DatabaseManager} from "./shell/DatabaseManager";
 import {transformBulkEditorChanges} from "./transform-bulk-editor-changes";
+import { OpenComponent } from './open/open.component';
+import { ExportComponent } from './export/export.component';
 
 function readAsDataURL(file: File): Promise<string> {
   if (!file) {
@@ -38,9 +39,9 @@ function readAsDataURL(file: File): Promise<string> {
 })
 export class NotebookComponent implements OnInit {
   isSaving = false;
-  isMode2: boolean = true;
-  loading: boolean = true;
-  name: string = "";
+  isMode2 = true;
+  loading = true;
+  name = "";
   hideMainToolbar = false;
   constructor(
     private injector: Injector,
@@ -170,12 +171,11 @@ export class NotebookComponent implements OnInit {
     this.titleService.setTitle(url.read("n", "EvaNotebook"));
     this.name = this.titleService.getTitle();
     editor.isReady
-      .then(_ => import("./shell/shell")
+      .then(() => import("./shell/shell")
         .then(lib =>
           new lib.Shell(editor as any, window, this.database).start(this.isMode2)
       ).then(shell => shell.registerHistoryChanges(this.titleService)).then(
         () => {
-          customElements.define('nk-form', createCustomElement(FormComponent, {injector: this.injector}));
           customElements.define('nk-table', createCustomElement(TableComponent, {injector: this.injector}));
           customElements.define('nk-tree', createCustomElement(TreeComponent, {injector: this.injector}));
           customElements.define('nk-toolbar', createCustomElement(MatToolbar, {injector: this.injector}));
@@ -219,8 +219,7 @@ export class NotebookComponent implements OnInit {
         const GLOBAL_GATEWAY = url.read("gg") ?? LOCAL_GATEWAY;
         resourceUrl = `${GLOBAL_GATEWAY}${response.Hash}?filename=${response.Name || response.name || file.name}`;
       }
-    } catch (e) {
-    }
+    } catch (e) {return;}
     resourceUrl = resourceUrl || await readAsDataURL(file);
     return {
       success: 1,
@@ -245,16 +244,11 @@ export class NotebookComponent implements OnInit {
   }
 
   exportNotebook() {
-    window.dispatchEvent(new CustomEvent('shell.ExportNotebook'));
+    this.dialog.open(ExportComponent);
   }
 
   saveInUrl() {
     window.dispatchEvent(new CustomEvent('shell.SaveInUrl'));
-  }
-
-  importNotebook(event: Event) {
-    // @ts-ignore
-    window.dispatchEvent(new CustomEvent('shell.ImportNotebook', {detail: {file: event.target.files.item(0)}}));
   }
 
   updateName(name: string) {
@@ -262,10 +256,12 @@ export class NotebookComponent implements OnInit {
     this.titleService.setTitle(name);
   }
 
-
-
   shareNotebook() {
     this.dialog.open(ShareDialogComponent);
+  }
+
+  openFile() {
+    this.dialog.open(OpenComponent);
   }
 
   openRecent() {

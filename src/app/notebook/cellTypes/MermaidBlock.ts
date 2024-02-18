@@ -252,7 +252,7 @@ export class MermaidTool {
     const wrapper = document.createElement('div');
 
     this.settings.forEach(tune => {
-      let exporter = document.createElement('button');
+      const exporter = document.createElement('button');
       exporter.classList.add('cdx-settings-button');
       exporter.textContent = tune.name;
       exporter.addEventListener('click', tune.call);

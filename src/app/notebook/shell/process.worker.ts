@@ -436,7 +436,7 @@ class MatTree {
     const entries = Object.entries(json).map(([key, value]) => {
       key = parent !== "Array" ? key : "";
       let type = value?.constructor?.name;
-      value = !!value.toJSON ? value.toJSON() : value;
+      value = value.toJSON ? value.toJSON() : value;
       if (typeof value === 'object' && !!value) {
         type = `${type}${type === "Array" ? `(${value.length})` : ""}`;
         return {
@@ -608,7 +608,7 @@ class OriginPrivateFileSystem {
 
 
 class Exit implements Error {
-  name: string = "Exit";
+  name = "Exit";
   constructor(public message: string) {}
 }
 
@@ -666,7 +666,7 @@ class ProcessWorker {
     environment.setupDocumentObserver = (document: string) => DocumentObserver.setup(environment.db, document);
     environment.hos = new HostOperatingSystem(environment);
     environment.hfs = new HostFilesystem(environment.hos);
-    environment.exit = (message: string = "0") => {
+    environment.exit = (message = "0") => {
       throw new Exit(message);
     }
     environment.P = P;
@@ -1061,11 +1061,11 @@ class ProcessWorker {
     environment.chart = (config: ConfigurationChart) => of(undefined).pipe(environment.plot(config));
     environment.delayEach = (milliseconds: number) => delayWhen((_, i) => interval(i * milliseconds));
     environment.arrowTableToJSON = map((table: arrow.Table<any>) => table.toArray().map((row) => row.toJSON()));
-    environment.insertCSVToDuckDB = (observable: Observable<string>, path: string = 'rows.csv') => concatMap((obj: { db: AsyncDuckDB, c: AsyncDuckDBConnection }) => observable.pipe(switchMap(async (csv: string) => {
+    environment.insertCSVToDuckDB = (observable: Observable<string>, path = 'rows.csv') => concatMap((obj: { db: AsyncDuckDB, c: AsyncDuckDBConnection }) => observable.pipe(switchMap(async (csv: string) => {
       await obj.db.registerFileText(path, csv);
       return obj;
     })));
-    environment.insertJSONToDuckDB = (observable: Observable<object>, path: string = 'rows.json', name: string = 'rows') => concatMap((obj: { db: AsyncDuckDB, c: AsyncDuckDBConnection }) => observable.pipe(switchMap(async (json) => {
+    environment.insertJSONToDuckDB = (observable: Observable<object>, path = 'rows.json', name = 'rows') => concatMap((obj: { db: AsyncDuckDB, c: AsyncDuckDBConnection }) => observable.pipe(switchMap(async (json) => {
       await obj.db.registerFileText(path, JSON.stringify(json));
       await obj.c.insertJSONFromPath(path, {name});
       return obj;
@@ -1098,7 +1098,7 @@ class ProcessWorker {
     environment.render = (x: string) => of(x).pipe(map(x => x.replace(/\n|\r|\r\n/gm, "")), environment.write());
     environment.printWide = tap(observerOrNext => this.localEcho.printWide(Array.isArray(observerOrNext) ? observerOrNext : environment.throwError(new Error(`TypeError: The operator printWide only supports iterators. ${observerOrNext} has to be an iterator.`))));
     environment.echo = (msg: any) => of(msg).pipe(filter(x => !!x), environment.display);
-    environment.publishMQTT = (topic: string, payloadName: string = "text", options = {
+    environment.publishMQTT = (topic: string, payloadName = "text", options = {
       publication: {},
       message: {}
     }) => map((payload: string) => ({
