@@ -298,15 +298,21 @@ export class DatabaseManager {
     );
   }
 
-  bulkInsertBlocks(blocks: BlockDocument[]) {
-    blocks.forEach((block: BlockDocument, index: number) => {
-      block.index = index;
-      block.createdBy = this._uuid;
-      block.lastEditedBy = this._uuid;
-      block.topic = this.topic;
+  bulkInsertBlocks(blocks: BlockDocument[], peer: string | undefined = undefined, topic: string | undefined = undefined) {
+    if ((peer && !topic) || (!peer && topic)) {
+      return;
+    } else if (!peer && !topic) {
+      peer = this._uuid;
+      topic = this.topic;
+    }
+    blocks.forEach((block: BlockDocument) => {
+      block.createdBy = peer;
+      block.lastEditedBy = peer;
+      block.topic = topic;
     });
-    // @ts-ignore
-    return this._database?.blocks.bulkInsert(blocks);
+    const db = this._database as any;
+    db.blocks.bulkInsert(blocks);
+    return {"peer": peer, "topic": topic}
   }
 
   decodeHtmlEntities(html: string) {
@@ -351,11 +357,11 @@ export class DatabaseManager {
     return this._database?.exportJSON();
   }
 
-  async exportNotebook(peer: string) {
+  async exportNotebook(peer: string, topic: string) {
     const data = await this._database?.exportJSON();
     let toExport: Array<BlockDocument> = [];
     data?.collections[1].docs.forEach((element) => {
-      if (element.createdBy === peer) {
+      if (element.createdBy === peer && element.topic === topic) {
         toExport.push(element)
       }
     })
@@ -411,13 +417,14 @@ export class DatabaseManager {
   }
 
   async insert(name: string, outputData: OutputData) {
-    // @ts-ignore
-    return (await this._database[name].insertCRDT({
-      ifMatch: {
-        $set: outputData
-      },
-    }))._data;
-    // @ts-ignore
+    const db = this._database as any;
+    if (this._database && db[name]) {
+      return await db[name].insertCRDT({
+        ifMatch: {
+          $set: outputData
+        },
+      })._data;
+    }
   }
 
   async destroy() {

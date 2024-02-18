@@ -15,8 +15,7 @@ export class EditorJS {
   public static version: "2.26.5";
   public readonly blocks = new Blocks(this.environment);
 
-  constructor(private environment: Environment) {
-  }
+  constructor(private environment: Environment) {}
 
   get isReady(): Promise<boolean> {
     return new Promise((resolve) => resolve(true));

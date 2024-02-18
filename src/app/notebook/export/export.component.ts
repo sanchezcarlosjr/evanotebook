@@ -22,11 +22,11 @@ export class ExportComponent {
   }
 
   async exportNotebook() {
-    console.log(await this.manager.exportNotebook(url.read("p")));
+    console.log(await this.manager.exportNotebook(url.read("p"), url.read("t")));
   }
 
   async destroy() {
-    this.manager.destroy();
+    await this.manager.destroy();
   }
 
 }
